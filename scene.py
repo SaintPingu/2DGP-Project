@@ -1,5 +1,5 @@
 from pico2d import *
-from mytool import *
+import mytool
 
 screenWidth = 1280
 screenHeight = 720
@@ -13,10 +13,10 @@ import tank
 def init():
     global img_background, img_ground
     open_canvas(screenWidth, screenHeight, sync=True)
-    img_background = load_image_path('background.png')
-    img_ground = load_image_path('ground.png')
+    img_background = mytool.load_image_path('background.png')
+    img_ground = mytool.load_image_path('ground.png')
     img_background.draw(screenWidth//2, screenHeight//2, screenWidth, screenHeight)
-    
+
     map.init()
     map.read_mapfile(0)
     map.invalidate_map()
