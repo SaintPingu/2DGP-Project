@@ -3,8 +3,6 @@ from pico2d import *
 import scene
 import map
 
-DEBUG = False
-
 os.chdir(os.path.dirname(__file__))
 scene.init()
 

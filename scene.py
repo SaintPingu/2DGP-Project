@@ -2,7 +2,7 @@ from pico2d import *
 import mytool
 
 screenWidth = 1280
-screenHeight = 720
+screenHeight = 800
 
 img_background : pico2d.Image
 img_ground : pico2d.Image
@@ -18,9 +18,8 @@ def init():
     img_background.draw(screenWidth//2, screenHeight//2, screenWidth, screenHeight)
 
     map.init()
-    map.read_mapfile(0)
-    map.invalidate_map()
-    map.draw_map()
+    map.read_mapfile(1)
+    map.draw_map(True)
 
 def draw_scene():
     tank.update()

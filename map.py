@@ -8,23 +8,24 @@ import tank
 img_debug : Image
 img_debug_air : Image
 
+DEBUG = False
+
 LEFT = -1
 RIGHT = 1
 
-CELL_SIZE = 2
+CELL_SIZE = 1
 
 BLOCK_NONE = 0
 
-BLOCK_DIRT = 1
-BLOCK_PLACED_DIRT = -BLOCK_DIRT
+BLOCK_GROUND = 1
+BLOCK_PLACED_GROUND = -BLOCK_GROUND
 
-BLOCK_DELETED = 999
 BLOCK_DEBUG = 9999
 BLOCK_DEBUG_AIR = 9998
 BLOCK_PLACED_DEBUG = -BLOCK_DEBUG
 BLOCK_PLACED_DEBUG_AIR = -BLOCK_DEBUG
 
-BLOCK_SET = { BLOCK_DEBUG, BLOCK_PLACED_DEBUG, BLOCK_DIRT, BLOCK_PLACED_DIRT }
+BLOCK_SET = { BLOCK_DEBUG, BLOCK_PLACED_DEBUG, BLOCK_GROUND, BLOCK_PLACED_GROUND }
 
 DEFAULT_RADIUS = 3
 radius_draw = DEFAULT_RADIUS
@@ -38,7 +39,7 @@ crnt_map : list[list[int]]
 xCellCount = 0
 yCellCount = 0
 is_map_invalid = True
-invalid_rect : Rect = None
+rect_inv : Rect = Rect()
 
 tank_obj : tank.Tank = None
 
@@ -57,6 +58,7 @@ def modify_map(events : list):
     global is_create_block, is_delete_block, is_create_tank, is_print_mouse_pos
     global radius_draw
     global tank_obj
+    global DEBUG
 
     if is_draw_mode == False:
         return
@@ -82,7 +84,7 @@ def modify_map(events : list):
                 stop_draw_mode()
                 return
             elif event.key == SDLK_F2:
-                draw_map(True)
+                DEBUG = not DEBUG
                 return
             elif event.key == SDLK_F5:
                 save_mapfile()
@@ -142,35 +144,37 @@ def stop_draw_mode():
     is_draw_mode = False
 
 def draw_map(invalidate_all=False):
+    global rect_inv
     global is_map_invalid
 
     if invalidate_all:
-        invalid_rect.origin = (0,0)
-        invalid_rect.width = scene.screenWidth
-        invalid_rect.height = scene.screenHeight
+        rect_inv = Rect((scene.screenWidth//2,scene.screenHeight//2), scene.screenWidth, scene.screenHeight)
+
+        for y in range(0, yCellCount):
+            for x in range(0, xCellCount):
+                if(crnt_map[y][x] < 0):
+                    crnt_map[y][x] *= -1
+
     elif is_map_invalid == False:
         return
 
-    start_x, start_y = invalid_rect.origin
-    end_x = (start_x + invalid_rect.width)
-    end_y = (start_y + invalid_rect.height)
+    cell_start_x, cell_start_y = get_cell(rect_inv.origin)
+    cell_end_x, cell_end_y = get_cell( (rect_inv.origin[0] + rect_inv.width, rect_inv.origin[1] + rect_inv.height) )
 
-    for y in range(start_y, end_y):
-        for x in range(start_x, end_x):
-            if out_of_range(x, y, xCellCount, yCellCount):
+    scene.img_background.clip_draw(int(rect_inv.origin[0]), int(rect_inv.origin[1]), int(rect_inv.width), int(rect_inv.height), *rect_inv.get_fCenter())
+    if DEBUG:
+        draw_rectangle(rect_inv.origin[0], rect_inv.origin[1], rect_inv.origin[0] + rect_inv.width, rect_inv.origin[1]+rect_inv.height)
+
+    for cell_y in range(cell_start_y, cell_end_y + 1):
+        for cell_x in range(cell_start_x, cell_end_x + 1):
+            if out_of_range(cell_x, cell_y, xCellCount, yCellCount):
                 continue
 
-            posX, posY = get_pos_from_index(x, y)
-            block_type = crnt_map[y][x]
+            posX, posY = get_pos_from_cell(cell_x, cell_y)
+            block_type = crnt_map[cell_y][cell_x]
 
-            if block_type == BLOCK_DELETED:
-                srcX = posX - (CELL_SIZE//2)
-                srcY = posY - (CELL_SIZE//2)
-                scene.img_background.clip_draw(srcX, srcY, CELL_SIZE, CELL_SIZE, posX, posY, CELL_SIZE, CELL_SIZE)
-                crnt_map[y][x] = BLOCK_NONE
-
-            elif block_type == BLOCK_DIRT:
-                scene.img_ground.draw(posX, posY, CELL_SIZE, CELL_SIZE)
+            if block_type == BLOCK_GROUND:
+                scene.img_ground.clip_draw(posX - (CELL_SIZE//2), posY - (CELL_SIZE//2), CELL_SIZE, CELL_SIZE, posX, posY)
 
             elif block_type == BLOCK_DEBUG:
                 img_debug.draw(posX, posY, CELL_SIZE, CELL_SIZE)
@@ -181,10 +185,11 @@ def draw_map(invalidate_all=False):
             else:
                 continue
 
-            crnt_map[y][x] *= -1
+            crnt_map[cell_y][cell_x] *= -1
 
     if tank_obj:
         tank_obj.draw()
+        
     update_canvas()
     is_map_invalid = False
 
@@ -196,21 +201,21 @@ def draw_map(invalidate_all=False):
 
 ##### BLOCK #####
 def create_block(radius, mouse_pos):
-    set_block(radius, mouse_pos, BLOCK_DIRT)
+    set_block(radius, mouse_pos, BLOCK_GROUND)
 
 def delete_block(radius, mouse_pos):
-    set_block(radius, mouse_pos, BLOCK_DELETED)
+    set_block(radius, mouse_pos, BLOCK_NONE)
 
 def set_block(radius, mouse_pos, block_type):
     col, row = get_cell(mouse_pos)
     x = -radius
 
-    for x in range(-radius, radius):
-        for y in range(-radius, radius):
+    for x in range(-radius, radius + 1):
+        for y in range(-radius, radius + 1):
             if not out_of_range(col+x, row+y, xCellCount, yCellCount):
                 crnt_map[row + y][col + x] = block_type
 
-    invalidate(get_cell(mouse_pos), radius*2, radius*2)
+    invalidate(mouse_pos, radius*2, radius*2)
     
 def is_block(block):
     return block in BLOCK_SET
@@ -224,10 +229,12 @@ def is_block(block):
 ##### Invalidate #####
 def set_invalidate_rect(center, width=0, height=0, scale=1, square=False):
     global crnt_map
-    
-    center = to_int_pos(center)
+    CORR_VAL = 2
+
     width *= scale
     height *= scale
+    width += CORR_VAL
+    height += CORR_VAL
 
     if square:
         if width > height:
@@ -235,42 +242,45 @@ def set_invalidate_rect(center, width=0, height=0, scale=1, square=False):
         else:
             width = height
 
-    width = int((width//CELL_SIZE) + CELL_SIZE)
-    height = int((height//CELL_SIZE) + CELL_SIZE)
+    cell_width = (width//CELL_SIZE) + CELL_SIZE
+    cell_height = (height//CELL_SIZE) + CELL_SIZE
 
     cell_center = get_cell(center)
     start_x, start_y = cell_center
-    start_x -= width//2
-    start_y -= height//2
-    end_x = start_x + width
-    end_y = start_y + height
+    start_x -= cell_width//2
+    start_y -= cell_height//2
+    end_x = start_x + cell_width
+    end_y = start_y + cell_height
 
     for y in range(start_y, end_y):
         for x in range(start_x, end_x):
             if not out_of_range(x, y, xCellCount, yCellCount):
-                if crnt_map[y][x] == BLOCK_NONE:
-                    crnt_map[y][x] = BLOCK_DELETED
-                else:
+                # if crnt_map[y][x] == BLOCK_NONE:
+                #     crnt_map[y][x] = BLOCK_DELETED
+                # else:
                     crnt_map[y][x] *= -1
                 #crnt_map[y][x] = BLOCK_DEBUG
     
-    invalidate(cell_center, width, height)
+    invalidate(center, width, height)
 
-def invalidate(cell_center, w, h):
+def invalidate(center, width, height):
     global is_map_invalid
-    global invalid_rect
-    w += CELL_SIZE
-    h += CELL_SIZE
-    invalid_rect = Rect(cell_center, w, h)
+    global rect_inv
+
+    rect_inv = Rect(center, width, height)
+
+    if rect_inv.left < 0:
+        rect_inv.set_origin((0, rect_inv.bottom), rect_inv.right, rect_inv.height)
+    elif rect_inv.right > scene.screenWidth:
+        rect_inv.set_origin((rect_inv.left, rect_inv.bottom), scene.screenWidth - rect_inv.left, rect_inv.height)
+
+    if rect_inv.bottom < 0:
+        rect_inv.set_origin((rect_inv.left, 0), rect_inv.width, rect_inv.top)
+    elif rect_inv.top > scene.screenHeight:
+        rect_inv.set_origin((rect_inv.left, rect_inv.bottom), rect_inv.width, scene.screenHeight - rect_inv.bottom)
+
     is_map_invalid = True
     draw_map()
-
-def invalidate_map():
-    global invalid_rect
-    invalid_rect = Rect()
-    invalid_rect.set_origin((0,0), xCellCount, yCellCount)
-
-
 
 
 
@@ -285,8 +295,10 @@ def get_cells(positions):
         result.append(get_cell(pos))
     return result
 
-def get_pos_from_index(colIdx : int, rowIdx : int):
-    return (colIdx * CELL_SIZE) + (CELL_SIZE//2), (rowIdx * CELL_SIZE) + (CELL_SIZE//2)
+def get_pos_from_cell(colIdx : int, rowIdx : int):
+    return (colIdx * CELL_SIZE), (rowIdx * CELL_SIZE)
+def get_origin_from_cell(colIdx : int, rowIdx : int):
+    return (colIdx * CELL_SIZE) - (CELL_SIZE//2), (rowIdx * CELL_SIZE) - (CELL_SIZE//2)
 
 def get_cell_range(center, width, height, extra_range=0):
     width = (width//CELL_SIZE) + extra_range
@@ -298,6 +310,8 @@ def get_cell_range(center, width, height, extra_range=0):
 
     return start_x, start_y, start_x + width, start_y + height
 
+def reset_range(position):
+    pass
 
 
 
@@ -314,7 +328,9 @@ def get_highest_ground_point(x, y, is_cell=False):
         start_col, start_row = get_cell((x, y))
 
     dir_down = True
-    if is_block(crnt_map[start_row][start_col]):
+    if out_of_range(start_col, start_row, xCellCount, yCellCount):
+        return False
+    elif is_block(crnt_map[start_row][start_col]):
         dir_down = False
 
     if dir_down:
@@ -329,8 +345,7 @@ def get_highest_ground_point(x, y, is_cell=False):
             if not out_of_range(start_col, row, xCellCount, yCellCount) and not is_block(crnt_map[row][start_col]):
                 return (start_col, row - 1)
 
-    raise Exception
-    return False
+    return (x, -1)
 
 
 def get_vec_highest(object : GameObject):
@@ -345,7 +360,7 @@ def get_vec_highest(object : GameObject):
             continue
         
         col, row = result
-        _, height = get_pos_from_index(col, row)
+        _, height = get_pos_from_cell(col, row)
         if height > vec_highest.y:
             vec_highest.x = vectors_bot[idx].x
             vec_highest.y = height
@@ -388,10 +403,12 @@ def get_rotated_to_ground(object : GameObject):
             continue
 
         ground_cell = get_highest_ground_point(*cell, True)
+        if ground_cell == False:
+            continue
         #draw_debug_cell(ground_cell)
-        crnt_map[ground_cell[1]][ground_cell[0]] = BLOCK_DEBUG
+        #crnt_map[ground_cell[1]][ground_cell[0]] = BLOCK_DEBUG
             
-        vec_ground = Vector2(*get_pos_from_index(*ground_cell))
+        vec_ground = Vector2(*get_pos_from_cell(*ground_cell))
         if vec_ground.y == vec_pivot.y:
             continue
         length = vec_pivot - vec_ground
@@ -412,7 +429,7 @@ def get_rotated_to_ground(object : GameObject):
         min_theta = 0
 
     cell_pivot = get_cell(vec_pivot)
-    crnt_map[cell_pivot[1]][cell_pivot[0]] = BLOCK_DEBUG
+    #crnt_map[cell_pivot[1]][cell_pivot[0]] = BLOCK_DEBUG
 
     object.set_theta(min_theta)
     #object.rotate_pivot(min_theta, vec_pivot)
@@ -430,7 +447,7 @@ def get_rotated_to_ground(object : GameObject):
 ##### DEBUG #####
 def draw_debug_cell(cell):
     r = CELL_SIZE//2
-    pos = get_pos_from_index(*cell)
+    pos = get_pos_from_cell(*cell)
     pico2d.draw_rectangle(pos[0]-r,pos[1]-r,pos[0]+r,pos[1]+r)
 def draw_debug_cells(cells):
     for cell in cells:
@@ -444,17 +461,20 @@ def draw_debug_vectors(vectors):
 ##### FILE I/O #####
 def read_mapfile(index : int):
     global crnt_map
+    crnt_map = [[0]*xCellCount for col in range(yCellCount)]
 
-    fileName = 'map' + str(index) + '.txt'
+    if index == -1:
+        return
+
+    fileName = 'map_' + str(index) + '.txt'
     file = open('maps/' + fileName, 'r')
 
-    crnt_map = [[0]*xCellCount for col in range(yCellCount)]
     for rowIdx, row in enumerate(crnt_map):
         line = file.readline()
-        for idx, ch in enumerate(line):
-            if ch == '\n':
+        for colIdx, ch in enumerate(line):
+            if colIdx >= xCellCount:
                 break
-            crnt_map[rowIdx][idx] = int(ch)
+            crnt_map[rowIdx][colIdx] = int(ch)
 
     file.close()
 
