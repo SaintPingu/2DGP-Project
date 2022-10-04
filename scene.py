@@ -21,6 +21,10 @@ def init():
 
     map.init()
     map.read_mapfile(1)
+<<<<<<< HEAD
+=======
+    map.draw_map(True)
+>>>>>>> 2ad42314f37038371798bb38375ff17069959d36
 
 def draw_scene():
     tank.update()

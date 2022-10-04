@@ -190,7 +190,11 @@ def draw_map(invalidate_all=False):
     if tank_obj:
         tank_obj.draw()
         
+<<<<<<< HEAD
     #update_canvas()
+=======
+    update_canvas()
+>>>>>>> 2ad42314f37038371798bb38375ff17069959d36
     is_map_invalid = False
 
 
