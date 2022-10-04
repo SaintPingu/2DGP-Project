@@ -154,14 +154,6 @@ class Rect:
         self.bottom = center[1] - (self.height//2)
         self.origin = (self.left, self.bottom)
     
-    def update(self):
-        self.set_pos(self.center)
-        
-    def collide_point(self, x, y):
-        if x >= self.left and x <= self.right and y >= self.bottom and y <= self.top:
-            return True
-        return False
-
     def get_rect_int(self):
         result = Rect()
         result.center = to_int_pos(self.center)
@@ -169,6 +161,17 @@ class Rect:
         result.height = int(self.height)
         result.update()
         return result
+
+    def get_fCenter(self):
+        return [self.origin[0] + (self.width/2), self.origin[1] + (self.height/2)]
+
+    def update(self):
+        self.set_pos(self.center)
+        
+    def collide_point(self, x, y):
+        if x >= self.left and x <= self.right and y >= self.bottom and y <= self.top:
+            return True
+        return False
     
     def move(self, x, y):
         self.center = (self.center[0] + x, self.center[1] + y)
@@ -298,6 +301,3 @@ def to_int_pos(position):
 
 def get_sign(num):
     return num / math.fabs(num)
-
-def get_cell(position, cell_size):
-    return int(position[0]//cell_size), int(position[1]//cell_size)
