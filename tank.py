@@ -47,32 +47,9 @@ class Tank(mytool.GameObject):
         tank_player1 = self
         self.is_created = True
 
-    def move(self):
-        if self.dir == 0:
-            return
-        elif self.dir == map.LEFT:
-            self.vDir = self.get_vec_left()
-        else:
-            self.vDir = self.get_vec_right()
-
-        vDest = mytool.Vector2(*self.center) + (self.vDir * self.speed)
-
-        if self.set_pos(vDest) == False:
-            self.stop()
-    
     def update(self):
         self.move()
         self.draw()
-
-    def start_move(self, dir):
-        self.dir += dir
-
-    def stop_dir(self, dir):
-        if self.dir != 0:
-            self.dir -= dir
-
-    def stop(self):
-        self.dir = 0
         
 
 def draw_tanks():

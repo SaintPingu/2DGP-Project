@@ -1,31 +1,10 @@
-from asyncio.windows_events import INFINITE
 from pico2d import *
-#from mytool import *
 from mytool import *
 import scene
 import tank
 
 img_debug : Image
 img_debug_air : Image
-
-DEBUG = False
-
-LEFT = -1
-RIGHT = 1
-
-CELL_SIZE = 1
-
-BLOCK_NONE = 0
-
-BLOCK_GROUND = 1
-BLOCK_PLACED_GROUND = -BLOCK_GROUND
-
-BLOCK_DEBUG = 9999
-BLOCK_DEBUG_AIR = 9998
-BLOCK_PLACED_DEBUG = -BLOCK_DEBUG
-BLOCK_PLACED_DEBUG_AIR = -BLOCK_DEBUG
-
-BLOCK_SET = { BLOCK_DEBUG, BLOCK_PLACED_DEBUG, BLOCK_GROUND, BLOCK_PLACED_GROUND }
 
 DEFAULT_RADIUS = 3
 radius_draw = DEFAULT_RADIUS
@@ -149,12 +128,6 @@ def draw_map(invalidate_all=False):
 
     if invalidate_all:
         rect_inv = Rect((scene.screenWidth//2,scene.screenHeight//2), scene.screenWidth, scene.screenHeight)
-
-        for y in range(0, yCellCount):
-            for x in range(0, xCellCount):
-                if(crnt_map[y][x] < 0):
-                    crnt_map[y][x] *= -1
-
     elif is_map_invalid == False:
         return
 
@@ -185,16 +158,11 @@ def draw_map(invalidate_all=False):
             else:
                 continue
 
-            crnt_map[cell_y][cell_x] *= -1
-
     if tank_obj:
         tank_obj.draw()
         
-<<<<<<< HEAD
     #update_canvas()
-=======
     update_canvas()
->>>>>>> 2ad42314f37038371798bb38375ff17069959d36
     is_map_invalid = False
 
 
@@ -245,25 +213,6 @@ def set_invalidate_rect(center, width=0, height=0, scale=1, square=False):
             height = width
         else:
             width = height
-
-    cell_width = (width//CELL_SIZE) + CELL_SIZE
-    cell_height = (height//CELL_SIZE) + CELL_SIZE
-
-    cell_center = get_cell(center)
-    start_x, start_y = cell_center
-    start_x -= cell_width//2
-    start_y -= cell_height//2
-    end_x = start_x + cell_width
-    end_y = start_y + cell_height
-
-    for y in range(start_y, end_y):
-        for x in range(start_x, end_x):
-            if not out_of_range(x, y, xCellCount, yCellCount):
-                # if crnt_map[y][x] == BLOCK_NONE:
-                #     crnt_map[y][x] = BLOCK_DELETED
-                # else:
-                    crnt_map[y][x] *= -1
-                #crnt_map[y][x] = BLOCK_DEBUG
     
     invalidate(center, width, height)
 
@@ -490,8 +439,6 @@ def save_mapfile():
 
     for row in crnt_map:
         for col in row:
-            if col < 0:
-                col *= -1
             file.write(str(col))
         file.write('\n')
     
