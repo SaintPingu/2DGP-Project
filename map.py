@@ -1,31 +1,10 @@
-from asyncio.windows_events import INFINITE
 from pico2d import *
-#from mytool import *
 from mytool import *
 import scene
 import tank
 
 img_debug : Image
 img_debug_air : Image
-
-DEBUG = False
-
-LEFT = -1
-RIGHT = 1
-
-CELL_SIZE = 1
-
-BLOCK_NONE = 0
-
-BLOCK_GROUND = 1
-BLOCK_PLACED_GROUND = -BLOCK_GROUND
-
-BLOCK_DEBUG = 9999
-BLOCK_DEBUG_AIR = 9998
-BLOCK_PLACED_DEBUG = -BLOCK_DEBUG
-BLOCK_PLACED_DEBUG_AIR = -BLOCK_DEBUG
-
-BLOCK_SET = { BLOCK_DEBUG, BLOCK_PLACED_DEBUG, BLOCK_GROUND, BLOCK_PLACED_GROUND }
 
 DEFAULT_RADIUS = 3
 radius_draw = DEFAULT_RADIUS
@@ -149,12 +128,6 @@ def draw_map(invalidate_all=False):
 
     if invalidate_all:
         rect_inv = Rect((scene.screenWidth//2,scene.screenHeight//2), scene.screenWidth, scene.screenHeight)
-
-        for y in range(0, yCellCount):
-            for x in range(0, xCellCount):
-                if(crnt_map[y][x] < 0):
-                    crnt_map[y][x] *= -1
-
     elif is_map_invalid == False:
         return
 
@@ -185,16 +158,11 @@ def draw_map(invalidate_all=False):
             else:
                 continue
 
-            crnt_map[cell_y][cell_x] *= -1
-
     if tank_obj:
         tank_obj.draw()
         
-<<<<<<< HEAD
     #update_canvas()
-=======
     update_canvas()
->>>>>>> 2ad42314f37038371798bb38375ff17069959d36
     is_map_invalid = False
 
 
@@ -223,14 +191,15 @@ def set_block(radius, mouse_pos, block_type):
     
 def is_block(block):
     return block in BLOCK_SET
-
-
+def is_block_cell(cell):
+    return crnt_map[cell[1]][cell[0]] in BLOCK_SET
 
 
 
 
 
 ##### Invalidate #####
+# BUG : Distortion background
 def set_invalidate_rect(center, width=0, height=0, scale=1, square=False):
     global crnt_map
     CORR_VAL = 2
@@ -245,25 +214,6 @@ def set_invalidate_rect(center, width=0, height=0, scale=1, square=False):
             height = width
         else:
             width = height
-
-    cell_width = (width//CELL_SIZE) + CELL_SIZE
-    cell_height = (height//CELL_SIZE) + CELL_SIZE
-
-    cell_center = get_cell(center)
-    start_x, start_y = cell_center
-    start_x -= cell_width//2
-    start_y -= cell_height//2
-    end_x = start_x + cell_width
-    end_y = start_y + cell_height
-
-    for y in range(start_y, end_y):
-        for x in range(start_x, end_x):
-            if not out_of_range(x, y, xCellCount, yCellCount):
-                # if crnt_map[y][x] == BLOCK_NONE:
-                #     crnt_map[y][x] = BLOCK_DELETED
-                # else:
-                    crnt_map[y][x] *= -1
-                #crnt_map[y][x] = BLOCK_DEBUG
     
     invalidate(center, width, height)
 
@@ -327,27 +277,25 @@ def reset_range(position):
 def get_highest_ground_point(x, y, is_cell=False):
     global crnt_map, xCellCount, yCellCount
 
-    start_col, start_row = int(x), int(y)
+    cell_start_col, cell_start_row = int(x), int(y)
     if not is_cell:
-        start_col, start_row = get_cell((x, y))
+        cell_start_col, cell_start_row = get_cell((x, y))
 
     dir_down = True
-    if out_of_range(start_col, start_row, xCellCount, yCellCount):
+    if out_of_range(cell_start_col, cell_start_row, xCellCount, yCellCount):
         return False
-    elif is_block(crnt_map[start_row][start_col]):
+    elif is_block(crnt_map[cell_start_row][cell_start_col]):
         dir_down = False
 
     if dir_down:
-        for row in range(0, start_row + 1).__reversed__():
-            if not out_of_range(start_col, row, xCellCount, yCellCount) and is_block(crnt_map[row][start_col]):
-                if is_block(crnt_map[row + 1][start_col]):
-                    pass
-                return (start_col, row)
+        for row in range(0, cell_start_row + 1).__reversed__():
+            if not out_of_range(cell_start_col, row, xCellCount, yCellCount) and is_block(crnt_map[row][cell_start_col]):
+                return (cell_start_col, row)
     else:
         max_row = scene.screenHeight//CELL_SIZE
-        for row in range(start_row + 1, max_row):
-            if not out_of_range(start_col, row, xCellCount, yCellCount) and not is_block(crnt_map[row][start_col]):
-                return (start_col, row - 1)
+        for row in range(cell_start_row + 1, max_row):
+            if not out_of_range(cell_start_col, row, xCellCount, yCellCount) and not is_block(crnt_map[row][cell_start_col]):
+                return (cell_start_col, row - 1)
 
     return (x, -1)
 
@@ -393,13 +341,15 @@ def get_rotated_to_ground(object : GameObject):
         axis = Vector2.right()
 
     min_theta = INFINITE
-    #print("\n\n\n pivot : " + str(vec_pivot))
+    # print("\n\n\n pivot : " + str(vec_pivot))
     for vector in vectors_bot:
         if dir_check == RIGHT:
-            if vector.x <= vec_pivot.x:
+            # if vector.x <= vec_pivot.x:
+            if vector.x < object.bot_center.x:
                 continue
         else:
-            if vector.x >= vec_pivot.x:
+            # if vector.x >= vec_pivot.x:
+            if vector.x > object.bot_center.x:
                 continue
 
         cell = get_cell(vector)
@@ -425,7 +375,7 @@ def get_rotated_to_ground(object : GameObject):
         #print("theta : " + str(theta))
         if math.fabs(theta) < math.fabs(min_theta):
             min_theta = theta
-            #print("min_theta : " + str(min_theta))
+            # print("min_degree : " + str(math.degrees(min_theta)))
             #print("ground : " + str(vec_ground))
             #print("Changed")
     
@@ -436,13 +386,23 @@ def get_rotated_to_ground(object : GameObject):
     #crnt_map[cell_pivot[1]][cell_pivot[0]] = BLOCK_DEBUG
 
     object.set_theta(min_theta)
+    if is_floating(object):
+        object = get_rotated_to_ground(object)
+
     #object.rotate_pivot(min_theta, vec_pivot)
     #print("result_theta : " + str(object.rot_theta))
 
     return object
 
 
-
+def is_floating(object : GameObject):
+    vectors_bot = object.get_vectors_bot()
+    for vector in vectors_bot:
+        cell = get_cell(vector)
+        if is_block_cell(cell):
+            return False
+        
+    return True
 
 
 
@@ -490,8 +450,6 @@ def save_mapfile():
 
     for row in crnt_map:
         for col in row:
-            if col < 0:
-                col *= -1
             file.write(str(col))
         file.write('\n')
     

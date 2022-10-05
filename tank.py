@@ -1,9 +1,9 @@
 import pico2d
-import mytool
+from mytool import *
 import map
 import scene
         
-class Tank(mytool.GameObject):
+class Tank(GameObject):
     img_tank : pico2d.Image = None
 
     def __init__(self, center=(0,0)):
@@ -14,14 +14,14 @@ class Tank(mytool.GameObject):
             tank_player1 = None
 
         if Tank.img_tank == None:
-            Tank.img_tank = mytool.load_image_path('tank_1.png')
+            Tank.img_tank = load_image_path('tank_1.png')
 
         super().__init__(center, Tank.img_tank.w, Tank.img_tank.h)
 
         self.is_created = False
-        self.speed = 0.5
+        self.speed = 2
         self.dir = 0
-        self.vDir = mytool.Vector2()
+        self.vDir = Vector2()
 
         tank_player1 = None
 
@@ -47,32 +47,9 @@ class Tank(mytool.GameObject):
         tank_player1 = self
         self.is_created = True
 
-    def move(self):
-        if self.dir == 0:
-            return
-        elif self.dir == map.LEFT:
-            self.vDir = self.get_vec_left()
-        else:
-            self.vDir = self.get_vec_right()
-
-        vDest = mytool.Vector2(*self.center) + (self.vDir * self.speed)
-
-        if self.set_pos(vDest) == False:
-            self.stop()
-    
     def update(self):
         self.move()
         self.draw()
-
-    def start_move(self, dir):
-        self.dir += dir
-
-    def stop_dir(self, dir):
-        if self.dir != 0:
-            self.dir -= dir
-
-    def stop(self):
-        self.dir = 0
         
 
 def draw_tanks():

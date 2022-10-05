@@ -1,6 +1,23 @@
+from asyncio.windows_events import INFINITE
 import pico2d
 import math
 import scene
+
+DEBUG = False
+
+LEFT = -1
+RIGHT = 1
+
+CELL_SIZE = 1
+
+BLOCK_NONE = 0
+BLOCK_GROUND = 1
+
+BLOCK_DEBUG = 9999
+BLOCK_DEBUG_AIR = 9998
+
+BLOCK_SET = { BLOCK_DEBUG, BLOCK_GROUND }
+
 
 class Vector2:
     def __init__(self, x=0, y=0):
@@ -20,7 +37,6 @@ class Vector2:
             return self.y
         else:
             raise IndexError
-
 
     def __str__(self):
         return "(" + str(self.x) + ", " + str(self.y) + ")"
@@ -276,6 +292,32 @@ class GameObject:
             return True
 
         return False
+
+    def set_pos(self, center):
+        self.set_center(center)
+
+    def move(self):
+        if self.dir == 0:
+            return
+        elif self.dir == LEFT:
+            self.vDir = self.get_vec_left()
+        else:
+            self.vDir = self.get_vec_right()
+
+        vDest = Vector2(*self.center) + (self.vDir * self.speed)
+
+        if self.set_pos(vDest) == False:
+            self.stop()
+
+    def start_move(self, dir):
+        self.dir += dir
+
+    def stop_dir(self, dir):
+        if self.dir != 0:
+            self.dir -= dir
+
+    def stop(self):
+        self.dir = 0
 
     def draw_debug_rect(self):
         rect = self.get_rect()

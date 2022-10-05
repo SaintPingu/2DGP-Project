@@ -1,5 +1,7 @@
 from pico2d import *
 import mytool
+import map
+import tank
 
 screenWidth = 1280
 screenHeight = 800
@@ -8,8 +10,7 @@ img_map : pico2d.Image
 img_background : pico2d.Image
 img_ground : pico2d.Image
 
-import map
-import tank
+
 
 def init():
     global img_background, img_map, img_ground
@@ -21,10 +22,6 @@ def init():
 
     map.init()
     map.read_mapfile(1)
-<<<<<<< HEAD
-=======
-    map.draw_map(True)
->>>>>>> 2ad42314f37038371798bb38375ff17069959d36
 
 def draw_scene():
     tank.update()
