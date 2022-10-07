@@ -31,7 +31,8 @@ def init():
     img_debug = load_image_path('debug.png')
     img_debug_air = load_image_path('debug_air.png')
 
-## DRAW ##
+
+##### DRAW ######
 def modify_map(events : list):
     global is_draw_mode, is_map_invalid
     global is_create_block, is_delete_block, is_create_tank, is_print_mouse_pos
@@ -161,7 +162,6 @@ def draw_map(invalidate_all=False):
     if tank_obj:
         tank_obj.draw()
         
-    #update_canvas()
     update_canvas()
     is_map_invalid = False
 
@@ -199,7 +199,7 @@ def is_block_cell(cell):
 
 
 ##### Invalidate #####
-# BUG : Distortion background
+# BUG : Distortion background when move tank
 def set_invalidate_rect(center, width=0, height=0, scale=1, square=False):
     global crnt_map
     CORR_VAL = 2
@@ -315,6 +315,7 @@ def get_vec_highest(object : GameObject):
     vec_befroe : Vector2 = None
 
     max_length = object.get_rect().width
+    idx_highest = 0
     if object.is_created == False:
         max_length = INFINITE
     for idx, cell in enumerate(bot_cells):
@@ -328,23 +329,24 @@ def get_vec_highest(object : GameObject):
             vec_highest.x = vectors_bot[idx].x
             vec_highest.y = height
             vec_befroe = vectors_bot[idx]
+            idx_highest = idx
 
-    return vec_befroe, vec_highest
+    return vec_befroe, vec_highest, idx_highest
 
 def attach_to_ground(object : GameObject):
-    vec_befroe, vec_pivot = get_vec_highest(object)
+    vec_befroe, vec_pivot, idx_pivot = get_vec_highest(object)
     if vec_befroe is False:
         return False
 
     dy = vec_pivot.y - vec_befroe.y
     object.offset(0, dy)
 
-    return vec_pivot
+    return vec_pivot, idx_pivot
 
 def get_rotated_to_ground(object : GameObject):
     global crnt_map
 
-    vec_pivot = attach_to_ground(object)
+    vec_pivot, idx_pivot = attach_to_ground(object)
     vectors_bot = object.get_vectors_bot()
 
     # set rotation direction
@@ -361,7 +363,6 @@ def get_rotated_to_ground(object : GameObject):
     # get minimum theta
     max_length = object.width
     min_theta = INFINITE
-    # print("\n\n\n pivot : " + str(vec_pivot))
     for vector in vectors_bot:
         if dir_check == RIGHT:
             if vector.x < object.bot_center.x:
@@ -377,12 +378,11 @@ def get_rotated_to_ground(object : GameObject):
         ground_cell = get_highest_ground_point(*cell, object.width, True)
         if ground_cell is False:
             continue
-        #draw_debug_cell(ground_cell)
-        #crnt_map[ground_cell[1]][ground_cell[0]] = BLOCK_DEBUG
             
         vec_ground = Vector2(*get_pos_from_cell(*ground_cell))
         if vec_ground.y == vec_pivot.y:
             continue
+
         length = vec_pivot - vec_ground
         if math.fabs(length.y) > max_length:
             continue
@@ -390,20 +390,25 @@ def get_rotated_to_ground(object : GameObject):
         theta = vec_ground.get_theta(axis, vec_pivot)
         if dir_check == RIGHT:
             theta *= -1
-        #print("theta : " + str(theta))
+
         if math.fabs(theta) < math.fabs(min_theta):
             min_theta = theta
-            # print("min_degree : " + str(math.degrees(min_theta)))
-            #print("ground : " + str(vec_ground))
-            #print("Changed")
     
     if min_theta == INFINITE:
-        min_theta = 0
+        min_theta = object.rot_theta
+    elif min_theta > 80:
+        return False
 
     # rotation and set position to ground
     object.set_theta(min_theta)
-    if is_floating(object):
-        attach_to_ground(object)
+    vectors_bot = object.get_vectors_bot()
+    vector_correction = vec_pivot - vectors_bot[idx_pivot]
+    object.set_center((object.center[0] + vector_correction[0], object.center[1] + vector_correction[1]))
+
+    # enable if object is floating
+    # if is_floating(object):
+    #     attach_to_ground(object)
+    #
 
     # don't move if position is on the edge
     for vector in vectors_bot:

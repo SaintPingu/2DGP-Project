@@ -1,4 +1,5 @@
 from asyncio.windows_events import INFINITE
+from turtle import right
 import pico2d
 import math
 import scene
@@ -209,6 +210,8 @@ class GameObject:
 
         self.bot_left = Vector2()
         self.bot_right = Vector2()
+        self.top_left = Vector2()
+        self.top_right = Vector2()
         self.bot_center = Vector2()
 
         self.rot_theta = theta
@@ -221,13 +224,15 @@ class GameObject:
         self.update_object()
 
     def update_object(self):
-        self.bot_left.x = self.center[0] - self.width//2
-        self.bot_left.y = self.center[1] - self.height//2
-        self.bot_right.x = self.center[0] + self.width//2
-        self.bot_right.y = self.center[1] - self.height//2
+        self.bot_left.x = self.top_left.x = self.center[0] - self.width//2
+        self.bot_left.y = self.bot_right.y = self.center[1] - self.height//2
+        self.bot_right.x = self.top_right.x =  self.center[0] + self.width//2
+        self.top_left.y = self.top_right.y = self.center[1] + self.height//2
         
         self.bot_left = self.bot_left.get_rotated_origin(self.center, self.rot_theta)
         self.bot_right = self.bot_right.get_rotated_origin(self.center, self.rot_theta)
+        self.top_left = self.top_left.get_rotated_origin(self.center, self.rot_theta)
+        self.top_right = self.top_right.get_rotated_origin(self.center, self.rot_theta)
 
         vec_left_to_center = (self.bot_right - self.bot_left).normalized() * (self.width // 2)
         self.bot_center = self.bot_left + vec_left_to_center
@@ -248,13 +253,34 @@ class GameObject:
         self.update_object()
 
     def get_vectors_bot(self):
-        #vec_LtoR = (self.bot_right - self.bot_left).normalized() * cell_size
         t = 0
         inc_t = 1 / self.width
 
         result : list[Vector2] = []
         while t <= 1:
             position = self.bot_left.lerp(self.bot_right, t)
+            result.append(position)
+            t += inc_t
+
+        return result
+    def get_collision_vectors(self, dir):
+        vec_start = Vector2()
+        vec_end = Vector2()
+        if dir == LEFT:
+            vec_start = self.bot_left
+            vec_end = self.top_left
+        elif dir == RIGHT:
+            vec_start = self.bot_right
+            vec_end = self.top_right
+        else:
+            raise Exception
+
+
+        t = 0.5
+        inc_t = 1 / self.height
+        result : list[Vector2] = []
+        while t <= 1:
+            position = vec_start.lerp(vec_end, t)
             result.append(position)
             t += inc_t
 
