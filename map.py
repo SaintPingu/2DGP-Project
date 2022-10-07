@@ -1,3 +1,6 @@
+if __name__ == "__main__":
+    quit()
+
 from pico2d import *
 from mytool import *
 import scene
@@ -22,6 +25,7 @@ rect_inv : Rect = Rect()
 
 tank_obj : tank.Tank = None
 
+    
 def init():
     global img_debug, img_debug_air
     global xCellCount, yCellCount
@@ -353,15 +357,17 @@ def get_rotated_to_ground(object : GameObject):
     dir_check = LEFT
     if vec_pivot.x < object.bot_center.x:
         dir_check = RIGHT
-    
+        
     axis = Vector2()
+    max_length = 0
     if dir_check == LEFT:
         axis = Vector2.left()
+        max_length = (vec_pivot - object.bot_left).get_norm()
     else:
         axis = Vector2.right()
+        max_length = (vec_pivot - object.bot_right).get_norm()
 
     # get minimum theta
-    max_length = object.width
     min_theta = INFINITE
     for vector in vectors_bot:
         if dir_check == RIGHT:
@@ -383,8 +389,8 @@ def get_rotated_to_ground(object : GameObject):
         if vec_ground.y == vec_pivot.y:
             continue
 
-        length = vec_pivot - vec_ground
-        if math.fabs(length.y) > max_length:
+        length = (vec_pivot - vec_ground).get_norm()
+        if length > max_length:
             continue
         
         theta = vec_ground.get_theta(axis, vec_pivot)
@@ -394,21 +400,20 @@ def get_rotated_to_ground(object : GameObject):
         if math.fabs(theta) < math.fabs(min_theta):
             min_theta = theta
     
+    # didn't find highest ground point for bottom vectors
     if min_theta == INFINITE:
-        min_theta = object.rot_theta
-    elif min_theta > 80:
+        min_theta = object.rot_theta * 0.6
+    elif math.fabs(math.degrees(min_theta)) > 75:
         return False
 
     # rotation and set position to ground
     object.set_theta(min_theta)
     vectors_bot = object.get_vectors_bot()
-    vector_correction = vec_pivot - vectors_bot[idx_pivot]
+    vector_correction = (vec_pivot - vectors_bot[idx_pivot]) * 0.1
     object.set_center((object.center[0] + vector_correction[0], object.center[1] + vector_correction[1]))
 
-    # enable if object is floating
-    # if is_floating(object):
-    #     attach_to_ground(object)
-    #
+    if is_floating(object):
+        attach_to_ground(object)
 
     # don't move if position is on the edge
     for vector in vectors_bot:

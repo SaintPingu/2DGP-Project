@@ -219,7 +219,7 @@ class GameObject:
         self.is_created = False
 
         self.dir = 0
-        self.speed = 0.5
+        self.speed = 1
 
         self.update_object()
 
