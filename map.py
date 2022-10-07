@@ -79,10 +79,10 @@ def modify_map(events : list):
         elif event.type == SDL_KEYUP:
             if event.key == SDLK_RIGHT:
                 if tank.tank_player1:
-                    tank.tank_player1.stop_dir(RIGHT)
+                    tank.tank_player1.stop()
             elif event.key == SDLK_LEFT:
                 if tank.tank_player1:
-                    tank.tank_player1.stop_dir(LEFT)
+                    tank.tank_player1.stop()
         elif event.type == SDL_MOUSEBUTTONDOWN:
             if event.button == SDL_BUTTON_LEFT:
                 is_create_block = True
@@ -274,12 +274,14 @@ def reset_range(position):
 
 
 ##### Object #####
-def get_highest_ground_point(x, y, is_cell=False):
+def get_highest_ground_point(x, y, max_length, is_cell=False):
     global crnt_map, xCellCount, yCellCount
 
     cell_start_col, cell_start_row = int(x), int(y)
     if not is_cell:
         cell_start_col, cell_start_row = get_cell((x, y))
+    
+    max_length /= CELL_SIZE
 
     dir_down = True
     if out_of_range(cell_start_col, cell_start_row, xCellCount, yCellCount):
@@ -290,25 +292,34 @@ def get_highest_ground_point(x, y, is_cell=False):
     if dir_down:
         for row in range(0, cell_start_row + 1).__reversed__():
             if not out_of_range(cell_start_col, row, xCellCount, yCellCount) and is_block(crnt_map[row][cell_start_col]):
+                if (cell_start_row - row) > max_length:
+                    break
                 return (cell_start_col, row)
     else:
         max_row = scene.screenHeight//CELL_SIZE
         for row in range(cell_start_row + 1, max_row):
             if not out_of_range(cell_start_col, row, xCellCount, yCellCount) and not is_block(crnt_map[row][cell_start_col]):
+                if (row - cell_start_row) > max_length:
+                    break
                 return (cell_start_col, row - 1)
 
-    return (x, -1)
+    # Fall
+    return False
 
 
 def get_vec_highest(object : GameObject):
     vectors_bot = object.get_vectors_bot()
     bot_cells = get_cells(vectors_bot)
 
-    vec_highest = Vector2()
-    vec_befroe = (-1, -1)
+    vec_highest = Vector2.zero()
+    vec_befroe : Vector2 = None
+
+    max_length = object.get_rect().width
+    if object.is_created == False:
+        max_length = INFINITE
     for idx, cell in enumerate(bot_cells):
-        result = get_highest_ground_point(cell[0], cell[1], True)
-        if result == False:
+        result = get_highest_ground_point(cell[0], cell[1], max_length, True)
+        if result is False:
             continue
         
         col, row = result
@@ -320,35 +331,42 @@ def get_vec_highest(object : GameObject):
 
     return vec_befroe, vec_highest
 
-def get_rotated_to_ground(object : GameObject):
-    global crnt_map
-
+def attach_to_ground(object : GameObject):
     vec_befroe, vec_pivot = get_vec_highest(object)
+    if vec_befroe is False:
+        return False
 
     dy = vec_pivot.y - vec_befroe.y
     object.offset(0, dy)
+
+    return vec_pivot
+
+def get_rotated_to_ground(object : GameObject):
+    global crnt_map
+
+    vec_pivot = attach_to_ground(object)
     vectors_bot = object.get_vectors_bot()
 
+    # set rotation direction
     dir_check = LEFT
     if vec_pivot.x < object.bot_center.x:
         dir_check = RIGHT
     
     axis = Vector2()
-    max_length = object.width
     if dir_check == LEFT:
         axis = Vector2.left()
     else:
         axis = Vector2.right()
 
+    # get minimum theta
+    max_length = object.width
     min_theta = INFINITE
     # print("\n\n\n pivot : " + str(vec_pivot))
     for vector in vectors_bot:
         if dir_check == RIGHT:
-            # if vector.x <= vec_pivot.x:
             if vector.x < object.bot_center.x:
                 continue
         else:
-            # if vector.x >= vec_pivot.x:
             if vector.x > object.bot_center.x:
                 continue
 
@@ -356,8 +374,8 @@ def get_rotated_to_ground(object : GameObject):
         if out_of_range(cell[0], cell[1], xCellCount, yCellCount):
             continue
 
-        ground_cell = get_highest_ground_point(*cell, True)
-        if ground_cell == False:
+        ground_cell = get_highest_ground_point(*cell, object.width, True)
+        if ground_cell is False:
             continue
         #draw_debug_cell(ground_cell)
         #crnt_map[ground_cell[1]][ground_cell[0]] = BLOCK_DEBUG
@@ -382,17 +400,26 @@ def get_rotated_to_ground(object : GameObject):
     if min_theta == INFINITE:
         min_theta = 0
 
-    cell_pivot = get_cell(vec_pivot)
-    #crnt_map[cell_pivot[1]][cell_pivot[0]] = BLOCK_DEBUG
-
+    # rotation and set position to ground
     object.set_theta(min_theta)
     if is_floating(object):
-        object = get_rotated_to_ground(object)
+        attach_to_ground(object)
 
-    #object.rotate_pivot(min_theta, vec_pivot)
-    #print("result_theta : " + str(object.rot_theta))
+    # don't move if position is on the edge
+    for vector in vectors_bot:
+        if object.dir == RIGHT:
+            if vector.x < object.bot_center.x:
+                continue
+        else:
+            if vector.x > object.bot_center.x:
+                continue
+        
+        cell = get_cell(vector)
+        result = get_highest_ground_point(*cell, object.width, True)
+        if result is not False:
+            return True
 
-    return object
+    return False
 
 
 def is_floating(object : GameObject):

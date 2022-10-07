@@ -18,10 +18,6 @@ class Tank(GameObject):
 
         super().__init__(center, Tank.img_tank.w, Tank.img_tank.h)
 
-        self.is_created = False
-        self.speed = 2
-        self.dir = 0
-        self.vDir = Vector2()
 
         tank_player1 = None
 
@@ -33,7 +29,10 @@ class Tank(GameObject):
             self.set_center(rect.center)
             return False
 
-        self = map.get_rotated_to_ground(self)
+        if map.get_rotated_to_ground(self) == False:
+            self.set_center(rect.center)
+            return False
+
         map.set_invalidate_rect(*rect.__getitem__(), square=True)
 
         return True
@@ -46,6 +45,7 @@ class Tank(GameObject):
         global tank_player1
         tank_player1 = self
         self.is_created = True
+        self.is_setting_mode = False
 
     def update(self):
         self.move()

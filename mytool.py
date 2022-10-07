@@ -213,6 +213,10 @@ class GameObject:
 
         self.rot_theta = theta
         self.is_invalid_rect = True
+        self.is_created = False
+
+        self.dir = 0
+        self.speed = 0.5
 
         self.update_object()
 
@@ -311,10 +315,6 @@ class GameObject:
 
     def start_move(self, dir):
         self.dir += dir
-
-    def stop_dir(self, dir):
-        if self.dir != 0:
-            self.dir -= dir
 
     def stop(self):
         self.dir = 0
