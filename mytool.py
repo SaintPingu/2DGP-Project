@@ -252,40 +252,6 @@ class GameObject:
         self.rot_theta = theta
         self.update_object()
 
-    def get_vectors_bot(self):
-        t = 0
-        inc_t = 1 / self.width
-
-        result : list[Vector2] = []
-        while t <= 1:
-            position = self.bot_left.lerp(self.bot_right, t)
-            result.append(position)
-            t += inc_t
-
-        return result
-    def get_collision_vectors(self, dir):
-        vec_start = Vector2()
-        vec_end = Vector2()
-        if dir == LEFT:
-            vec_start = self.bot_left
-            vec_end = self.top_left
-        elif dir == RIGHT:
-            vec_start = self.bot_right
-            vec_end = self.top_right
-        else:
-            raise Exception
-
-
-        t = 0.5
-        inc_t = 1 / self.height
-        result : list[Vector2] = []
-        while t <= 1:
-            position = vec_start.lerp(vec_end, t)
-            result.append(position)
-            t += inc_t
-
-        return result
-
     def offset(self, dx, dy):
         self.center = (self.center[0] + dx, self.center[1] + dy)
         self.update_object()
@@ -299,7 +265,6 @@ class GameObject:
             return
         self.is_invalid_rect = False
         image.rotate_draw(self.rot_theta, *self.center)
-        #self.draw_debug_rect()
 
     def get_rect(self):
         return Rect(self.center, self.width, self.height)
@@ -326,6 +291,26 @@ class GameObject:
     def set_pos(self, center):
         self.set_center(center)
 
+    def draw_debug_rect(self):
+        rect = self.get_rect()
+        pico2d.draw_rectangle(rect.left, rect.bottom, rect.right, rect.top)
+
+
+
+
+class GroundObject(GameObject):
+    def get_vectors_bot(self):
+        t = 0
+        inc_t = 1 / self.width
+
+        result : list[Vector2] = []
+        while t <= 1:
+            position = self.bot_left.lerp(self.bot_right, t)
+            result.append(position)
+            t += inc_t
+
+        return result
+
     def move(self):
         if self.dir == 0:
             return
@@ -345,9 +330,15 @@ class GameObject:
     def stop(self):
         self.dir = 0
 
-    def draw_debug_rect(self):
-        rect = self.get_rect()
-        pico2d.draw_rectangle(rect.left, rect.bottom, rect.right, rect.top)
+
+
+
+
+
+
+
+
+
 
 def convert_pico2d(x, y):
     return x, scene.screenHeight - 1 - y

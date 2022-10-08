@@ -268,8 +268,10 @@ def get_cell_range(center, width, height, extra_range=0):
 
     return start_x, start_y, start_x + width, start_y + height
 
-def reset_range(position):
-    pass
+def get_block(cell):
+    if out_of_range(cell[0], cell[1], xCellCount, yCellCount):
+        return False
+    return crnt_map[cell[1]][cell[0]]
 
 
 
@@ -311,7 +313,7 @@ def get_highest_ground_point(x, y, max_length, is_cell=False):
     return False
 
 
-def get_vec_highest(object : GameObject):
+def get_vec_highest(object : GroundObject):
     vectors_bot = object.get_vectors_bot()
     bot_cells = get_cells(vectors_bot)
 
@@ -337,7 +339,7 @@ def get_vec_highest(object : GameObject):
 
     return vec_befroe, vec_highest, idx_highest
 
-def attach_to_ground(object : GameObject):
+def attach_to_ground(object : GroundObject):
     vec_befroe, vec_pivot, idx_pivot = get_vec_highest(object)
     if vec_befroe is False:
         return False
@@ -347,9 +349,7 @@ def attach_to_ground(object : GameObject):
 
     return vec_pivot, idx_pivot
 
-def get_rotated_to_ground(object : GameObject):
-    global crnt_map
-
+def get_rotated_to_ground(object : GroundObject):
     vec_pivot, idx_pivot = attach_to_ground(object)
     vectors_bot = object.get_vectors_bot()
 
@@ -389,7 +389,7 @@ def get_rotated_to_ground(object : GameObject):
         if vec_ground.y == vec_pivot.y:
             continue
 
-        length = (vec_pivot - vec_ground).get_norm()
+        length = (object.bot_center - vec_ground).get_norm()
         if length > max_length:
             continue
         
@@ -415,7 +415,7 @@ def get_rotated_to_ground(object : GameObject):
     if is_floating(object):
         attach_to_ground(object)
 
-    # don't move if position is on the edge
+    # move if position is not on the edge
     for vector in vectors_bot:
         if object.dir == RIGHT:
             if vector.x < object.bot_center.x:
@@ -440,6 +440,15 @@ def is_floating(object : GameObject):
             return False
         
     return True
+
+
+
+
+
+
+
+
+
 
 
 
