@@ -1,8 +1,6 @@
 from asyncio.windows_events import INFINITE
-from turtle import right
-import pico2d
+from pico2d import *
 import math
-import scene
 
 DEBUG = False
 
@@ -83,11 +81,14 @@ class Vector2:
     def dot(self, other):
         return (self.x * other.x) + (self.y * other.y)
     
+    def cross(self, other):
+        return Vector2(-self.y, other.x)
+    
     def get_theta(self, other):
         dot = self.dot(other)
         return math.acos(dot / (self.get_norm() * other.get_norm()))
 
-    def get_theta(self, axis, origin):
+    def get_theta_axis(self, axis, origin):
         self -= origin
         dot = self.dot(axis)
         return math.acos(dot / (self.get_norm() * axis.get_norm()))
@@ -98,13 +99,9 @@ class Vector2:
     def rotate(self, theta):
         self = self.get_rotated(theta)
 
-    def get_rotated_origin(self, origin, theta):
-        if type(origin) != Vector2:
-            origin = Vector2(*origin)
-
-        result = self
-        result -= origin
-        return origin + result.get_rotated(theta)
+    # does not work
+    # def rotate_origin(self, origin, theta):
+    #     self = self.get_rotated_origin(origin, theta)
 
     def get_rotated(self, theta):
         result = Vector2()
@@ -112,6 +109,15 @@ class Vector2:
         result.y = (self.x * math.sin(theta)) + (self.y * math.cos(theta))
 
         return result
+
+    def get_rotated_origin(self, origin, theta):
+        if type(origin) != Vector2:
+            origin = Vector2(*origin)
+
+        result = self
+        result -= origin
+        
+        return origin + result.get_rotated(theta)
 
     def get_rotated_vDir(self, vDest, vDir, t:float=1):
         if t < 0:
@@ -260,7 +266,7 @@ class GameObject:
         self.center = center
         self.update_object()
 
-    def draw_image(self, image : pico2d.Image):
+    def draw_image(self, image : Image):
         if self.is_invalid_rect == False:
             return
         self.is_invalid_rect = False
@@ -293,7 +299,7 @@ class GameObject:
 
     def draw_debug_rect(self):
         rect = self.get_rect()
-        pico2d.draw_rectangle(rect.left, rect.bottom, rect.right, rect.top)
+        draw_rectangle(rect.left, rect.bottom, rect.right, rect.top)
 
 
 
@@ -341,11 +347,12 @@ class GroundObject(GameObject):
 
 
 def convert_pico2d(x, y):
-    return x, scene.screenHeight - 1 - y
+    from scene import screenHeight
+    return x, screenHeight - 1 - y
     
 def load_image_path(image : str):
     name = 'images/' + image
-    result = pico2d.load_image(name)
+    result = load_image(name)
     print('load : ' + name)
     return result
 

@@ -1,10 +1,7 @@
-import pico2d
 from mytool import *
 import map
         
 class Tank(GroundObject):
-    img_tank : pico2d.Image = None
-
     def __init__(self, center=(0,0)):
         global tank_player1
 
@@ -12,10 +9,14 @@ class Tank(GroundObject):
             map.set_invalidate_rect(*tank_player1.get_rect().__getitem__())
             tank_player1 = None
 
-        if Tank.img_tank == None:
-            Tank.img_tank = load_image_path('tank_1.png')
+        self.img_tank = load_image_path('tank_green.png')
+        self.img_barrel = load_image_path('barrel_green.png')
 
-        super().__init__(center, Tank.img_tank.w, Tank.img_tank.h)
+        self.barrel_position = Vector2()
+        self.barrel_pivot = Vector2()
+        self.barrel_theta = 0
+
+        super().__init__(center, self.img_tank.w, self.img_tank.h)
 
         tank_player1 = None
 
@@ -47,15 +48,19 @@ class Tank(GroundObject):
         if map.get_rotated_to_ground(self) == False:
             dont_move(prev_theta, prev_rect.center)
             return False
-
+        
+        prev_barrel_rect = self.update_barrel()
+        map.set_invalidate_rect(*prev_barrel_rect.__getitem__(), square=True)
         map.set_invalidate_rect(*prev_rect.__getitem__(), square=True)
 
-        # if self.dir != 0:
-        #     map.draw_debug_vectors(self.get_collision_vectors())
         return True
 
     def draw(self):
-        self.draw_image(Tank.img_tank)
+        if self.is_invalid_rect == False:
+            return
+        
+        self.img_barrel.rotate_draw(self.barrel_theta, *self.barrel_position)
+        self.draw_image(self.img_tank)
 
     def create(self):
         global tank_player1
@@ -66,6 +71,22 @@ class Tank(GroundObject):
     def update(self):
         self.move()
         self.draw()
+
+    def update_barrel(self):
+        prev_barrel_rect = Rect(self.barrel_position, self.img_barrel.w, self.img_barrel.h)
+        self.barrel_position = self.barrel_pivot
+        self.barrel_position.x += self.img_barrel.w / 2
+
+        vNormal = Vector2.cross(self.bot_left, self.bot_right).normalized()
+        vTest = self.bot_left - self.bot_right
+        self.barrel_pivot = Vector2(*self.get_rect().center) + (vNormal * 3)
+        self.barrel_position.y = self.barrel_pivot.y
+        print("\n\n\n")
+        print(vTest)
+        print(self.get_rect().center)
+        print(self.barrel_pivot)
+        self.barrel_position = self.barrel_position.get_rotated_origin(self.barrel_pivot, self.barrel_theta)
+        return prev_barrel_rect
 
 
     def get_collision_vectors(self):
@@ -92,7 +113,16 @@ class Tank(GroundObject):
             t += inc_t
 
         return result
-        
+
+    def rotate_barrel(self, dest : Vector2):
+        vDest = dest - self.barrel_pivot
+        self.barrel_theta = Vector2.get_theta(Vector2.right(), vDest)
+        if dest.y < self.barrel_pivot.y:
+            self.barrel_theta *= -1
+        self.is_invalid_rect = True
+        prev_barrel_rect = self.update_barrel()
+        map.set_invalidate_rect(*prev_barrel_rect.__getitem__(), square=True)
+
 
 def draw_tanks():
     if tank_player1:
@@ -101,5 +131,23 @@ def draw_tanks():
 def update():
     if tank_player1:
         tank_player1.move()
+
+def stop_tank():
+    if tank_player1:
+        tank_player1.stop()
+
+def move_tank(dir):
+    if tank_player1:
+        tank_player1.start_move(dir)
+
+def send_mouse_pos(x, y):
+    if tank_player1:
+        tank_player1.rotate_barrel(Vector2(x, y))
+
+def draw_debug():
+    if tank_player1:
+        # map.draw_debug_point(tank_player1.barrel_pivot)
+        # map.draw_debug_point(tank_player1.get_rect().center)
+        pass
 
 tank_player1 : Tank = None

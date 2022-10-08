@@ -1,23 +1,22 @@
-from pico2d import *
-import mytool
+from mytool import *
 import map
 import tank
 
 screenWidth = 1280
 screenHeight = 800
 
-img_map : pico2d.Image
-img_background : pico2d.Image
-img_ground : pico2d.Image
+img_map : Image
+img_background : Image
+img_ground : Image
 
 
 
 def init():
     global img_background, img_map, img_ground
     open_canvas(screenWidth, screenHeight, sync=True)
-    img_background = mytool.load_image_path('background.png')
-    img_map = mytool.load_image_path('map_1.png')
-    img_ground = mytool.load_image_path('ground.png')
+    img_background = load_image_path('background.png')
+    img_map = load_image_path('map_1.png')
+    img_ground = load_image_path('ground.png')
     img_map.draw(screenWidth//2, screenHeight//2, screenWidth, screenHeight)
 
     map.init()
@@ -25,4 +24,5 @@ def init():
 
 def draw_scene():
     tank.update()
+    map.draw_map()
     update_canvas()
