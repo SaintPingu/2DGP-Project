@@ -2,8 +2,10 @@ if __name__ == "__main__":
     quit()
 
 from tools import *
+from object import *
 import scene
 import tank
+import shell
 
 img_debug : Image
 img_debug_air : Image
@@ -13,7 +15,6 @@ radius_draw = DEFAULT_RADIUS
 is_draw_mode = False
 is_create_block = False
 is_delete_block = False
-is_create_tank = False
 is_print_mouse_pos = False
 
 crnt_map : list[list[int]]
@@ -38,7 +39,7 @@ def init():
 ##### DRAW ######
 def modify_map(events : list):
     global is_draw_mode
-    global is_create_block, is_delete_block, is_create_tank, is_print_mouse_pos
+    global is_create_block, is_delete_block, is_print_mouse_pos
     global radius_draw
     global tank_obj
     global DEBUG
@@ -66,11 +67,13 @@ def modify_map(events : list):
             elif event.key == SDLK_F5:
                 save_mapfile()
             elif event.key == SDLK_F9:
-                if is_create_tank == False:
+                if tank_obj == None:
                     tank_obj = tank.Tank()
+                    gameObjects.append(tank_obj)
                 else:
                     set_invalidate_rect(*tank_obj.get_rect().__getitem__())
-                is_create_tank = not is_create_tank
+                    gameObjects.remove(tank_obj)
+                    tank_obj = None
             elif event.key == SDLK_F10:
                 is_print_mouse_pos = not is_print_mouse_pos
             elif event.key == SDLK_F6:
@@ -78,11 +81,10 @@ def modify_map(events : list):
             continue
         elif event.type == SDL_MOUSEBUTTONDOWN:
             if event.button == SDL_BUTTON_LEFT:
-                is_create_block = True
-                if is_create_tank:
+                if tank_obj:
                     tank_obj.create()
-                    is_create_tank = False
                     return
+                is_create_block = True
             elif event.button == SDL_BUTTON_RIGHT:
                 is_delete_block = True
         elif event.type == SDL_MOUSEBUTTONUP:
@@ -96,7 +98,7 @@ def modify_map(events : list):
 
         if mouse_pos[0] < 0:
             continue
-        if is_create_tank:
+        if tank_obj:
             tank_obj.set_pos(mouse_pos)
         elif is_create_block:
             create_block(radius_draw, mouse_pos)
@@ -155,19 +157,6 @@ def draw_map(is_draw_full=False):
                     continue
 
     rect_inv_list.clear()
-    if is_draw_mode:
-        if tank_obj:
-            tank_obj.draw()
-    else:
-        tank.draw_tanks()
-        tank.draw_debug()
-        
-    update_canvas()
-    rect_inv_list.clear()
-
-
-
-
 
 
 
@@ -398,7 +387,7 @@ def get_rotated_to_ground(object : GroundObject):
     
     # didn't find highest ground point for bottom vectors
     if min_theta == INFINITE:
-        min_theta = object.rot_theta * 0.6
+        min_theta = object.theta * 0.6
     elif math.fabs(math.degrees(min_theta)) > 75:
         return False
 

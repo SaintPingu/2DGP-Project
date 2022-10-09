@@ -1,6 +1,6 @@
 from tools import *
+from object import *
 import map
-import tank
 import gui
 
 screenWidth = 1280
@@ -14,6 +14,7 @@ img_main_gui : Image
 min_height = 0
 
 def init():
+    import shell, tank
     global img_background, img_map, img_ground
     global min_height
     
@@ -29,8 +30,11 @@ def init():
 
     map.init()
     map.read_mapfile(1)
+    tank.init()
+    shell.init()
 
 def draw_scene():
-    tank.update()
+    update_objects()
     map.draw_map()
+    draw_objects()
     update_canvas()

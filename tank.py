@@ -1,6 +1,16 @@
 from tools import *
+from object import *
 import map
-        
+import shell
+
+tank_green : Image = None
+barrel_green : Image = None
+
+def init():
+    global tank_green, barrel_green
+    tank_green = load_image_path('tank_green.png')
+    barrel_green = load_image_path('barrel_green.png')
+
 class Tank(GroundObject):
     def __init__(self, center=(0,0)):
         global tank_player1
@@ -9,12 +19,13 @@ class Tank(GroundObject):
             map.set_invalidate_rect(*tank_player1.get_rect().__getitem__())
             tank_player1 = None
 
-        self.img_tank = load_image_path('tank_green.png')
-        self.img_barrel = load_image_path('barrel_green.png')
+        self.img_tank = tank_green
+        self.img_barrel = barrel_green
 
         self.barrel_position = Vector2()
         self.barrel_pivot = Vector2()
         self.barrel_theta = 0
+        self.hp = 100
 
         super().__init__(center, self.img_tank.w, self.img_tank.h)
 
@@ -28,7 +39,7 @@ class Tank(GroundObject):
         from scene import screenHeight, screenWidth
 
         prev_rect = self.get_rect()
-        prev_theta = self.rot_theta
+        prev_theta = self.theta
 
         self.set_center(center)
         if self.out_of_bound(0, screenHeight, screenWidth, 0):
@@ -52,11 +63,12 @@ class Tank(GroundObject):
         prev_barrel_rect = self.update_barrel()
         map.set_invalidate_rect(*prev_barrel_rect.__getitem__(), square=True)
         map.set_invalidate_rect(*prev_rect.__getitem__(), square=True)
+        self.is_rect_invalid = True
 
         return True
 
     def draw(self):
-        if self.is_invalid_rect == False:
+        if self.is_rect_invalid == False:
             return
         
         self.img_barrel.rotate_draw(self.barrel_theta, *self.barrel_position)
@@ -70,7 +82,6 @@ class Tank(GroundObject):
 
     def update(self):
         self.move()
-        self.draw()
 
     def update_barrel(self):
         prev_barrel_rect = Rect(self.barrel_position, self.img_barrel.w, self.img_barrel.h)
@@ -114,18 +125,14 @@ class Tank(GroundObject):
         self.barrel_theta = Vector2.get_theta(Vector2.right(), vDest)
         if dest.y < self.barrel_pivot.y:
             self.barrel_theta *= -1
-        self.is_invalid_rect = True
         prev_barrel_rect = self.update_barrel()
         map.set_invalidate_rect(*prev_barrel_rect.__getitem__(), square=True)
+        self.is_rect_invalid = True
 
+    def fire(self):
+        crnt_shell = shell.Shell("HP", self.barrel_position, self.barrel_theta)
+        shell.add_shell(crnt_shell)
 
-def draw_tanks():
-    if tank_player1:
-        tank_player1.draw()
-
-def update():
-    if tank_player1:
-        tank_player1.move()
 
 def stop_tank():
     if tank_player1:
@@ -144,5 +151,9 @@ def draw_debug():
         # map.draw_debug_point(tank_player1.barrel_pivot)
         # map.draw_debug_point(tank_player1.get_rect().center)
         pass
+
+def fire():
+    if tank_player1:
+        tank_player1.fire()
 
 tank_player1 : Tank = None

@@ -36,7 +36,9 @@ while running:
         elif event.type == SDL_MOUSEMOTION:
             mouse_pos = convert_pico2d(event.x, event.y)
             tank.send_mouse_pos(*mouse_pos)
-            
+        elif event.type == SDL_MOUSEBUTTONDOWN:
+            if event.button == SDL_BUTTON_LEFT:
+                tank.fire()
     
 
 close_canvas()
