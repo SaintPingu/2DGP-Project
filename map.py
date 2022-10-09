@@ -19,7 +19,6 @@ is_print_mouse_pos = False
 crnt_map : list[list[int]]
 xCellCount = 0
 yCellCount = 0
-is_map_invalid = True
 rect_inv_list : list[Rect] = []
 
 tank_obj : tank.Tank = None
@@ -38,7 +37,7 @@ def init():
 
 ##### DRAW ######
 def modify_map(events : list):
-    global is_draw_mode, is_map_invalid
+    global is_draw_mode
     global is_create_block, is_delete_block, is_create_tank, is_print_mouse_pos
     global radius_draw
     global tank_obj
@@ -118,12 +117,11 @@ def stop_draw_mode():
 
 def draw_map(is_draw_full=False):
     global rect_inv_list
-    global is_map_invalid
 
     if is_draw_full:
         rect_inv_list.clear()
         rect_inv_list.append(Rect((scene.screenWidth//2, scene.screenHeight//2), scene.screenWidth, scene.screenHeight))
-    elif is_map_invalid == False:
+    elif len(rect_inv_list) == 0:
         return
 
     for rect_inv in rect_inv_list:
@@ -165,7 +163,7 @@ def draw_map(is_draw_full=False):
         tank.draw_debug()
         
     update_canvas()
-    is_map_invalid = False
+    rect_inv_list.clear()
 
 
 
@@ -221,10 +219,9 @@ def set_invalidate_rect(center, width=0, height=0, scale=1, square=False):
     add_invalidate(center, width, height)
 
 def add_invalidate(center, width, height):
-    global is_map_invalid
     global rect_inv_list
 
-    rect_inv = Rect(center, width, height)
+    rect_inv = Rect.get_rect_int(Rect(center, width, height))
 
     if rect_inv.left < 0:
         rect_inv.set_origin((0, rect_inv.bottom), rect_inv.right, rect_inv.height)
@@ -237,7 +234,6 @@ def add_invalidate(center, width, height):
         rect_inv.set_origin((rect_inv.left, rect_inv.bottom), rect_inv.width, scene.screenHeight - rect_inv.bottom)
 
     rect_inv_list.append(rect_inv)
-    is_map_invalid = True
 
 
 

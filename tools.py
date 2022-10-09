@@ -20,8 +20,8 @@ BLOCK_SET = { BLOCK_DEBUG, BLOCK_GROUND }
 
 class Vector2:
     def __init__(self, x=0, y=0):
-        self.x = x
-        self.y = y
+        self.x : float = x
+        self.y : float = y
 
     def __call__(self):
         return self.x, self.y
@@ -147,15 +147,15 @@ class Vector2:
 
 class Rect:
     def __init__(self, center=(0,0), width=0, height=0):
-        self.center = center
-        self.origin = (0,0)
-        self.width = width
-        self.height = height
+        self.center : tuple = center
+        self.origin : tuple = (0,0)
+        self.width : float = width
+        self.height : float = height
 
-        self.left = 0
-        self.right = 0
-        self.top = 0
-        self.bottom = 0
+        self.left : float = 0
+        self.right : float = 0
+        self.top : float = 0
+        self.bottom : float = 0
 
         self.set_pos(center)
 
@@ -210,9 +210,9 @@ class Rect:
 
 class GameObject:
     def __init__(self, center=(0,0), width=0, height=0, theta=0):
-        self.center = center
-        self.width = width
-        self.height = height
+        self.center : Vector2 = Vector2(*center)
+        self.width : float = width
+        self.height : float = height
 
         self.bot_left = Vector2()
         self.bot_right = Vector2()
@@ -220,20 +220,20 @@ class GameObject:
         self.top_right = Vector2()
         self.bot_center = Vector2()
 
-        self.rot_theta = theta
-        self.is_invalid_rect = True
-        self.is_created = False
+        self.rot_theta : float = theta
+        self.is_invalid_rect : bool = True
+        self.is_created : bool = False
 
-        self.dir = 0
-        self.speed = 1
+        self.dir : int = 0
+        self.speed : float = 1
 
         self.update_object()
 
     def update_object(self):
-        self.bot_left.x = self.top_left.x = self.center[0] - self.width//2
-        self.bot_left.y = self.bot_right.y = self.center[1] - self.height//2
-        self.bot_right.x = self.top_right.x =  self.center[0] + self.width//2
-        self.top_left.y = self.top_right.y = self.center[1] + self.height//2
+        self.bot_left.x = self.top_left.x = self.center.x - self.width//2
+        self.bot_left.y = self.bot_right.y = self.center.y - self.height//2
+        self.bot_right.x = self.top_right.x =  self.center.x + self.width//2
+        self.top_left.y = self.top_right.y = self.center.y + self.height//2
         
         self.bot_left = self.bot_left.get_rotated_origin(self.center, self.rot_theta)
         self.bot_right = self.bot_right.get_rotated_origin(self.center, self.rot_theta)
@@ -253,17 +253,18 @@ class GameObject:
         self.update_object()
 
     def rotate_pivot(self, theta, pivot):
-        center = Vector2(*self.center)
+        center = self.center
         self.center = center.get_rotated_origin(pivot, theta)
         self.rot_theta = theta
         self.update_object()
 
     def offset(self, dx, dy):
-        self.center = (self.center[0] + dx, self.center[1] + dy)
+        self.center.x += dx
+        self.center.y += dy
         self.update_object()
 
     def set_center(self, center):
-        self.center = center
+        self.center = Vector2(*center)
         self.update_object()
 
     def draw_image(self, image : Image):
@@ -325,7 +326,7 @@ class GroundObject(GameObject):
         else:
             self.vDir = self.get_vec_right()
 
-        vDest = Vector2(*self.center) + (self.vDir * self.speed)
+        vDest = self.center + (self.vDir * self.speed)
 
         if self.set_pos(vDest) == False:
             self.stop()
