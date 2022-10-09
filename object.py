@@ -21,6 +21,9 @@ class GameObject:
 
         self.update_object()
 
+        detect_square = self.get_squre()
+        self.detect_radius = (Vector2(*detect_square.center) - Vector2(detect_square.left, detect_square.top)).get_norm()
+
     def update_object(self):
         self.bot_left.x = self.top_left.x = self.center.x - self.width//2
         self.bot_left.y = self.bot_right.y = self.center.y - self.height//2
@@ -69,11 +72,13 @@ class GameObject:
         return Rect(self.center, self.width, self.height)
     
     def get_squre(self):
-        if self.width < self.height:
-            self.width = self.height
+        width = self.width
+        height = self.height
+        if width < height:
+            width = height
         else:
-            self.height = self.width
-        return Rect(self.center, self.width, self.height)
+            height = width
+        return Rect(self.center, width, height)
 
     def get_vec_left(self):
         return (self.bot_left - self.bot_right).normalized()
@@ -101,10 +106,13 @@ class GameObject:
         rect = self.get_rect()
         draw_rectangle(rect.left, rect.bottom, rect.right, rect.top)
 
-    def draw():
+    def draw(self):
         pass
     
-    def update():
+    def update(self):
+        pass
+    
+    def invalidate(self):
         pass
 
 

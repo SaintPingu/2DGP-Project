@@ -1,3 +1,4 @@
+from dis import dis
 from tools import *
 from object import *
 import map
@@ -39,12 +40,40 @@ class Shell(GameObject):
             gameObjects.remove(self)
             return
 
+        for object in gameObjects:
+            if object is self:
+                continue
+
+            distance = (self.center - object.center).get_norm()
+            if distance < self.detect_radius + object.detect_radius:
+                object.invalidate()
+
+        detected_cells = map.get_detected_cells(self.get_rect())
+        if len(detected_cells) > 0:
+            min = 99999
+            head = self.center + (self.vector * self.img_shell.w/CELL_SIZE)
+
+            for cell in detected_cells:
+                cell_pos = Vector2(*map.get_pos_from_cell(*cell))
+                distance = (cell_pos - head).get_norm()
+                if distance < CELL_SIZE:
+                    fired_shells.remove(self)
+                    gameObjects.remove(self)
+                    return
+                elif distance < min:
+                    min = distance
+
         self.is_rect_invalid = True
         self.vector = self.vector.lerp(Vector2.down(), 0.003)
         self.theta = self.vector.get_theta(Vector2.right())
         if self.vector.y < 0:
             self.speed += 0.05
             self.theta *= -1
+
+
+
+
+
 
 fired_shells : list[Shell] = []
 

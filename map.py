@@ -66,6 +66,8 @@ def modify_map(events : list):
                 return
             elif event.key == SDLK_F5:
                 save_mapfile()
+            elif event.key == SDLK_F6:
+                draw_map(True)
             elif event.key == SDLK_F9:
                 if tank_obj == None:
                     tank_obj = tank.Tank()
@@ -76,8 +78,6 @@ def modify_map(events : list):
                     tank_obj = None
             elif event.key == SDLK_F10:
                 is_print_mouse_pos = not is_print_mouse_pos
-            elif event.key == SDLK_F6:
-                draw_map(True)
             continue
         elif event.type == SDL_MOUSEBUTTONDOWN:
             if event.button == SDL_BUTTON_LEFT:
@@ -98,7 +98,7 @@ def modify_map(events : list):
 
         if mouse_pos[0] < 0:
             continue
-        if tank_obj:
+        if tank_obj and not tank_obj.is_created:
             tank_obj.set_pos(mouse_pos)
         elif is_create_block:
             create_block(radius_draw, mouse_pos)
@@ -132,11 +132,10 @@ def draw_map(is_draw_full=False):
             draw_rectangle(rect_inv.origin[0], rect_inv.origin[1], rect_inv.origin[0] + int(rect_inv.width), rect_inv.origin[1] + int(rect_inv.height))
 
     for rect_inv in rect_inv_list:
-        cell_start_x, cell_start_y = get_cell(rect_inv.origin)
-        cell_end_x, cell_end_y = get_cell( (rect_inv.origin[0] + rect_inv.width, rect_inv.origin[1] + rect_inv.height) )
+        cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect_inv)
 
-        for cell_y in range(cell_start_y - 1, cell_end_y + 1):
-            for cell_x in range(cell_start_x - 1, cell_end_x + 1):
+        for cell_y in range(cell_start_y, cell_end_y + 1):
+            for cell_x in range(cell_start_x, cell_end_x + 1):
                 if out_of_range(cell_x, cell_y, xCellCount, yCellCount):
                     continue
 
@@ -256,6 +255,23 @@ def get_block(cell):
         return False
     return crnt_map[cell[1]][cell[0]]
 
+def get_detected_cells(rect : Rect):
+    result = []
+    cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect)
+    for cell_y in range(cell_start_y, cell_end_y + 1):
+        for cell_x in range(cell_start_x, cell_end_x + 1):
+            if out_of_range(cell_x, cell_y, xCellCount, yCellCount):
+                continue
+            cell = crnt_map[cell_y][cell_x]
+            if is_block(cell):
+                result.append((cell_x, cell_y))
+    
+    return result
+                
+def get_start_end_cells(rect : Rect):
+    cell_start_x, cell_start_y = get_cell(rect.origin)
+    cell_end_x, cell_end_y = get_cell( (rect.origin[0] + rect.width, rect.origin[1] + rect.height) )
+    return cell_start_x, cell_start_y, cell_end_x, cell_end_y
 
 
 

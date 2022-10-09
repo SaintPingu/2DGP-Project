@@ -67,6 +67,11 @@ class Tank(GroundObject):
 
         return True
 
+    def invalidate(self):
+        map.set_invalidate_rect(self.barrel_position, self.img_barrel.w, self.img_barrel.h, square=True)
+        map.set_invalidate_rect(*self.get_rect().__getitem__(), square=True)
+        self.is_rect_invalid = True
+
     def draw(self):
         if self.is_rect_invalid == False:
             return
