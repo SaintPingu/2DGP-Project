@@ -1,4 +1,4 @@
-from mytool import *
+from tools import *
 import map
 
 

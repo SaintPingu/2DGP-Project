@@ -1,4 +1,4 @@
-from mytool import *
+from tools import *
 import map
         
 class Tank(GroundObject):
@@ -78,13 +78,8 @@ class Tank(GroundObject):
         self.barrel_position.x += self.img_barrel.w / 2
 
         vNormal = Vector2.cross(self.bot_left, self.bot_right).normalized()
-        vTest = self.bot_left - self.bot_right
         self.barrel_pivot = Vector2(*self.get_rect().center) + (vNormal * 3)
         self.barrel_position.y = self.barrel_pivot.y
-        print("\n\n\n")
-        print(vTest)
-        print(self.get_rect().center)
-        print(self.barrel_pivot)
         self.barrel_position = self.barrel_position.get_rotated_origin(self.barrel_pivot, self.barrel_theta)
         return prev_barrel_rect
 

@@ -1,5 +1,5 @@
 import os
-from mytool import *
+from tools import *
 import scene
 import map
 import tank

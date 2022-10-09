@@ -1,7 +1,7 @@
 if __name__ == "__main__":
     quit()
 
-from mytool import *
+from tools import *
 import scene
 import tank
 
@@ -29,6 +29,7 @@ def init():
     global img_debug, img_debug_air
     global xCellCount, yCellCount
 
+    # 1 ~ screen_max
     xCellCount = scene.screenWidth // CELL_SIZE
     yCellCount = scene.screenHeight // CELL_SIZE
     img_debug = load_image_path('debug.png')
@@ -73,6 +74,8 @@ def modify_map(events : list):
                 is_create_tank = not is_create_tank
             elif event.key == SDLK_F10:
                 is_print_mouse_pos = not is_print_mouse_pos
+            elif event.key == SDLK_F6:
+                draw_map(True)
             continue
         elif event.type == SDL_MOUSEBUTTONDOWN:
             if event.button == SDL_BUTTON_LEFT:
@@ -113,35 +116,36 @@ def stop_draw_mode():
     radius_draw = DEFAULT_RADIUS
     is_draw_mode = False
 
-def draw_map():
+def draw_map(is_draw_full=False):
     global rect_inv_list
     global is_map_invalid
 
-    if is_map_invalid == False:
+    if is_draw_full:
+        rect_inv_list.clear()
+        rect_inv_list.append(Rect((scene.screenWidth//2, scene.screenHeight//2), scene.screenWidth, scene.screenHeight))
+    elif is_map_invalid == False:
         return
 
     for rect_inv in rect_inv_list:
-        cell_start_x, cell_start_y = get_cell(rect_inv.origin)
-        cell_end_x, cell_end_y = get_cell( (rect_inv.origin[0] + rect_inv.width, rect_inv.origin[1] + rect_inv.height) )
-
         scene.img_background.clip_draw(int(rect_inv.origin[0]), int(rect_inv.origin[1]), int(rect_inv.width), int(rect_inv.height), *rect_inv.get_fCenter())
         if DEBUG:
-            draw_rectangle(rect_inv.origin[0], rect_inv.origin[1], rect_inv.origin[0] + rect_inv.width, rect_inv.origin[1]+rect_inv.height)
+            draw_rectangle(rect_inv.origin[0], rect_inv.origin[1], rect_inv.origin[0] + int(rect_inv.width), rect_inv.origin[1] + int(rect_inv.height))
 
     for rect_inv in rect_inv_list:
         cell_start_x, cell_start_y = get_cell(rect_inv.origin)
         cell_end_x, cell_end_y = get_cell( (rect_inv.origin[0] + rect_inv.width, rect_inv.origin[1] + rect_inv.height) )
 
-        for cell_y in range(cell_start_y, cell_end_y + 1):
-            for cell_x in range(cell_start_x, cell_end_x + 1):
+        for cell_y in range(cell_start_y - 1, cell_end_y + 1):
+            for cell_x in range(cell_start_x - 1, cell_end_x + 1):
                 if out_of_range(cell_x, cell_y, xCellCount, yCellCount):
                     continue
 
                 posX, posY = get_pos_from_cell(cell_x, cell_y)
+                originX, originY = get_origin_from_cell(cell_x, cell_y)
                 block_type = crnt_map[cell_y][cell_x]
 
                 if block_type == BLOCK_GROUND:
-                    scene.img_ground.clip_draw(posX - (CELL_SIZE//2), posY - (CELL_SIZE//2), CELL_SIZE, CELL_SIZE, posX, posY)
+                    scene.img_ground.clip_draw(originX, originY, CELL_SIZE, CELL_SIZE, posX, posY)
 
                 elif block_type == BLOCK_DEBUG:
                     img_debug.draw(posX, posY, CELL_SIZE, CELL_SIZE)
@@ -183,9 +187,10 @@ def set_block(radius, mouse_pos, block_type):
     for x in range(-radius, radius + 1):
         for y in range(-radius, radius + 1):
             if not out_of_range(col+x, row+y, xCellCount, yCellCount):
-                crnt_map[row + y][col + x] = block_type
+                if row + y >= scene.min_height // CELL_SIZE:
+                    crnt_map[row + y][col + x] = block_type
 
-    add_invalidate(mouse_pos, radius*2, radius*2)
+    add_invalidate(mouse_pos, radius*2 * CELL_SIZE, radius*2 * CELL_SIZE)
     
 def is_block(block):
     return block in BLOCK_SET
@@ -226,8 +231,8 @@ def add_invalidate(center, width, height):
     elif rect_inv.right > scene.screenWidth:
         rect_inv.set_origin((rect_inv.left, rect_inv.bottom), scene.screenWidth - rect_inv.left, rect_inv.height)
 
-    if rect_inv.bottom < 0:
-        rect_inv.set_origin((rect_inv.left, 0), rect_inv.width, rect_inv.top)
+    if rect_inv.bottom <= scene.min_height:
+        rect_inv.set_origin((rect_inv.left, scene.min_height), rect_inv.width, rect_inv.top - scene.min_height + 1)
     elif rect_inv.top > scene.screenHeight:
         rect_inv.set_origin((rect_inv.left, rect_inv.bottom), rect_inv.width, scene.screenHeight - rect_inv.bottom)
 
@@ -247,9 +252,9 @@ def get_cells(positions):
     return result
 
 def get_pos_from_cell(colIdx : int, rowIdx : int):
-    return (colIdx * CELL_SIZE), (rowIdx * CELL_SIZE)
+    return ((colIdx * CELL_SIZE) + CELL_SIZE//2), ((rowIdx * CELL_SIZE) + CELL_SIZE//2)
 def get_origin_from_cell(colIdx : int, rowIdx : int):
-    return (colIdx * CELL_SIZE) - (CELL_SIZE//2), (rowIdx * CELL_SIZE) - (CELL_SIZE//2)
+    return ((colIdx * CELL_SIZE) + CELL_SIZE//2) - CELL_SIZE//2, ((rowIdx * CELL_SIZE) + CELL_SIZE//2) - CELL_SIZE//2
 
 def get_cell_range(center, width, height, extra_range=0):
     width = (width//CELL_SIZE) + extra_range
@@ -289,7 +294,7 @@ def get_highest_ground_point(x, y, max_length, is_cell=False):
         dir_down = False
 
     if dir_down:
-        for row in range(0, cell_start_row + 1).__reversed__():
+        for row in range(scene.min_height, cell_start_row + 1).__reversed__():
             if not out_of_range(cell_start_col, row, xCellCount, yCellCount) and is_block(crnt_map[row][cell_start_col]):
                 if (cell_start_row - row) > max_length:
                     break
@@ -334,8 +339,8 @@ def get_vec_highest(object : GroundObject):
 
 def attach_to_ground(object : GroundObject):
     vec_befroe, vec_pivot, idx_pivot = get_vec_highest(object)
-    if vec_befroe is False:
-        return False
+    if vec_befroe is None:
+        return False, False
 
     dy = vec_pivot.y - vec_befroe.y
     object.offset(0, dy)
@@ -344,6 +349,8 @@ def attach_to_ground(object : GroundObject):
 
 def get_rotated_to_ground(object : GroundObject):
     vec_pivot, idx_pivot = attach_to_ground(object)
+    if vec_pivot is False:
+        return False
     vectors_bot = object.get_vectors_bot()
 
     # set rotation direction
