@@ -1,4 +1,3 @@
-from dis import dis
 from tools import *
 from object import *
 import map
@@ -25,11 +24,14 @@ class Shell(GameObject):
         super().__init__(position, self.img_shell.w, self.img_shell.h, theta)
 
         self.vector = Vector2.right().get_rotated(theta)
-        self.speed, self.damage = get_attributes(shell_name)
+        self.speed, self.damage, self.explosion_radius = get_attributes(shell_name)
+        self.temp = None
 
     def draw(self):
         self.is_rect_invalid = True
         self.draw_image(self.img_shell)
+        if self.temp:
+            map.draw_debug_point(self.temp)
     
     def update(self):
         map.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
@@ -48,20 +50,23 @@ class Shell(GameObject):
             if distance < self.detect_radius + object.detect_radius:
                 object.invalidate()
 
-        detected_cells = map.get_detected_cells(self.get_rect())
+        head = self.center + (self.vector.normalized() * self.img_shell.w/CELL_SIZE)
+        rect_detection = Rect(head, CELL_SIZE, CELL_SIZE)
+        detected_cells = map.get_detected_cells(rect_detection)
         if len(detected_cells) > 0:
             min = 99999
-            head = self.center + (self.vector * self.img_shell.w/CELL_SIZE)
-
             for cell in detected_cells:
                 cell_pos = Vector2(*map.get_pos_from_cell(*cell))
                 distance = (cell_pos - head).get_norm()
-                if distance < CELL_SIZE:
+                if distance <= CELL_SIZE + 1:
+                    self.explosion(head)
                     fired_shells.remove(self)
                     gameObjects.remove(self)
                     return
                 elif distance < min:
                     min = distance
+                    self.temp = cell_pos
+            print(min)
 
         self.is_rect_invalid = True
         self.vector = self.vector.lerp(Vector2.down(), 0.003)
@@ -70,6 +75,8 @@ class Shell(GameObject):
             self.speed += 0.05
             self.theta *= -1
 
+    def explosion(self, head : Vector2):
+        map.set_block(self.explosion_radius, head, BLOCK_NONE)
 
 
 
@@ -81,19 +88,19 @@ def add_shell(shell : Shell):
     fired_shells.append(shell)
     gameObjects.append(shell)
 
-    #fired_shells.clear()
-
 
 def get_attributes(shell_name : str) -> tuple[float, float]:
     assert shell_name in SHELLS.keys()
 
     speed = 0
     damage = 0
+    explosion_radius = 0
 
     if shell_name == "HP":
         speed = 6
         damage = 10
+        explosion_radius = 10
     else:
         raise Exception
 
-    return speed, damage
+    return speed, damage, explosion_radius

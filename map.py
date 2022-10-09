@@ -1,6 +1,7 @@
 if __name__ == "__main__":
     quit()
 
+from turtle import distance
 from tools import *
 from object import *
 import scene
@@ -166,17 +167,36 @@ def create_block(radius, mouse_pos):
 def delete_block(radius, mouse_pos):
     set_block(radius, mouse_pos, BLOCK_NONE)
 
-def set_block(radius, mouse_pos, block_type):
-    col, row = get_cell(mouse_pos)
+def set_block(radius, position, block_type):
+    col, row = get_cell(position)
     x = -radius
 
     for x in range(-radius, radius + 1):
         for y in range(-radius, radius + 1):
-            if not out_of_range(col+x, row+y, xCellCount, yCellCount):
-                if row + y >= scene.min_height // CELL_SIZE:
-                    crnt_map[row + y][col + x] = block_type
+            cell_x = col+x
+            cell_y = row+y
+            if out_of_range(cell_x, cell_y, xCellCount, yCellCount):
+                continue
+            elif row + y < scene.min_height // CELL_SIZE:
+                continue
+            cell_pos = get_pos_from_cell(cell_x, cell_y)
+            distance = (Vector2(*position) - Vector2(*cell_pos)).get_norm()
+            if distance <= radius * CELL_SIZE:
+                crnt_map[row + y][col + x] = block_type
 
-    add_invalidate(mouse_pos, radius*2 * CELL_SIZE, radius*2 * CELL_SIZE)
+    add_invalidate(position, radius*2 * CELL_SIZE, radius*2 * CELL_SIZE)
+
+# def set_block(radius, position, block_type):
+#     col, row = get_cell(position)
+#     x = -radius
+
+#     for x in range(-radius, radius + 1):
+#         for y in range(-radius, radius + 1):
+#             if not out_of_range(col+x, row+y, xCellCount, yCellCount):
+#                 if row + y >= scene.min_height // CELL_SIZE:
+#                     crnt_map[row + y][col + x] = block_type
+
+#     add_invalidate(position, radius*2 * CELL_SIZE, radius*2 * CELL_SIZE)
     
 def is_block(block):
     return block in BLOCK_SET

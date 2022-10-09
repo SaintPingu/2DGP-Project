@@ -15,10 +15,6 @@ class Tank(GroundObject):
     def __init__(self, center=(0,0)):
         global tank_player1
 
-        if tank_player1:
-            map.set_invalidate_rect(*tank_player1.get_rect().__getitem__())
-            tank_player1 = None
-
         self.img_tank = tank_green
         self.img_barrel = barrel_green
 
