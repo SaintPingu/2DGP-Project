@@ -1,6 +1,7 @@
 from tools import *
 from object import *
 import map
+import sprite
 import gui
 
 screenWidth = 1280
@@ -14,7 +15,7 @@ img_main_gui : Image
 min_height = 0
 
 def init():
-    import shell, tank
+    import shell, tank, sprite
     global img_background, img_map, img_ground
     global min_height
     
@@ -32,9 +33,14 @@ def init():
     map.read_mapfile(1)
     tank.init()
     shell.init()
+    sprite.init()
 
 def draw_scene():
     update_objects()
+    sprite.update_animations()
+
     map.draw_map()
+
     draw_objects()
+    sprite.draw_animations()
     update_canvas()

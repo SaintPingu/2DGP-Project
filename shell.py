@@ -4,16 +4,14 @@ import map
 import scene
 
 
-img_shell_ap : Image = None
-img_shell_hp : Image = None
-img_shell_mul : Image = None
-
 SHELLS = {}
 
 def init():
-    global img_shell_hp, SHELLS
+    global SHELLS
+    img_shell_ap = load_image_path('shell_ap.png')
     img_shell_hp = load_image_path('shell_hp.png')
-    SHELLS = {"AP" : img_shell_ap, "HP" : img_shell_hp, "MUL" : img_shell_mul}
+    img_shell_mul = load_image_path('shell_multiple.png')
+    SHELLS = { "AP" : img_shell_ap, "HP" : img_shell_hp, "MUL" : img_shell_mul }
 
 
 class Shell(GameObject):
@@ -37,11 +35,14 @@ class Shell(GameObject):
         map.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
         self.offset(*(self.vector * self.speed))
         rect = self.get_squre()
+
+        # out of range
         if rect.right < 0 or rect.left > scene.screenWidth or rect.bottom <= scene.min_height:
             fired_shells.remove(self)
             gameObjects.remove(self)
             return
 
+        # check collision
         for object in gameObjects:
             if object is self:
                 continue
@@ -50,11 +51,10 @@ class Shell(GameObject):
             if distance < self.detect_radius + object.detect_radius:
                 object.invalidate()
 
-        head = self.center + (self.vector.normalized() * self.img_shell.w/CELL_SIZE)
+        head = self.get_head()
         rect_detection = Rect(head, CELL_SIZE, CELL_SIZE)
         detected_cells = map.get_detected_cells(rect_detection)
         if len(detected_cells) > 0:
-            min = 99999
             for cell in detected_cells:
                 cell_pos = Vector2(*map.get_pos_from_cell(*cell))
                 distance = (cell_pos - head).get_norm()
@@ -65,10 +65,10 @@ class Shell(GameObject):
                     return
                 elif distance < min:
                     min = distance
-                    self.temp = cell_pos
-            print(min)
 
         self.is_rect_invalid = True
+
+        # apply rotation and gravity
         self.vector = self.vector.lerp(Vector2.down(), 0.003)
         self.theta = self.vector.get_theta(Vector2.right())
         if self.vector.y < 0:
@@ -76,7 +76,14 @@ class Shell(GameObject):
             self.theta *= -1
 
     def explosion(self, head : Vector2):
+        import sprite
         map.set_block(self.explosion_radius, head, BLOCK_NONE)
+        head = self.get_head()
+        sprite_explosion = sprite.Sprite("Explosion_HP", head, 14, 75, 75, max_frame_col=4, delay=5, scale=2, origin=(0, 75))
+        sprite.add_animation(sprite_explosion)
+
+    def get_head(self) -> Vector2:
+        return self.center + (self.vector.normalized() * self.img_shell.w/CELL_SIZE)
 
 
 
@@ -99,7 +106,15 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
     if shell_name == "HP":
         speed = 6
         damage = 10
-        explosion_radius = 10
+        explosion_radius = 20
+    elif shell_name == "AP":
+        speed = 7
+        damage = 30
+        explosion_radius = 8
+    elif shell_name == "MUL":
+        speed = 5
+        damage = 2
+        explosion_radius = 4
     else:
         raise Exception
 

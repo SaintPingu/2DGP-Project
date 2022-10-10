@@ -2,6 +2,7 @@ from tools import *
 from object import *
 import map
 import shell
+import sprite
 
 tank_green : Image = None
 barrel_green : Image = None
@@ -56,6 +57,7 @@ class Tank(GroundObject):
             dont_move(prev_theta, prev_rect.center)
             return False
         
+        # invalidate
         prev_barrel_rect = self.update_barrel()
         map.set_invalidate_rect(*prev_barrel_rect.__getitem__(), square=True)
         map.set_invalidate_rect(*prev_rect.__getitem__(), square=True)
@@ -131,8 +133,24 @@ class Tank(GroundObject):
         self.is_rect_invalid = True
 
     def fire(self):
+        barrel_vector = Vector2.right().get_rotated(self.barrel_theta)
+        barrel_head = self.barrel_position + (barrel_vector * self.img_barrel.w/2)
         crnt_shell = shell.Shell("HP", self.barrel_position, self.barrel_theta)
         shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta)
+        # shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta - 0.02)
+        # shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta + 0.02)
+        # shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta - 0.04)
+        # shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta + 0.04)
+        # shell.add_shell(crnt_shell)
+
+        sprite_shot = sprite.Sprite("Shot", barrel_head, 4, 30, 48, self.barrel_theta, delay=5)
+        sprite_shot.set_parent(self)
+        sprite.add_animation(sprite_shot)
 
 
 def stop_tank():

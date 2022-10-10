@@ -6,7 +6,6 @@ from tools import *
 from object import *
 import scene
 import tank
-import shell
 
 img_debug : Image
 img_debug_air : Image
