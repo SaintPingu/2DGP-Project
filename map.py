@@ -1,12 +1,12 @@
 if __name__ == "__main__":
     quit()
 
-from turtle import distance
 from tools import *
 from object import *
 import scene
 import tank
 
+img_map : Image
 img_debug : Image
 img_debug_air : Image
 
@@ -126,25 +126,33 @@ def draw_map(is_draw_full=False):
     elif len(rect_inv_list) == 0:
         return
 
+    # draw background
     for rect_inv in rect_inv_list:
-        scene.img_background.clip_draw(int(rect_inv.origin[0]), int(rect_inv.origin[1]), int(rect_inv.width), int(rect_inv.height), *rect_inv.get_fCenter())
+        scene.img_background.clip_draw(int(rect_inv.origin[0]), int(rect_inv.origin[1] - scene.min_height), int(rect_inv.width), int(rect_inv.height), *rect_inv.get_fCenter())
         if DEBUG:
             draw_rectangle(rect_inv.origin[0], rect_inv.origin[1], rect_inv.origin[0] + int(rect_inv.width), rect_inv.origin[1] + int(rect_inv.height))
 
+    # draw grounds
+    block_counts = []
     for rect_inv in rect_inv_list:
+        block_count = 0        
         cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect_inv)
 
         for cell_y in range(cell_start_y, cell_end_y + 1):
             for cell_x in range(cell_start_x, cell_end_x + 1):
                 if out_of_range(cell_x, cell_y, xCellCount, yCellCount):
                     continue
+                block_type = crnt_map[cell_y][cell_x]
+                if block_type == BLOCK_NONE:
+                    continue
 
                 posX, posY = get_pos_from_cell(cell_x, cell_y)
                 originX, originY = get_origin_from_cell(cell_x, cell_y)
-                block_type = crnt_map[cell_y][cell_x]
 
                 if block_type == BLOCK_GROUND:
                     scene.img_ground.clip_draw(originX, originY, CELL_SIZE, CELL_SIZE, posX, posY)
+                    crnt_map[cell_y][cell_x] = -BLOCK_GROUND
+                    block_count += 1
 
                 elif block_type == BLOCK_DEBUG:
                     img_debug.draw(posX, posY, CELL_SIZE, CELL_SIZE)
@@ -154,6 +162,26 @@ def draw_map(is_draw_full=False):
 
                 else:
                     continue
+        
+        block_counts.append(block_count)
+
+    for idx, rect_inv in enumerate(rect_inv_list):
+        cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect_inv)
+        block_count = block_counts[idx]
+
+        is_end = False
+        for cell_y in range(cell_start_y, cell_end_y + 1):
+            for cell_x in range(cell_start_x, cell_end_x + 1):
+                if block_count <= 0:
+                    is_end = True
+                    break
+                elif out_of_range(cell_x, cell_y, xCellCount, yCellCount):
+                    continue
+                elif crnt_map[cell_y][cell_x] < 0:
+                    crnt_map[cell_y][cell_x] *= -1
+                    block_count -= 1
+            if is_end:
+                break
 
     rect_inv_list.clear()
 
@@ -292,6 +320,8 @@ def get_start_end_cells(rect : Rect):
     cell_end_x, cell_end_y = get_cell( (rect.origin[0] + rect.width, rect.origin[1] + rect.height) )
     return cell_start_x, cell_start_y, cell_end_x, cell_end_y
 
+def out_of_range_cell(cell):
+    return ((cell[0] < 0) or (cell[0] >= xCellCount) or (cell[1] < 0) or (cell[1] >= yCellCount))
 
 
 
@@ -341,7 +371,7 @@ def get_vec_highest(object : GroundObject):
     max_length = object.get_rect().width
     idx_highest = 0
     if object.is_created == False:
-        max_length = INFINITE
+        max_length = float('inf')
     for idx, cell in enumerate(bot_cells):
         result = get_highest_ground_point(cell[0], cell[1], max_length, True)
         if result is False:
@@ -379,16 +409,15 @@ def get_rotated_to_ground(object : GroundObject):
         dir_check = RIGHT
         
     axis = Vector2()
-    max_length = 0
     if dir_check == LEFT:
         axis = Vector2.left()
-        max_length = (vec_pivot - object.bot_left).get_norm()
     else:
         axis = Vector2.right()
-        max_length = (vec_pivot - object.bot_right).get_norm()
 
+    max_y = object.bot_center.y + object.width//2
+    min_y = object.bot_center.y - object.width//2
     # get minimum theta
-    min_theta = INFINITE
+    min_theta = float("inf")
     for vector in vectors_bot:
         if dir_check == RIGHT:
             if vector.x < object.bot_center.x:
@@ -409,8 +438,11 @@ def get_rotated_to_ground(object : GroundObject):
         if vec_ground.y == vec_pivot.y:
             continue
 
-        length = (object.bot_center - vec_ground).get_norm()
-        if length > max_length:
+        # max_length = (vec_pivot - vector).get_norm() + 4
+        # length = (vec_pivot - vec_ground).get_norm()
+        # if length > max_length:
+        #     continue
+        if vec_ground.y > max_y or vec_ground.y < min_y:
             continue
         
         theta = vec_ground.get_theta_axis(axis, vec_pivot)
@@ -420,16 +452,19 @@ def get_rotated_to_ground(object : GroundObject):
         if math.fabs(theta) < math.fabs(min_theta):
             min_theta = theta
     
-    # didn't find highest ground point for bottom vectors
-    if min_theta == INFINITE:
-        min_theta = object.theta * 0.6
+    # didn't find highest ground point for bottom vectors   
+    if min_theta == float("inf"):
+        min_theta = object.theta * 0.9
     elif math.fabs(math.degrees(min_theta)) > 75:
         return False
+
+    # ground와 object의 거리 계산하여 크면 False
+
 
     # rotation and set position to ground
     object.set_theta(min_theta)
     vectors_bot = object.get_vectors_bot()
-    vector_correction = (vec_pivot - vectors_bot[idx_pivot]) * 0.1
+    vector_correction = (vec_pivot - vectors_bot[idx_pivot]) 
     object.set_center((object.center[0] + vector_correction[0], object.center[1] + vector_correction[1]))
 
     if is_floating(object):
@@ -494,10 +529,12 @@ def draw_debug_point(point):
 
 ##### FILE I/O #####
 def read_mapfile(index : int):
-    global crnt_map
+    global crnt_map, img_map
+
     crnt_map = [[0]*xCellCount for col in range(yCellCount)]
 
     if index == -1:
+        scene.img_background.draw(scene.screenWidth//2, scene.screenHeight//2 + scene.min_height//2)    # Empty background
         return
 
     fileName = 'map_' + str(index) + '.txt'
@@ -511,6 +548,9 @@ def read_mapfile(index : int):
             crnt_map[rowIdx][colIdx] = int(ch)
 
     file.close()
+
+    img_map = load_image_path('map_' + str(index) + '.png')
+    img_map.draw(scene.screenWidth//2, scene.screenHeight//2 + scene.min_height//2)
 
 def save_mapfile():
     global crnt_map, xCellCount, yCellCount

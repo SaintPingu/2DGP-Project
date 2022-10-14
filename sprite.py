@@ -7,8 +7,8 @@ SPRITES = {}
 def init():
     global SPRITES
     img_sprite_shot = load_image_path('sprite_shot.png')
-    img_sprite_explosion_hp = load_image_path('sprite_explosion_hp.png')
-    SPRITES = { "Shot" : img_sprite_shot, "Explosion_HP" : img_sprite_explosion_hp }
+    img_sprite_explosion_hp = load_image_path('sprite_explosion.png')
+    SPRITES = { "Shot" : img_sprite_shot, "Explosion" : img_sprite_explosion_hp }
 
 class Sprite:
     def __init__(self, sprite_name:str, position, max_frame:int, frame_width:int, frame_height:int, theta=0, max_frame_col:int =0, delay:int=0, scale=1, is_play_once=True, origin=None):
@@ -29,6 +29,12 @@ class Sprite:
         self.crnt_delay = 0
         self.parent_object : GameObject = None
 
+        self.raidus = 0
+        if self.frame_width > self.frame_height:
+            self.raidus = self.frame_width*self.scale
+        else:
+            self.raidus = self.frame_height*self.scale
+
         if origin is None:
             origin = (0, self.sprite.h)
         self.origin = Vector2(*origin)
@@ -38,6 +44,7 @@ class Sprite:
         self.parent_object = object
 
     def draw(self):
+        from tank import check_invalidate
         left = 0
         bottom = 0
         if self.frame_row != 0:
@@ -54,7 +61,10 @@ class Sprite:
             self.sprite.clip_composite_draw(left, bottom, self.frame_width, self.frame_height, self.theta, '', *self.position, self.frame_width//2 * self.scale, self.frame_height//2 * self.scale)
         else:
             self.sprite.clip_draw(left, bottom, self.frame_width, self.frame_height, *self.position, self.frame_width*self.scale, self.frame_height*self.scale)
+
         
+        check_invalidate(self.position, self.raidus)
+
     def update(self):
         is_running = True
 
@@ -73,7 +83,14 @@ class Sprite:
     
 animations : list[Sprite] = []
 
-def add_animation(sprite : Sprite):
+def add_animation(sprite_name : Sprite, center, theta=0, scale=1.0, parent=None):
+
+    sprite = None
+    if sprite_name == "Shot":
+        sprite = Sprite("Shot", center, 4, 30, 48, theta, scale=scale, delay=5)
+    elif sprite_name == "Explosion":
+        sprite = Sprite(sprite_name, center, 14, 75, 75, max_frame_col=4, delay=5, scale=scale, origin=(0, 75))
+
     animations.append(sprite)
 
 def update_animations():

@@ -1,13 +1,12 @@
-from asyncio.windows_events import INFINITE
 from pico2d import *
 import math
-
+    
 DEBUG = False
 
 LEFT = -1
 RIGHT = 1
 
-CELL_SIZE = 2
+CELL_SIZE = 2   # recommend an even number
 
 BLOCK_NONE = 0
 BLOCK_GROUND = 1

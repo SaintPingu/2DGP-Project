@@ -62,8 +62,8 @@ class GameObject:
         self.center = Vector2(*center)
         self.update_object()
 
-    def draw_image(self, image : Image):
-        if self.is_rect_invalid == False:
+    def draw_image(self, image : Image, apply_invalid = True):
+        if apply_invalid and self.is_rect_invalid == False:
             return
         self.is_rect_invalid = False
         image.rotate_draw(self.theta, *self.center)

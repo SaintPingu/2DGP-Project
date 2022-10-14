@@ -24,6 +24,8 @@ class Shell(GameObject):
         self.vector = Vector2.right().get_rotated(theta)
         self.speed, self.damage, self.explosion_radius = get_attributes(shell_name)
         self.temp = None
+        self.center_inv_list : list[Vector2] = []
+        self.is_destroyed = False
 
     def draw(self):
         self.is_rect_invalid = True
@@ -32,14 +34,23 @@ class Shell(GameObject):
             map.draw_debug_point(self.temp)
     
     def update(self):
-        map.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
+        if len(self.center_inv_list) > 10 or self.is_destroyed:
+            map.set_invalidate_rect(self.center_inv_list.pop(0), self.img_shell.w, self.img_shell.h, square=True)
+            if len(self.center_inv_list) <= 0:
+                fired_shells.remove(self)
+                gameObjects.remove(self)
+                return
+            elif self.is_destroyed:
+                return
+
+        self.center_inv_list.append(Vector2(*self.center))
+        # map.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
         self.offset(*(self.vector * self.speed))
         rect = self.get_squre()
 
         # out of range
-        if rect.right < 0 or rect.left > scene.screenWidth or rect.bottom <= scene.min_height:
-            fired_shells.remove(self)
-            gameObjects.remove(self)
+        if rect.right < 0 or rect.left > scene.screenWidth or rect.top <= scene.min_height:
+            self.is_destroyed = True
             return
 
         # check collision
@@ -52,19 +63,12 @@ class Shell(GameObject):
                 object.invalidate()
 
         head = self.get_head()
-        rect_detection = Rect(head, CELL_SIZE, CELL_SIZE)
-        detected_cells = map.get_detected_cells(rect_detection)
-        if len(detected_cells) > 0:
-            for cell in detected_cells:
-                cell_pos = Vector2(*map.get_pos_from_cell(*cell))
-                distance = (cell_pos - head).get_norm()
-                if distance <= CELL_SIZE + 1:
-                    self.explosion(head)
-                    fired_shells.remove(self)
-                    gameObjects.remove(self)
-                    return
-                elif distance < min:
-                    min = distance
+        detected_cell = map.get_cell(head)
+        if not map.out_of_range_cell(detected_cell) and map.is_block_cell(detected_cell):
+            self.explosion(head)
+            self.is_destroyed = True
+            map.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
+            return
 
         self.is_rect_invalid = True
 
@@ -79,8 +83,7 @@ class Shell(GameObject):
         import sprite
         map.set_block(self.explosion_radius, head, BLOCK_NONE)
         head = self.get_head()
-        sprite_explosion = sprite.Sprite("Explosion_HP", head, 14, 75, 75, max_frame_col=4, delay=5, scale=2, origin=(0, 75))
-        sprite.add_animation(sprite_explosion)
+        sprite.add_animation("Explosion", head, scale=self.explosion_radius/10)
 
     def get_head(self) -> Vector2:
         return self.center + (self.vector.normalized() * self.img_shell.w/CELL_SIZE)

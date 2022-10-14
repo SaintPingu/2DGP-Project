@@ -5,6 +5,8 @@ import map
 import tank
 
 os.chdir(os.path.dirname(__file__))
+
+open_canvas(scene.screenWidth, scene.screenHeight, sync=True)
 scene.init()
 
 running = True

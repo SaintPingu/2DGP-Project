@@ -135,23 +135,31 @@ class Tank(GroundObject):
     def fire(self):
         barrel_vector = Vector2.right().get_rotated(self.barrel_theta)
         barrel_head = self.barrel_position + (barrel_vector * self.img_barrel.w/2)
-        crnt_shell = shell.Shell("HP", self.barrel_position, self.barrel_theta)
+        #crnt_shell = shell.Shell("HP", self.barrel_position, self.barrel_theta)
+        # crnt_shell = shell.Shell("AP", self.barrel_position, self.barrel_theta)
+        # shell.add_shell(crnt_shell)
+        crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta)
         shell.add_shell(crnt_shell)
-        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta)
-        # shell.add_shell(crnt_shell)
-        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta - 0.02)
-        # shell.add_shell(crnt_shell)
-        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta + 0.02)
-        # shell.add_shell(crnt_shell)
-        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta - 0.04)
-        # shell.add_shell(crnt_shell)
-        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta + 0.04)
-        # shell.add_shell(crnt_shell)
+        crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta - 0.02)
+        shell.add_shell(crnt_shell)
+        crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta + 0.02)
+        shell.add_shell(crnt_shell)
+        crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta - 0.04)
+        shell.add_shell(crnt_shell)
+        crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta + 0.04)
+        shell.add_shell(crnt_shell)
 
-        sprite_shot = sprite.Sprite("Shot", barrel_head, 4, 30, 48, self.barrel_theta, delay=5)
-        sprite_shot.set_parent(self)
-        sprite.add_animation(sprite_shot)
+        sprite.add_animation("Shot", barrel_head, theta=self.barrel_theta, parent=self)
 
+    def check_invalidate(self, position, radius):
+        distance = (position - self.center).get_norm()
+        if distance < self.detect_radius + radius:
+            self.is_rect_invalid = True
+
+
+def check_invalidate(position, radius):
+    if tank_player1:
+        tank_player1.check_invalidate(position, radius)
 
 def stop_tank():
     if tank_player1:
