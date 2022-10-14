@@ -1,6 +1,9 @@
 from pico2d import *
 import math
-    
+
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 1000
+
 DEBUG = False
 
 LEFT = -1
@@ -214,8 +217,8 @@ class Rect:
 
 
 def convert_pico2d(x, y):
-    from scene import screenHeight
-    return x, screenHeight - 1 - y
+    from scene import SCREEN_HEIGHT
+    return x, SCREEN_HEIGHT - 1 - y
     
 def load_image_path(image : str):
     name = 'images/' + image

@@ -1,8 +1,7 @@
 from tools import *
 from object import *
-import map
+import gmap
 import shell
-import sprite
 
 tank_green : Image = None
 barrel_green : Image = None
@@ -33,13 +32,13 @@ class Tank(GroundObject):
             self.set_theta(prev_theta)
             self.set_center(prev_center)
 
-        from scene import screenHeight, screenWidth
+        from scene import SCREEN_HEIGHT, SCREEN_WIDTH
 
         prev_rect = self.get_rect()
         prev_theta = self.theta
 
         self.set_center(center)
-        if self.out_of_bound(0, screenHeight, screenWidth, 0):
+        if self.out_of_bound(0, SCREEN_HEIGHT, SCREEN_WIDTH, 0):
             dont_move(prev_theta, prev_rect.center)
             return False
 
@@ -47,27 +46,27 @@ class Tank(GroundObject):
         if self.dir != 0:
             vectors_coll = self.get_collision_vectors()
             for vector in vectors_coll:
-                cell = map.get_cell(vector)
-                block = map.get_block(cell)
-                if block is not False and map.is_block(block):
+                cell = gmap.get_cell(vector)
+                block = gmap.get_block(cell)
+                if block is not False and gmap.is_block(block):
                     dont_move(prev_theta, prev_rect.center)
                     return False
 
-        if map.get_rotated_to_ground(self) == False:
+        if self.rotate_ground() == False:
             dont_move(prev_theta, prev_rect.center)
             return False
         
         # invalidate
         prev_barrel_rect = self.update_barrel()
-        map.set_invalidate_rect(*prev_barrel_rect.__getitem__(), square=True)
-        map.set_invalidate_rect(*prev_rect.__getitem__(), square=True)
+        gmap.set_invalidate_rect(*prev_barrel_rect.__getitem__(), square=True)
+        gmap.set_invalidate_rect(*prev_rect.__getitem__(), square=True)
         self.is_rect_invalid = True
 
         return True
 
     def invalidate(self):
-        map.set_invalidate_rect(self.barrel_position, self.img_barrel.w, self.img_barrel.h, square=True)
-        map.set_invalidate_rect(*self.get_rect().__getitem__(), square=True)
+        gmap.set_invalidate_rect(self.barrel_position, self.img_barrel.w, self.img_barrel.h, square=True)
+        gmap.set_invalidate_rect(*self.get_rect().__getitem__(), square=True)
         self.is_rect_invalid = True
 
     def draw(self):
@@ -129,37 +128,34 @@ class Tank(GroundObject):
         if dest.y < self.barrel_pivot.y:
             self.barrel_theta *= -1
         prev_barrel_rect = self.update_barrel()
-        map.set_invalidate_rect(*prev_barrel_rect.__getitem__(), square=True)
+        gmap.set_invalidate_rect(*prev_barrel_rect.__getitem__(), square=True)
         self.is_rect_invalid = True
 
     def fire(self):
+        from sprite import add_animation
         barrel_vector = Vector2.right().get_rotated(self.barrel_theta)
         barrel_head = self.barrel_position + (barrel_vector * self.img_barrel.w/2)
         #crnt_shell = shell.Shell("HP", self.barrel_position, self.barrel_theta)
-        # crnt_shell = shell.Shell("AP", self.barrel_position, self.barrel_theta)
+        crnt_shell = shell.Shell("AP", self.barrel_position, self.barrel_theta)
+        shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta)
         # shell.add_shell(crnt_shell)
-        crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta)
-        shell.add_shell(crnt_shell)
-        crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta - 0.02)
-        shell.add_shell(crnt_shell)
-        crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta + 0.02)
-        shell.add_shell(crnt_shell)
-        crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta - 0.04)
-        shell.add_shell(crnt_shell)
-        crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta + 0.04)
-        shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta - 0.02)
+        # shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta + 0.02)
+        # shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta - 0.04)
+        # shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta + 0.04)
+        # shell.add_shell(crnt_shell)
 
-        sprite.add_animation("Shot", barrel_head, theta=self.barrel_theta, parent=self)
-
-    def check_invalidate(self, position, radius):
-        distance = (position - self.center).get_norm()
-        if distance < self.detect_radius + radius:
-            self.is_rect_invalid = True
+        add_animation("Shot", barrel_head, theta=self.barrel_theta, parent=self)
 
 
 def check_invalidate(position, radius):
     if tank_player1:
-        tank_player1.check_invalidate(position, radius)
+        if tank_player1.is_in_radius(position, radius):
+            tank_player1.is_rect_invalid = True
 
 def stop_tank():
     if tank_player1:

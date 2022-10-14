@@ -1,3 +1,4 @@
+from turtle import xcor
 from tools import *
 
 class GameObject:
@@ -44,6 +45,8 @@ class GameObject:
         self.update_object()
 
     def set_theta(self, theta):
+        if self.theta == theta:
+            return
         self.theta = theta
         self.update_object()
 
@@ -105,6 +108,11 @@ class GameObject:
     def draw_debug_rect(self):
         rect = self.get_rect()
         draw_rectangle(rect.left, rect.bottom, rect.right, rect.top)
+    
+    def is_in_radius(self, position : Vector2, radius):
+        distance = (position - self.center).get_norm()
+        if distance < self.detect_radius + radius:
+            return True
 
     def draw(self):
         pass
@@ -115,13 +123,15 @@ class GameObject:
     def invalidate(self):
         pass
 
+gameObjects : list[GameObject] = []
 
 
+from gmap import get_cell, get_cells, get_highest_ground_cell, get_pos_from_cell, is_block_cell, out_of_range_cell, X_CELL_COUNT, Y_CELL_COUNT
 
 class GroundObject(GameObject):
     def get_vectors_bot(self):
         t = 0
-        inc_t = 1 / self.width
+        inc_t = 1 / (self.width * CELL_SIZE)
 
         result : list[Vector2] = []
         while t <= 1:
@@ -150,7 +160,175 @@ class GroundObject(GameObject):
     def stop(self):
         self.dir = 0
 
-gameObjects : list[GameObject] = []
+    def update_ground(self):
+        if self.is_floating():
+            prev_rect = self.get_rect()
+            self.attach_ground(True)
+
+    # _BUG_ : pass through a thin wall
+    def get_vec_highest(self, ignore_height=False):
+        vectors_bot = self.get_vectors_bot()
+        bot_cells = get_cells(vectors_bot)
+
+        vec_highest = Vector2.zero()
+        vec_befroe : Vector2 = None
+
+        # Set max length
+        max_length = 0
+        idx_highest = 0
+        if ignore_height or not self.is_created:
+            max_length = float('inf')
+        else:
+            max_length = self.get_rect().height / 2
+
+        # Find
+        for idx, cell in enumerate(bot_cells):
+            result = get_highest_ground_cell(cell[0], cell[1], max_length, True)
+            if result is False:
+                # MODIFY
+                # check other side
+                continue
+            
+            col, row = result
+            _, height = get_pos_from_cell(col, row)
+            if height > vec_highest.y:
+                vec_highest.x = vectors_bot[idx].x
+                vec_highest.y = height
+                vec_befroe = vectors_bot[idx]
+                idx_highest = idx
+
+        return vec_befroe, vec_highest, idx_highest
+
+    def attach_ground(self, ignore_height=False):
+        vec_befroe, vec_pivot, idx_pivot = self.get_vec_highest(ignore_height)
+        if vec_befroe is None:
+            return False, False
+
+        dy = vec_pivot.y - vec_befroe.y
+        self.offset(0, dy)
+
+        return vec_pivot, idx_pivot
+
+    def rotate_ground(self):
+        vec_pivot, idx_pivot = self.attach_ground()
+        if vec_pivot is False:
+            return False
+        vectors_bot = self.get_vectors_bot()
+
+        # set rotation direction
+        dir_check = LEFT
+        if vec_pivot.x < self.bot_center.x:
+            dir_check = RIGHT
+            
+        axis = Vector2()
+        if dir_check == LEFT:
+            axis = Vector2.left()
+        else:
+            axis = Vector2.right()
+
+        max_y = self.bot_center.y + self.width//2
+        min_y = self.bot_center.y - self.width//2
+        # get minimum theta
+        min_theta = float("inf")
+        flat_count = 0
+        for vector in vectors_bot:
+            if dir_check == RIGHT:
+                if vector.x < self.bot_center.x:
+                    continue
+            else:
+                if vector.x > self.bot_center.x:
+                    continue
+
+            cell = get_cell(vector)
+            if out_of_range(cell[0], cell[1], X_CELL_COUNT, Y_CELL_COUNT):
+                continue
+
+            ground_cell = get_highest_ground_cell(*cell, is_cell=True)
+                
+            vec_ground = Vector2(*get_pos_from_cell(*ground_cell))
+            if vec_ground.y == vec_pivot.y:
+                flat_count += 1
+                continue
+            elif vec_ground.y > max_y or vec_ground.y < min_y:
+                continue
+
+            # max_length = (vec_pivot - vector).get_norm() + 4
+            # length = (vec_pivot - vec_ground).get_norm()
+            # if length > max_length:
+            #     continue
+            
+            theta = vec_ground.get_theta_axis(axis, vec_pivot)
+            if dir_check == RIGHT:
+                theta *= -1
+
+            if math.fabs(theta) < math.fabs(min_theta):
+                min_theta = theta
+        
+        # didn't find highest ground point for bottom vectors
+        if min_theta == float("inf"):
+            if flat_count > 0:
+                min_theta = 0
+            else:
+                min_theta = self.theta
+        elif math.fabs(math.degrees(min_theta)) > 75:
+            return False
+
+        # ground와 object의 거리 계산하여 크면 False
+
+
+        # rotation and set position to ground
+        self.set_theta(min_theta)
+        self.attach_ground()
+        vectors_bot = self.get_vectors_bot()
+        vector_correction = (vec_pivot - vectors_bot[idx_pivot])
+        if vector_correction.x != 0 and vector_correction.y != 0:
+            pass
+        prev_center = self.center
+        self.set_center((self.center[0] + vector_correction[0], self.center[1] + vector_correction[1]))
+        if self.is_on_edge():
+            self.set_center(prev_center)
+
+        if self.is_floating():
+            self.attach_ground()
+
+        if self.is_on_edge():
+            return False
+
+        return True
+
+    def is_on_edge(self):
+        if self.dir == 0:
+            return False
+
+        vectors_bot = self.get_vectors_bot()
+        max_length = self.width / 2
+        for vector in vectors_bot:
+            if self.dir == RIGHT:
+                if vector.x < self.bot_center.x:
+                    continue
+            else:
+                if vector.x > self.bot_center.x:
+                    continue
+            
+            cell = get_cell(vector)
+            ground_cell = get_highest_ground_cell(*cell, is_cell=True)
+            if ground_cell is not False:
+                ground_point = Vector2(*get_pos_from_cell(*ground_cell))
+                length = (self.bot_center - ground_point).get_norm()
+                if length <= max_length:
+                    return False
+        return True
+
+    def is_floating(self):
+        vectors_bot = self.get_vectors_bot()
+        for vector in vectors_bot:
+            cell = get_cell(vector)
+            if is_block_cell(cell):
+                return False
+            
+        return True
+
+groundObjects : list[GroundObject] = []
 
 def update_objects():
     for object in gameObjects:
@@ -159,3 +337,8 @@ def update_objects():
 def draw_objects():
     for object in gameObjects:
         object.draw()
+
+def check_ground(position : Vector2, radius):
+    for object in groundObjects:
+        if object.is_in_radius(position, radius):
+            object.attach_ground()

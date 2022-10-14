@@ -1,6 +1,5 @@
 from object import GameObject
 from tools import *
-import map
 
 SPRITES = {}
 
@@ -66,6 +65,7 @@ class Sprite:
         check_invalidate(self.position, self.raidus)
 
     def update(self):
+        from gmap import set_invalidate_rect
         is_running = True
 
         self.crnt_delay += 1
@@ -78,7 +78,7 @@ class Sprite:
             elif self.max_frame_col != 0:
                 if self.frame % self.max_frame_col == 0:
                     self.frame_row += 1
-            map.set_invalidate_rect(self.position, self.frame_width*self.scale, self.frame_height*self.scale, square=True)
+            set_invalidate_rect(self.position, self.frame_width*self.scale, self.frame_height*self.scale, square=True)
         return is_running
     
 animations : list[Sprite] = []

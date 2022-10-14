@@ -1,12 +1,12 @@
 import os
 from tools import *
 import scene
-import map
+import gmap
 import tank
 
 os.chdir(os.path.dirname(__file__))
 
-open_canvas(scene.screenWidth, scene.screenHeight, sync=True)
+open_canvas(SCREEN_WIDTH, SCREEN_HEIGHT, sync=True)
 scene.init()
 
 running = True
@@ -16,8 +16,8 @@ while running:
     events = get_events()
     event : Event
 
-    if map.is_draw_mode == True:
-        map.modify_map(events)
+    if gmap.is_draw_mode == True:
+        gmap.modify_map(events)
         continue
 
     for event in events:
@@ -25,7 +25,7 @@ while running:
             running = False
         elif event.type == SDL_KEYDOWN:
             if event.key == SDLK_F1:
-                map.start_draw_mode()
+                gmap.start_draw_mode()
             elif event.key == SDLK_RIGHT:
                 tank.move_tank(RIGHT)
             elif event.key == SDLK_LEFT:

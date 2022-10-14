@@ -1,7 +1,6 @@
 from tools import *
 from object import *
-import map
-import scene
+import gmap
 
 
 SHELLS = {}
@@ -31,11 +30,13 @@ class Shell(GameObject):
         self.is_rect_invalid = True
         self.draw_image(self.img_shell)
         if self.temp:
-            map.draw_debug_point(self.temp)
+            gmap.draw_debug_point(self.temp)
     
     def update(self):
+        from scene import SCREEN_WIDTH, min_height
+
         if len(self.center_inv_list) > 10 or self.is_destroyed:
-            map.set_invalidate_rect(self.center_inv_list.pop(0), self.img_shell.w, self.img_shell.h, square=True)
+            gmap.set_invalidate_rect(self.center_inv_list.pop(0), self.img_shell.w, self.img_shell.h, square=True)
             if len(self.center_inv_list) <= 0:
                 fired_shells.remove(self)
                 gameObjects.remove(self)
@@ -49,7 +50,7 @@ class Shell(GameObject):
         rect = self.get_squre()
 
         # out of range
-        if rect.right < 0 or rect.left > scene.screenWidth or rect.top <= scene.min_height:
+        if rect.right < 0 or rect.left > SCREEN_WIDTH or rect.top <= min_height:
             self.is_destroyed = True
             return
 
@@ -62,12 +63,14 @@ class Shell(GameObject):
             if distance < self.detect_radius + object.detect_radius:
                 object.invalidate()
 
+        # MODIFY
+        # head size up
         head = self.get_head()
-        detected_cell = map.get_cell(head)
-        if not map.out_of_range_cell(detected_cell) and map.is_block_cell(detected_cell):
+        detected_cell = gmap.get_cell(head)
+        if not gmap.out_of_range_cell(detected_cell) and gmap.is_block_cell(detected_cell):
             self.explosion(head)
             self.is_destroyed = True
-            map.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
+            gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
             return
 
         self.is_rect_invalid = True
@@ -81,7 +84,8 @@ class Shell(GameObject):
 
     def explosion(self, head : Vector2):
         import sprite
-        map.set_block(self.explosion_radius, head, BLOCK_NONE)
+        gmap.set_block(self.explosion_radius, head, BLOCK_NONE)
+
         head = self.get_head()
         sprite.add_animation("Explosion", head, scale=self.explosion_radius/10)
 
