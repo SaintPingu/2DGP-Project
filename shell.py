@@ -1,6 +1,7 @@
 from tools import *
 from object import *
 import gmap
+import sprite
 
 
 SHELLS = {}
@@ -33,13 +34,10 @@ class Shell(GameObject):
             gmap.draw_debug_point(self.temp)
     
     def update(self):
-        from scene import SCREEN_WIDTH, min_height
-
         if len(self.center_inv_list) > 10 or self.is_destroyed:
             gmap.set_invalidate_rect(self.center_inv_list.pop(0), self.img_shell.w, self.img_shell.h, square=True)
             if len(self.center_inv_list) <= 0:
-                fired_shells.remove(self)
-                gameObjects.remove(self)
+                delete_shell(self)
                 return
             elif self.is_destroyed:
                 return
@@ -50,28 +48,29 @@ class Shell(GameObject):
         rect = self.get_squre()
 
         # out of range
-        if rect.right < 0 or rect.left > SCREEN_WIDTH or rect.top <= min_height:
+        if rect.right < 0 or rect.left > SCREEN_WIDTH or rect.top <= MIN_HEIGHT:
             self.is_destroyed = True
             return
 
         # check collision
         for object in gameObjects:
-            if object is self:
+            if type(object) is Shell:
                 continue
 
             distance = (self.center - object.center).get_norm()
             if distance < self.detect_radius + object.detect_radius:
                 object.invalidate()
 
-        # MODIFY
-        # head size up
         head = self.get_head()
-        detected_cell = gmap.get_cell(head)
-        if not gmap.out_of_range_cell(detected_cell) and gmap.is_block_cell(detected_cell):
-            self.explosion(head)
-            self.is_destroyed = True
-            gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
-            return
+        rect_detection = Rect(head, 4, 4)
+        detected_cells = get_detected_cells(rect_detection)
+        for detected_cell in detected_cells:
+            if not out_of_range_cell(detected_cell) and is_block_cell(detected_cell):
+                self.explosion(head)
+                self.is_destroyed = True
+                gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
+                return
+        # gmap.draw_debug_rect(rect_detection)
 
         self.is_rect_invalid = True
 
@@ -83,8 +82,7 @@ class Shell(GameObject):
             self.theta *= -1
 
     def explosion(self, head : Vector2):
-        import sprite
-        gmap.set_block(self.explosion_radius, head, BLOCK_NONE)
+        gmap.draw_block(self.explosion_radius, head, BLOCK_NONE)
 
         head = self.get_head()
         sprite.add_animation("Explosion", head, scale=self.explosion_radius/10)
@@ -100,8 +98,11 @@ fired_shells : list[Shell] = []
 
 def add_shell(shell : Shell):
     fired_shells.append(shell)
-    gameObjects.append(shell)
+    add_object(shell)
 
+def delete_shell(shell : Shell):
+    fired_shells.remove(shell)
+    delete_object(shell)
 
 def get_attributes(shell_name : str) -> tuple[float, float]:
     assert shell_name in SHELLS.keys()
@@ -113,7 +114,7 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
     if shell_name == "HP":
         speed = 6
         damage = 10
-        explosion_radius = 20
+        explosion_radius = 15
     elif shell_name == "AP":
         speed = 7
         damage = 30

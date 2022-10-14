@@ -1,4 +1,3 @@
-from turtle import xcor
 from tools import *
 
 class GameObject:
@@ -126,7 +125,6 @@ class GameObject:
 gameObjects : list[GameObject] = []
 
 
-from gmap import get_cell, get_cells, get_highest_ground_cell, get_pos_from_cell, is_block_cell, out_of_range_cell, X_CELL_COUNT, Y_CELL_COUNT
 
 class GroundObject(GameObject):
     def get_vectors_bot(self):
@@ -329,6 +327,17 @@ class GroundObject(GameObject):
         return True
 
 groundObjects : list[GroundObject] = []
+
+def add_object(object : GameObject):
+    gameObjects.append(object)
+    if type(object) == GroundObject:
+        groundObjects.append(object)
+
+def delete_object(object : GameObject):
+    gameObjects.remove(object)
+    if type(object) == GroundObject:
+        groundObjects.remove(object)
+    del object
 
 def update_objects():
     for object in gameObjects:

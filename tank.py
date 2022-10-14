@@ -2,6 +2,7 @@ from tools import *
 from object import *
 import gmap
 import shell
+import sprite
 
 tank_green : Image = None
 barrel_green : Image = None
@@ -32,8 +33,6 @@ class Tank(GroundObject):
             self.set_theta(prev_theta)
             self.set_center(prev_center)
 
-        from scene import SCREEN_HEIGHT, SCREEN_WIDTH
-
         prev_rect = self.get_rect()
         prev_theta = self.theta
 
@@ -46,12 +45,13 @@ class Tank(GroundObject):
         if self.dir != 0:
             vectors_coll = self.get_collision_vectors()
             for vector in vectors_coll:
-                cell = gmap.get_cell(vector)
-                block = gmap.get_block(cell)
-                if block is not False and gmap.is_block(block):
+                cell = get_cell(vector)
+                block = get_block_cell(cell)
+                if block is not False and is_block(block):
                     dont_move(prev_theta, prev_rect.center)
                     return False
 
+        
         if self.rotate_ground() == False:
             dont_move(prev_theta, prev_rect.center)
             return False
@@ -123,20 +123,31 @@ class Tank(GroundObject):
         return result
 
     def rotate_barrel(self, dest : Vector2):
-        vDest = dest - self.barrel_pivot
+        vDest = (dest - self.barrel_pivot).normalized()
+        # 180 degree rotation
+        if vDest.x < 0:
+            dir = self.get_vec_left()
+            if vDest.y <= dir.y:
+                vDest = dir
+        else:
+            dir = self.get_vec_right()
+            if vDest.y <= dir.y:
+                vDest = dir
         self.barrel_theta = Vector2.get_theta(Vector2.right(), vDest)
         if dest.y < self.barrel_pivot.y:
             self.barrel_theta *= -1
+        
+        
+
         prev_barrel_rect = self.update_barrel()
         gmap.set_invalidate_rect(*prev_barrel_rect.__getitem__(), square=True)
         self.is_rect_invalid = True
 
     def fire(self):
-        from sprite import add_animation
         barrel_vector = Vector2.right().get_rotated(self.barrel_theta)
         barrel_head = self.barrel_position + (barrel_vector * self.img_barrel.w/2)
-        #crnt_shell = shell.Shell("HP", self.barrel_position, self.barrel_theta)
-        crnt_shell = shell.Shell("AP", self.barrel_position, self.barrel_theta)
+        crnt_shell = shell.Shell("HP", self.barrel_position, self.barrel_theta)
+        #crnt_shell = shell.Shell("AP", self.barrel_position, self.barrel_theta)
         shell.add_shell(crnt_shell)
         # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta)
         # shell.add_shell(crnt_shell)
@@ -149,7 +160,7 @@ class Tank(GroundObject):
         # crnt_shell = shell.Shell("MUL", self.barrel_position, self.barrel_theta + 0.04)
         # shell.add_shell(crnt_shell)
 
-        add_animation("Shot", barrel_head, theta=self.barrel_theta, parent=self)
+        sprite.add_animation("Shot", barrel_head, theta=self.barrel_theta, parent=self)
 
 
 def check_invalidate(position, radius):
@@ -171,8 +182,6 @@ def send_mouse_pos(x, y):
 
 def draw_debug():
     if tank_player1:
-        # map.draw_debug_point(tank_player1.barrel_pivot)
-        # map.draw_debug_point(tank_player1.get_rect().center)
         pass
 
 def fire():

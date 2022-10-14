@@ -1,28 +1,28 @@
 from tools import *
 from object import *
-import gmap
-import sprite
-import gui
 
 img_background : Image
 img_ground : Image
 img_main_gui : Image
 
-min_height = 0
+import gmap
+import sprite
+import gui
+
+
+
 
 def init():
-    import shell, tank, sprite
+    import tank, shell
     global img_background, img_ground, img_main_gui
-    global min_height
     
     img_background = load_image_path('background.png')
     img_ground = load_image_path('ground.png')
     img_main_gui = load_image_path('gui.png')
-    min_height = img_main_gui.h
     img_main_gui.draw(SCREEN_WIDTH//2, img_main_gui.h//2)
 
+    read_mapfile(1)
     gmap.init()
-    gmap.read_mapfile(1)
     tank.init()
     shell.init()
     sprite.init()

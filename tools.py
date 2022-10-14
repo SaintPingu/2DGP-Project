@@ -1,15 +1,19 @@
 from pico2d import *
 import math
 
+DEBUG = False
+
+CELL_SIZE = 2   # recommend an even number
+
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 1000
+MIN_HEIGHT = 108
 
-DEBUG = False
+X_CELL_COUNT = SCREEN_WIDTH // CELL_SIZE
+Y_CELL_COUNT = SCREEN_HEIGHT // CELL_SIZE
 
 LEFT = -1
 RIGHT = 1
-
-CELL_SIZE = 2   # recommend an even number
 
 BLOCK_NONE = 0
 BLOCK_GROUND = 1
@@ -18,7 +22,7 @@ BLOCK_DEBUG = 9999
 BLOCK_DEBUG_AIR = 9998
 
 BLOCK_SET = { BLOCK_DEBUG, BLOCK_GROUND }
-
+_crnt_map : list[list[int]] = []
 
 class Vector2:
     def __init__(self, x=0, y=0):
@@ -211,13 +215,7 @@ class Rect:
         return result
 
 
-
-
-
-
-
 def convert_pico2d(x, y):
-    from scene import SCREEN_HEIGHT
     return x, SCREEN_HEIGHT - 1 - y
     
 def load_image_path(image : str):
@@ -237,3 +235,150 @@ def to_int_pos(position):
 
 def get_sign(num):
     return num / math.fabs(num)
+
+
+
+##### MAP #####
+def is_block(block):
+    return block in BLOCK_SET
+def is_block_cell(cell):
+    return _crnt_map[cell[1]][cell[0]] in BLOCK_SET
+
+def get_cell(position):
+    return int(position[0]//CELL_SIZE), int(position[1]//CELL_SIZE)
+def get_cells(positions):
+    result = []
+    for pos in positions:
+        result.append(get_cell(pos))
+    return result
+
+def get_pos_from_cell(colIdx : int, rowIdx : int):
+    return ((colIdx * CELL_SIZE) + CELL_SIZE//2), ((rowIdx * CELL_SIZE) + CELL_SIZE//2)
+def get_origin_from_cell(colIdx : int, rowIdx : int):
+    return ((colIdx * CELL_SIZE) + CELL_SIZE//2) - CELL_SIZE//2, ((rowIdx * CELL_SIZE) + CELL_SIZE//2) - CELL_SIZE//2
+
+def get_cell_range(center, width, height, extra_range=0):
+    width = (width//CELL_SIZE) + extra_range
+    height = (height//CELL_SIZE) + extra_range
+
+    start_x, start_y = get_cell(center)
+    start_x -= width//2
+    start_y -= height//2
+
+    return start_x, start_y, start_x + width, start_y + height
+
+def get_block(cell):
+    if out_of_range(cell[0], cell[1], X_CELL_COUNT, Y_CELL_COUNT):
+        return False
+    return _crnt_map[cell[1]][cell[0]]
+
+def get_detected_cells(rect : Rect):
+    global _crnt_map
+    result = []
+    cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect)
+    for cell_y in range(cell_start_y, cell_end_y + 1):
+        for cell_x in range(cell_start_x, cell_end_x + 1):
+            if out_of_range(cell_x, cell_y, X_CELL_COUNT, Y_CELL_COUNT):
+                continue
+            cell = _crnt_map[cell_y][cell_x]
+            if is_block(cell):
+                result.append((cell_x, cell_y))
+    
+    return result
+                
+def get_start_end_cells(rect : Rect):
+    cell_start_x, cell_start_y = get_cell(rect.origin)
+    cell_end_x, cell_end_y = get_cell( (rect.origin[0] + rect.width, rect.origin[1] + rect.height) )
+    return cell_start_x, cell_start_y, cell_end_x, cell_end_y
+
+def out_of_range_cell(cell):
+    return ((cell[0] < 0) or (cell[0] >= X_CELL_COUNT) or (cell[1] < 0) or (cell[1] >= Y_CELL_COUNT))
+
+def get_block(col : int, row : int):
+    return _crnt_map[row][col]
+def get_block_cell(cell : tuple):
+    return _crnt_map[cell[1]][cell[0]]
+def set_block(col : int, row : int, block : int):
+    _crnt_map[row][col] = block
+
+
+##### Object #####
+def get_highest_ground_cell(x, y, max_length = float('inf'), is_cell=False):
+    global _crnt_map
+
+    cell_start_col, cell_start_row = int(x), int(y)
+    if not is_cell:
+        cell_start_col, cell_start_row = get_cell((x, y))
+    
+    max_length /= CELL_SIZE
+
+    dir_down = True
+    if out_of_range(cell_start_col, cell_start_row, X_CELL_COUNT, Y_CELL_COUNT):
+        return False
+    elif is_block(_crnt_map[cell_start_row][cell_start_col]):
+        dir_down = False
+
+    if dir_down:
+        for row in range(MIN_HEIGHT, cell_start_row + 1).__reversed__():
+            if not out_of_range(cell_start_col, row, X_CELL_COUNT, Y_CELL_COUNT) and is_block(_crnt_map[row][cell_start_col]):
+                if (cell_start_row - row) > max_length:
+                    break
+                return (cell_start_col, row)
+    else:
+        max_row = SCREEN_HEIGHT//CELL_SIZE
+        for row in range(cell_start_row + 1, max_row):
+            if not out_of_range(cell_start_col, row, X_CELL_COUNT, Y_CELL_COUNT) and not is_block(_crnt_map[row][cell_start_col]):
+                if (row - cell_start_row) > max_length:
+                    break
+                return (cell_start_col, row - 1)
+
+    return False
+
+
+
+
+
+
+
+
+
+
+
+##### FILE I/O #####
+def read_mapfile(index : int):
+    from scene import img_background
+    global _crnt_map, img_map
+
+    _crnt_map = [[0]*X_CELL_COUNT for col in range(Y_CELL_COUNT)]
+
+    if index == -1:
+        img_background.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + MIN_HEIGHT//2)    # Empty background
+        return
+
+    fileName = 'map_' + str(index) + '.txt'
+    file = open('maps/' + fileName, 'r')
+
+    for rowIdx, row in enumerate(_crnt_map):
+        line = file.readline()
+        for colIdx, ch in enumerate(line):
+            if colIdx >= X_CELL_COUNT:
+                break
+            _crnt_map[rowIdx][colIdx] = int(ch)
+
+    file.close()
+
+    img_map = load_image_path('map_' + str(index) + '.png')
+    img_map.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + MIN_HEIGHT//2)
+
+def save_mapfile():
+    global _crnt_map, X_CELL_COUNT, Y_CELL_COUNT
+
+    fileName = 'map_save' + '.txt'
+    file = open('maps/' + fileName, 'w')
+
+    for row in _crnt_map:
+        for col in row:
+            file.write(str(col))
+        file.write('\n')
+    
+    file.close()
