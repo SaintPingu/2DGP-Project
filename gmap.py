@@ -177,11 +177,6 @@ def draw_map(is_draw_full=False):
             if is_end:
                 break
 
-    if len(rect_debug_list) > 0:
-        for rect in rect_debug_list:
-            draw_rectangle(rect.origin[0], rect.origin[1], rect.origin[0] + rect.width, rect.origin[1]+rect.height)
-        rect_debug_list.clear()
-
     rect_inv_list.clear()
 
 
@@ -259,6 +254,12 @@ def add_invalidate(center, width, height):
 
 
 ##### DEBUG #####
+def draw_debugs():
+    if len(rect_debug_list) > 0:
+        for rect in rect_debug_list:
+            draw_rectangle(rect.origin[0], rect.origin[1], rect.origin[0]+rect.width, rect.origin[1]+rect.height)
+        rect_debug_list.clear()
+        
 def draw_debug_cell(cell):
     r = CELL_SIZE//2
     pos = get_pos_from_cell(*cell)
@@ -267,7 +268,7 @@ def draw_debug_cells(cells):
     for cell in cells:
         draw_debug_cell(cell)
 def draw_debug_vector(vector):
-    rect_debug_list.append(Rect(vector, 1, 1))
+    rect_debug_list.append(Rect(vector, 2, 2))
 def draw_debug_vectors(vectors):
     for vector in vectors:
         draw_debug_vector(vector)

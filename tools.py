@@ -87,8 +87,8 @@ class Vector2:
     def dot(self, other):
         return (self.x * other.x) + (self.y * other.y)
     
-    def cross(self, other):
-        return Vector2(-self.y, other.x)
+    def cross(self):
+        return Vector2(-self.y, self.x)
     
     def get_theta(self, other):
         dot = self.dot(other)
@@ -104,11 +104,21 @@ class Vector2:
 
     def rotate(self, theta):
         self = self.get_rotated(theta)
+    
+    # rotate self(unit direction vector) to vec_dest
+    def get_rotated_dest(self, vec_src, vec_dest, t=1): # t=0~1
+        vec_to_target = (vec_dest - vec_src).normalized()
+        a = math.atan2(self.x, self.y)
+        b = math.atan2(vec_to_target.x, vec_to_target.y)
+        theta = a - b
 
-    # does not work
-    # def rotate_origin(self, origin, theta):
-    #     self = self.get_rotated_origin(origin, theta)
+        rotation_degree = math.degrees(theta)
+        if math.fabs(rotation_degree) > 180:
+            rotation_degree -= get_sign(rotation_degree) * 360
+        if math.fabs(rotation_degree) > 45:
+            rotation_degree = get_sign(rotation_degree) * 45
 
+        return self.get_rotated(math.radians(rotation_degree))
     def get_rotated(self, theta):
         result = Vector2()
         result.x = (self.x * math.cos(theta)) - (self.y * math.sin(theta))
@@ -215,6 +225,7 @@ class Rect:
         return result
 
 
+##### TOOLS #####
 def convert_pico2d(x, y):
     return x, SCREEN_HEIGHT - 1 - y
     
@@ -235,7 +246,6 @@ def to_int_pos(position):
 
 def get_sign(num):
     return num / math.fabs(num)
-
 
 
 ##### MAP #####

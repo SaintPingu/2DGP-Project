@@ -24,7 +24,6 @@ class Shell(GameObject):
         self.vector = Vector2.right().get_rotated(theta)
         self.speed, self.damage, self.explosion_radius = get_attributes(shell_name)
         self.temp = None
-        self.center_inv_list : list[Vector2] = []
         self.is_destroyed = False
 
     def draw(self):
@@ -34,22 +33,13 @@ class Shell(GameObject):
             gmap.draw_debug_point(self.temp)
     
     def update(self):
-        if len(self.center_inv_list) > 10 or self.is_destroyed:
-            gmap.set_invalidate_rect(self.center_inv_list.pop(0), self.img_shell.w, self.img_shell.h, square=True)
-            if len(self.center_inv_list) <= 0:
-                delete_shell(self)
-                return
-            elif self.is_destroyed:
-                return
-
-        self.center_inv_list.append(Vector2(*self.center))
-        # map.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
+        gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
         self.offset(*(self.vector * self.speed))
         rect = self.get_squre()
 
         # out of range
         if rect.right < 0 or rect.left > SCREEN_WIDTH or rect.top <= MIN_HEIGHT:
-            self.is_destroyed = True
+            delete_shell(self)
             return
 
         # check collision
@@ -67,8 +57,8 @@ class Shell(GameObject):
         for detected_cell in detected_cells:
             if not out_of_range_cell(detected_cell) and is_block_cell(detected_cell):
                 self.explosion(head)
-                self.is_destroyed = True
                 gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
+                delete_shell(self)
                 return
         # gmap.draw_debug_rect(rect_detection)
 

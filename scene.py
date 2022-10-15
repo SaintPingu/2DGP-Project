@@ -32,8 +32,9 @@ def draw_scene():
     sprite.update_animations()
 
     gmap.draw_map()
-
     draw_objects()
     sprite.draw_animations()
+    gmap.draw_debugs()
+    
     img_main_gui.draw(SCREEN_WIDTH//2, img_main_gui.h//2)
     update_canvas()
