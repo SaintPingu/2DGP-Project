@@ -73,9 +73,9 @@ class Shell(GameObject):
 
     def explosion(self, head : Vector2):
         gmap.draw_block(self.explosion_radius, head, BLOCK_NONE)
-
-        head = self.get_head()
+        check_ground(head, self.explosion_radius)
         sprite.add_animation("Explosion", head, scale=self.explosion_radius/10)
+        
 
     def get_head(self) -> Vector2:
         return self.center + (self.vector.normalized() * self.img_shell.w/CELL_SIZE)

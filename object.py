@@ -183,8 +183,6 @@ class GroundObject(GameObject):
         for idx, cell in enumerate(bot_cells):
             result = get_highest_ground_cell(cell[0], cell[1], max_length, True)
             if result is False:
-                # MODIFY
-                # check other side
                 continue
             
             col, row = result
@@ -207,9 +205,11 @@ class GroundObject(GameObject):
 
         return vec_pivot, idx_pivot
 
-    def rotate_ground(self):
-        vec_pivot, idx_pivot = self.attach_ground()
+    def rotate_ground(self, ignore_height=False):
+        vec_pivot, idx_pivot = self.attach_ground(ignore_height)
         if vec_pivot is False:
+            if self.is_created: # delete : fall
+                delete_object(self)
             return False
         vectors_bot = self.get_vectors_bot()
 
@@ -242,6 +242,8 @@ class GroundObject(GameObject):
                 continue
 
             ground_cell = get_highest_ground_cell(*cell, is_cell=True)
+            if ground_cell is False:
+                continue
                 
             vec_ground = Vector2(*get_pos_from_cell(*ground_cell))
             if vec_ground.y == vec_pivot.y:
@@ -268,11 +270,8 @@ class GroundObject(GameObject):
                 min_theta = 0
             else:
                 min_theta = self.theta
-        elif math.fabs(math.degrees(min_theta)) > 75:
+        elif math.fabs(math.degrees(min_theta)) > 75 and ignore_height == False:
             return False
-
-        # ground와 object의 거리 계산하여 크면 False
-
 
         # rotation and set position to ground
         self.set_theta(min_theta)
@@ -330,12 +329,12 @@ groundObjects : list[GroundObject] = []
 
 def add_object(object : GameObject):
     gameObjects.append(object)
-    if type(object) == GroundObject:
+    if object.__class__.__base__ == GroundObject:
         groundObjects.append(object)
 
 def delete_object(object : GameObject):
     gameObjects.remove(object)
-    if type(object) == GroundObject:
+    if object.__class__.__base__ == GroundObject:
         groundObjects.remove(object)
     del object
 
@@ -350,4 +349,6 @@ def draw_objects():
 def check_ground(position : Vector2, radius):
     for object in groundObjects:
         if object.is_in_radius(position, radius):
-            object.attach_ground()
+            object.rotate_ground(True)
+            object.is_rect_invalid = True
+            object.update()

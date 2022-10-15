@@ -86,6 +86,7 @@ class Tank(GroundObject):
 
     def update(self):
         self.move()
+        self.update_barrel()
 
     def get_collision_vectors(self):
         vec_start = Vector2()
@@ -135,7 +136,7 @@ class Tank(GroundObject):
             target = self.get_barrel_head()
         self.vec_dir_barrel = self.vec_dir_barrel.get_rotated_dest(self.barrel_pivot, target)
 
-        # 180 degree rotation
+        # 190 degree rotation
         if self.vec_dir_barrel.x < 0:
             left_dir = self.get_vec_left().get_rotated(math.radians(10))
             if self.vec_dir_barrel.y <= left_dir.y:
@@ -168,7 +169,6 @@ class Tank(GroundObject):
         # shell.add_shell(crnt_shell)
 
         sprite.add_animation("Shot", head, theta=theta, parent=self)
-
 
 def check_invalidate(position, radius):
     if tank_player1:

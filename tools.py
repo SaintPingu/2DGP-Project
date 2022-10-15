@@ -102,9 +102,6 @@ class Vector2:
     def get_dest(self, vector_dir, speed : float):
         return self + (vector_dir * speed)
 
-    def rotate(self, theta):
-        self = self.get_rotated(theta)
-    
     # rotate self(unit direction vector) to vec_dest
     def get_rotated_dest(self, vec_src, vec_dest, t=1): # t=0~1
         vec_to_target = (vec_dest - vec_src).normalized()
@@ -112,13 +109,7 @@ class Vector2:
         b = math.atan2(vec_to_target.x, vec_to_target.y)
         theta = a - b
 
-        rotation_degree = math.degrees(theta)
-        if math.fabs(rotation_degree) > 180:
-            rotation_degree -= get_sign(rotation_degree) * 360
-        if math.fabs(rotation_degree) > 45:
-            rotation_degree = get_sign(rotation_degree) * 45
-
-        return self.get_rotated(math.radians(rotation_degree))
+        return self.get_rotated(theta * t)
     def get_rotated(self, theta):
         result = Vector2()
         result.x = (self.x * math.cos(theta)) - (self.y * math.sin(theta))
@@ -329,7 +320,7 @@ def get_highest_ground_cell(x, y, max_length = float('inf'), is_cell=False):
         dir_down = False
 
     if dir_down:
-        for row in range(MIN_HEIGHT, cell_start_row + 1).__reversed__():
+        for row in range(MIN_HEIGHT//CELL_SIZE, cell_start_row + 1).__reversed__():
             if not out_of_range(cell_start_col, row, X_CELL_COUNT, Y_CELL_COUNT) and is_block(_crnt_map[row][cell_start_col]):
                 if (cell_start_row - row) > max_length:
                     break
