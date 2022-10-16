@@ -191,6 +191,13 @@ class Rect:
         result.update()
         return result
 
+# Invalidation Rectangle
+class InvRect(Rect):
+    def __init__(self, center=(0,0), width=0, height=0, is_filled=False, is_empty=False):
+        super().__init__(center, width, height)
+        self.is_filled = is_filled
+        self.is_empty = is_empty
+
 
 ##### TOOLS #####
 def convert_pico2d(x, y):

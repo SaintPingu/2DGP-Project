@@ -17,8 +17,8 @@ is_create_block = False
 is_delete_block = False
 is_print_mouse_pos = False
 
-rect_inv_list : list[Rect] = []
-rect_debug_list : list[Rect] = []
+_rect_inv_list : list[InvRect] = []
+_rect_debug_list : list[InvRect] = []
 
 tank_obj : tank = None
 wind : env.Wind = None
@@ -117,7 +117,7 @@ def draw_ground(rect : Rect):
 def draw_background(rect : Rect):
     scene.img_background.clip_draw(int(rect.origin[0]), int(rect.origin[1]), int(rect.width), int(rect.height), *rect.get_fCenter())
 
-def get_blocK_set(rect_inv : Rect):
+def get_block_set(rect_inv : Rect):
     cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect_inv)
     sliced_map = get_sliced_map(cell_start_x, cell_start_y, cell_end_x, cell_end_y)
 
@@ -127,33 +127,31 @@ def get_blocK_set(rect_inv : Rect):
     return block_set
 
 def draw_map(is_draw_full=False):
-    global rect_inv_list
+    global _rect_inv_list
 
     if is_draw_full:
-        rect_inv_list.clear()
-        rect_inv_list.append(Rect((SCREEN_WIDTH//2, SCREEN_HEIGHT//2), SCREEN_WIDTH, SCREEN_HEIGHT))
-    elif len(rect_inv_list) == 0:
+        _rect_inv_list.clear()
+        _rect_inv_list.append(InvRect((SCREEN_WIDTH//2, SCREEN_HEIGHT//2), SCREEN_WIDTH, SCREEN_HEIGHT))
+    elif len(_rect_inv_list) == 0:
         return
 
     # draw background
-    for rect_inv in list(rect_inv_list):
-        block_set = get_blocK_set(rect_inv)
+    for rect_inv in list(_rect_inv_list):
+        if is_debug_mode():
+            draw_debug_rect(rect_inv)
 
-        # filled of blocks
-        if False not in block_set:
+        if rect_inv.is_filled:
             draw_ground(rect_inv)
-            rect_inv_list.remove(rect_inv)
+            _rect_inv_list.remove(rect_inv)
             continue
         # empty
-        elif True not in block_set:
-            rect_inv_list.remove(rect_inv)
+        elif rect_inv.is_empty:
+            _rect_inv_list.remove(rect_inv)
 
         draw_background(rect_inv)
-        if is_debug_mode():
-            draw_rectangle(rect_inv.origin[0], rect_inv.origin[1], rect_inv.origin[0] + int(rect_inv.width), rect_inv.origin[1] + int(rect_inv.height))
 
     # draw grounds
-    for rect_inv in rect_inv_list:
+    for rect_inv in _rect_inv_list:
         cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect_inv)
 
         for cell_y in range(cell_start_y, cell_end_y + 1):
@@ -169,7 +167,7 @@ def draw_map(is_draw_full=False):
                 img_ground.clip_draw(originX, originY, CELL_SIZE, CELL_SIZE, posX, posY)
 
 
-    rect_inv_list.clear()
+    _rect_inv_list.clear()
 
 
 
@@ -204,8 +202,15 @@ def draw_block(radius, position, is_block):
 
 
 ##### Invalidate #####
+# merge rectangles
+def merge_rects(rect_left : InvRect, rect_right : InvRect):
+    width = rect_right.right - rect_left.left
+    height = rect_right.top - rect_left.bottom
+    center = (rect_left.left + width//2, rect_left.bottom + height//2)
+    return InvRect(center, width, height, rect_left.is_filled, rect_left.is_empty)
+
 def set_invalidate_rect(center, width=0, height=0, scale=1, square=False):
-    CORR_VAL = 2
+    CORR_VAL = 3
 
     width *= scale
     height *= scale
@@ -221,9 +226,10 @@ def set_invalidate_rect(center, width=0, height=0, scale=1, square=False):
     add_invalidate(center, width, height)
 
 def add_invalidate(center, width, height):
-    global rect_inv_list
+    global _rect_inv_list
 
     rect_inv = Rect.get_rect_int(Rect(center, width, height))
+    rect_inv = InvRect(*rect_inv.__getitem__())
 
     if rect_inv.left < 0:
         rect_inv.set_origin((0, rect_inv.bottom), rect_inv.right, rect_inv.height)
@@ -235,17 +241,22 @@ def add_invalidate(center, width, height):
     elif rect_inv.top > SCREEN_HEIGHT:
         rect_inv.set_origin((rect_inv.left, rect_inv.bottom), rect_inv.width, SCREEN_HEIGHT - rect_inv.bottom)
 
-    MIN_DIVIDE_SIZE = CELL_SIZE * 8
+    MIN_DIVIDE_SIZE = CELL_SIZE * 6
     if rect_inv.width <= MIN_DIVIDE_SIZE and rect_inv.height <= MIN_DIVIDE_SIZE:
-        rect_inv_list.append(rect_inv)
+        _rect_inv_list.append(rect_inv)
         return
     if is_debug_mode():
         draw_debug_rect(rect_inv)
 
-    # Sqaure
+
+    # Divide rectangles by grid
     max_row = rect_inv.height//MIN_DIVIDE_SIZE
     max_col = rect_inv.width//MIN_DIVIDE_SIZE
     for row in range(0, max_row + 1):
+        check_empty_count = 0
+        check_filled_count = 0
+        rect_before : InvRect = None
+
         for col in range(0, max_col + 1):
             x = rect_inv.origin[0] + (col*MIN_DIVIDE_SIZE) + MIN_DIVIDE_SIZE//2
             y = rect_inv.origin[1] + (row*MIN_DIVIDE_SIZE) + MIN_DIVIDE_SIZE//2
@@ -261,31 +272,41 @@ def add_invalidate(center, width, height):
                 x = rect_inv.right - width//2
 
             center = (x, y)
-            rect = Rect(center, width, height)
-            rect_inv_list.append(rect)
-            if is_debug_mode():
-                draw_debug_rect(rect)
+            rect = InvRect(center, width, height)
 
-    # remaining area #
-    # top
-    # if rect_inv.width % MIN_DIVIDE_SIZE != 0:
-    #     remain_height = (rect_inv.height - (rect_inv.height//MIN_DIVIDE_SIZE) * MIN_DIVIDE_SIZE)
-    #     x = rect_inv.center[0]
-    #     y = rect_inv.top - remain_height//2
-    #     rect = Rect((x,y), rect_inv.width, remain_height)
-    #     rect_inv_list.append(rect)
-    #     if is_debug_mode():
-    #         draw_debug_rect(rect)
-    # # right
-    # if rect_inv.height % MIN_DIVIDE_SIZE != 0:
-    #     remain_height = rect_inv.height - (rect_inv.height - (rect_inv.height//MIN_DIVIDE_SIZE) * MIN_DIVIDE_SIZE)
-    #     y = rect_inv.origin[1] + remain_height//2
-    #     remain_width = (rect_inv.width - (rect_inv.width//MIN_DIVIDE_SIZE) * MIN_DIVIDE_SIZE)
-    #     x = rect_inv.right - remain_width//2
-    #     rect = Rect((x,y), remain_width, remain_height)
-    #     rect_inv_list.append(rect)
-    #     if is_debug_mode():
-    #         draw_debug_rect(rect)
+            # merge rect in row
+            block_set = get_block_set(rect)
+            # filled
+            if False not in block_set:
+                if check_empty_count > 0:
+                    _rect_inv_list.append(rect_before)
+                check_empty_count = 0
+
+                if check_filled_count > 0:
+                    rect = merge_rects(rect_before, rect)
+                check_filled_count += 1
+                rect.is_filled = True
+            # empty
+            elif True not in block_set:
+                if check_filled_count > 0:
+                    _rect_inv_list.append(rect_before)
+
+                check_filled_count = 0
+                if check_empty_count > 0:
+                    rect = merge_rects(rect_before, rect)
+                check_empty_count += 1
+                rect.is_empty = True
+            else:
+                _rect_inv_list.append(rect)
+                if check_filled_count > 0 or check_empty_count > 0:
+                    _rect_inv_list.append(rect_before)
+                check_empty_count = 0
+                check_filled_count = 0
+
+            rect_before = rect
+
+        if check_filled_count > 0 or check_empty_count > 0:
+            _rect_inv_list.append(rect_before)
 
 
 
@@ -297,25 +318,25 @@ def add_invalidate(center, width, height):
 
 ##### DEBUG #####
 def draw_debugs():
-    if len(rect_debug_list) > 0:
-        for rect in rect_debug_list:
+    if len(_rect_debug_list) > 0:
+        for rect in _rect_debug_list:
             draw_rectangle(rect.origin[0], rect.origin[1], rect.origin[0]+rect.width, rect.origin[1]+rect.height)
-        rect_debug_list.clear()
+        _rect_debug_list.clear()
         
 def draw_debug_cell(cell):
     r = CELL_SIZE//2
     pos = get_pos_from_cell(*cell)
-    rect_debug_list.append(Rect(pos, r, r))
+    _rect_debug_list.append(Rect(pos, r, r))
 def draw_debug_cells(cells):
     for cell in cells:
         draw_debug_cell(cell)
 def draw_debug_vector(vector):
-    rect_debug_list.append(Rect(vector, 1, 1))
+    _rect_debug_list.append(Rect(vector, 1, 1))
 def draw_debug_vectors(vectors):
     for vector in vectors:
         draw_debug_vector(vector)
 def draw_debug_point(point):
-    rect_debug_list.append(Rect(point, 2, 2))
+    _rect_debug_list.append(Rect(point, 2, 2))
 def draw_debug_rect(rect : Rect):
-    rect_debug_list.append(rect)
+    _rect_debug_list.append(rect)
     

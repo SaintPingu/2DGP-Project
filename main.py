@@ -1,5 +1,4 @@
 import os
-import time
 from tools import *
 import scene
 import gmap
@@ -11,24 +10,18 @@ open_canvas(SCREEN_WIDTH, SCREEN_HEIGHT, sync=True)
 scene.init()
 
 running = True
-current_time = time.time() + 1
 while running:
-    frame_time = time.time() - current_time
-    frame_rate = 1.0 / frame_time
-    current_time += frame_time
-    if frame_rate < 60:
-        print("Frame Time: %f sec, Frame Rate: %f fps" %(frame_time,frame_rate))
 
     scene.draw_scene()
 
-    events = get_events()
+    event_list = get_events()
     event : Event
 
     if gmap.is_draw_mode == True:
-        gmap.modify_map(events)
+        gmap.modify_map(event_list)
         continue
 
-    for event in events:
+    for event in event_list:
         if event.type == SDL_QUIT:
             running = False
         elif event.type == SDL_KEYDOWN:
