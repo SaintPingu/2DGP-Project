@@ -6,12 +6,6 @@ class GameObject:
         self.width : float = width
         self.height : float = height
 
-        self.bot_left = Vector2()
-        self.bot_right = Vector2()
-        self.top_left = Vector2()
-        self.top_right = Vector2()
-        self.bot_center = Vector2()
-
         self.theta : float = theta
         self.is_rect_invalid : bool = True
         self.is_created : bool = False
@@ -19,24 +13,11 @@ class GameObject:
         self.dir : int = 0
         self.speed : float = 1
 
-        self.update_object()
-
         detect_square = self.get_squre()
         self.detect_radius = (Vector2(*detect_square.center) - Vector2(detect_square.left, detect_square.top)).get_norm()
 
+    # update based on center, width, height, theta
     def update_object(self):
-        self.bot_left.x = self.top_left.x = self.center.x - self.width//2
-        self.bot_left.y = self.bot_right.y = self.center.y - self.height//2
-        self.bot_right.x = self.top_right.x =  self.center.x + self.width//2
-        self.top_left.y = self.top_right.y = self.center.y + self.height//2
-        
-        self.bot_left = self.bot_left.get_rotated_origin(self.center, self.theta)
-        self.bot_right = self.bot_right.get_rotated_origin(self.center, self.theta)
-        self.top_left = self.top_left.get_rotated_origin(self.center, self.theta)
-        self.top_right = self.top_right.get_rotated_origin(self.center, self.theta)
-
-        vec_left_to_center = (self.bot_right - self.bot_left).normalized() * (self.width // 2)
-        self.bot_center = self.bot_left + vec_left_to_center
         self.is_rect_invalid = True
 
     def rotate(self, theta):
@@ -64,11 +45,11 @@ class GameObject:
         self.center = Vector2(*center)
         self.update_object()
 
-    def draw_image(self, image : Image, apply_invalid = True):
-        if apply_invalid and self.is_rect_invalid == False:
+    def draw_image(self, image : Image, scale = 1):
+        if self.is_rect_invalid == False:
             return
         self.is_rect_invalid = False
-        image.rotate_draw(self.theta, *self.center)
+        image.rotate_draw(self.theta, *self.center, image.w*scale, image.h*scale)
 
     def get_rect(self):
         return Rect(self.center, self.width, self.height)
@@ -81,11 +62,6 @@ class GameObject:
         else:
             height = width
         return Rect(self.center, width, height)
-
-    def get_vec_left(self):
-        return (self.bot_left - self.bot_right).normalized()
-    def get_vec_right(self):
-        return (self.bot_right - self.bot_left).normalized()
     
     def out_of_bound(self, left= -9999, top= -9999, right= -9999, bottom= -9999):
         rect = self.get_rect()
@@ -113,6 +89,13 @@ class GameObject:
         if distance < self.detect_radius + radius:
             return True
 
+    def resize(self, scale : float):
+        self.width *= scale
+        self.height *= scale
+        rect = self.get_rect()
+        self.center = Vector2(rect.origin[0] + self.width//2, rect.origin[1] + self.height//2)
+        self.update_object()
+
     def draw(self):
         pass
     
@@ -127,6 +110,36 @@ _gameObjects : list[GameObject] = []
 
 
 class GroundObject(GameObject):
+    def __init__(self, center=(0, 0), width=0, height=0, theta=0):
+        super().__init__(center, width, height, theta)
+        self.bot_left = Vector2()
+        self.bot_right = Vector2()
+        self.top_left = Vector2()
+        self.top_right = Vector2()
+        self.bot_center = Vector2()
+
+        self.update_object()
+
+    def update_object(self):
+        self.bot_left.x = self.top_left.x = self.center.x - self.width//2
+        self.bot_left.y = self.bot_right.y = self.center.y - self.height//2
+        self.bot_right.x = self.top_right.x = self.center.x + self.width//2
+        self.top_left.y = self.top_right.y = self.center.y + self.height//2
+        
+        self.bot_left = self.bot_left.get_rotated_origin(self.center, self.theta)
+        self.bot_right = self.bot_right.get_rotated_origin(self.center, self.theta)
+        self.top_left = self.top_left.get_rotated_origin(self.center, self.theta)
+        self.top_right = self.top_right.get_rotated_origin(self.center, self.theta)
+
+        vec_left_to_center = (self.bot_right - self.bot_left).normalized() * (self.width // 2)
+        self.bot_center = self.bot_left + vec_left_to_center
+        super().update_object()
+    
+    def get_vec_left(self):
+        return (self.bot_left - self.bot_right).normalized()
+    def get_vec_right(self):
+        return (self.bot_right - self.bot_left).normalized()
+
     def get_vectors_bot(self):
         t = 0
         inc_t = 1 / (self.width * CELL_SIZE)
@@ -346,7 +359,7 @@ def update_objects():
         object.update()
                 
 def draw_objects():
-    for object in _gameObjects:
+    for object in reversed(_gameObjects):
         object.draw()
 
 def check_ground(position : Vector2, radius):

@@ -197,6 +197,7 @@ class InvRect(Rect):
         super().__init__(center, width, height)
         self.is_filled = is_filled
         self.is_empty = is_empty
+        self.is_grid = True
 
 
 ##### TOOLS #####
@@ -343,7 +344,7 @@ def get_highest_ground_cell(x, y, max_length = float('inf'), is_cell=False):
 
 ##### FILE I/O #####
 def read_mapfile(index : int):
-    from scene import img_background
+    from gmap import img_background
     global _crnt_map, img_map
 
     _crnt_map = [[False]*X_CELL_COUNT for col in range(Y_CELL_COUNT)]

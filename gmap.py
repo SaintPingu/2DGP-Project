@@ -7,15 +7,15 @@ import scene
 import tank
 import environment as env
 
-img_map : Image
-img_ground : Image
+img_background : Image
+_img_ground : Image
 
 DEFAULT_DRAW_RADIUS = 3
-radius_draw = DEFAULT_DRAW_RADIUS
+_radius_draw = DEFAULT_DRAW_RADIUS
 is_draw_mode = False
-is_create_block = False
-is_delete_block = False
-is_print_mouse_pos = False
+_is_create_block = False
+_is_delete_block = False
+_is_print_mouse_pos = False
 
 _rect_inv_list : list[InvRect] = []
 _rect_debug_list : list[InvRect] = []
@@ -25,16 +25,17 @@ wind : env.Wind = None
 
 
 def init():
-    global wind, img_ground
-    img_ground = load_image_path('ground.png')
+    global wind, img_background, _img_ground
+    img_background = load_image_path('background.png')
+    _img_ground = load_image_path('ground.png')
     wind = env.Wind()
     wind.randomize()
 
 ##### DRAW ######
 def modify_map(events : list):
     global is_draw_mode
-    global is_create_block, is_delete_block, is_print_mouse_pos
-    global radius_draw
+    global _is_create_block, _is_delete_block, _is_print_mouse_pos
+    global _radius_draw
     global tank_obj, wind
 
     if is_draw_mode == False:
@@ -46,11 +47,11 @@ def modify_map(events : list):
             if event.key == None:
                 continue
             elif SDLK_1 <= event.key <= SDLK_9:
-                radius_draw = event.key - SDLK_0
+                _radius_draw = event.key - SDLK_0
             elif event.key == SDLK_KP_MULTIPLY:
-                radius_draw *= 2
+                _radius_draw *= 2
             elif event.key == SDLK_KP_DIVIDE:
-                radius_draw //= 2
+                _radius_draw //= 2
             elif event.key == SDLK_F1:
                 stop_draw_mode()
                 return
@@ -72,19 +73,19 @@ def modify_map(events : list):
                     delete_object(tank_obj)
                     tank_obj = None
             elif event.key == SDLK_F10:
-                is_print_mouse_pos = not is_print_mouse_pos
+                _is_print_mouse_pos = not _is_print_mouse_pos
             continue
         elif event.type == SDL_MOUSEBUTTONDOWN:
             if event.button == SDL_BUTTON_LEFT:
                 if tank_obj:
                     tank_obj.create()
                     return
-                is_create_block = True
+                _is_create_block = True
             elif event.button == SDL_BUTTON_RIGHT:
-                is_delete_block = True
+                _is_delete_block = True
         elif event.type == SDL_MOUSEBUTTONUP:
-            is_create_block = False
-            is_delete_block = False
+            _is_create_block = False
+            _is_delete_block = False
             continue
 
         mouse_pos = (-1, -1)
@@ -95,12 +96,12 @@ def modify_map(events : list):
             continue
         if tank_obj and not tank_obj.is_created:
             tank_obj.set_pos(mouse_pos)
-        elif is_create_block:
-            create_block(radius_draw, mouse_pos)
-        elif is_delete_block:
-            delete_block(radius_draw, mouse_pos)
+        elif _is_create_block:
+            create_block(_radius_draw, mouse_pos)
+        elif _is_delete_block:
+            delete_block(_radius_draw, mouse_pos)
         
-        if is_print_mouse_pos:
+        if _is_print_mouse_pos:
             print(mouse_pos)
     
 def start_draw_mode():
@@ -108,14 +109,14 @@ def start_draw_mode():
     is_draw_mode = True
 
 def stop_draw_mode():
-    global is_draw_mode, radius_draw
-    radius_draw = DEFAULT_DRAW_RADIUS
+    global is_draw_mode, _radius_draw
+    _radius_draw = DEFAULT_DRAW_RADIUS
     is_draw_mode = False
 
 def draw_ground(rect : Rect):
-    img_ground.clip_draw(int(rect.origin[0]), int(rect.origin[1]), int(rect.width), int(rect.height), *rect.get_fCenter())
+    _img_ground.clip_draw(int(rect.origin[0]), int(rect.origin[1]), int(rect.width), int(rect.height), *rect.get_fCenter())
 def draw_background(rect : Rect):
-    scene.img_background.clip_draw(int(rect.origin[0]), int(rect.origin[1]), int(rect.width), int(rect.height), *rect.get_fCenter())
+    img_background.clip_draw(int(rect.origin[0]), int(rect.origin[1]), int(rect.width), int(rect.height), *rect.get_fCenter())
 
 def get_block_set(rect_inv : Rect):
     cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect_inv)
@@ -139,6 +140,13 @@ def draw_map(is_draw_full=False):
     for rect_inv in list(_rect_inv_list):
         if is_debug_mode():
             draw_debug_rect(rect_inv)
+
+        if rect_inv.is_grid == False:
+            block_set = get_block_set(rect_inv)
+            if False not in block_set:
+                rect_inv.is_filled = True
+            elif True not in block_set:
+                rect_inv.is_empty = True
 
         if rect_inv.is_filled:
             draw_ground(rect_inv)
@@ -164,7 +172,7 @@ def draw_map(is_draw_full=False):
                 posX, posY = get_pos_from_cell(cell_x, cell_y)
                 originX, originY = get_origin_from_cell(cell_x, cell_y)
 
-                img_ground.clip_draw(originX, originY, CELL_SIZE, CELL_SIZE, posX, posY)
+                _img_ground.clip_draw(originX, originY, CELL_SIZE, CELL_SIZE, posX, posY)
 
 
     _rect_inv_list.clear()
@@ -202,6 +210,16 @@ def draw_block(radius, position, is_block):
 
 
 ##### Invalidate #####
+def resize_rect_inv(rect : Rect):
+    if rect.left < 0:
+        rect.set_origin((0, rect.bottom), rect.right, rect.height)
+    elif rect.right > SCREEN_WIDTH:
+        rect.set_origin((rect.left, rect.bottom), SCREEN_WIDTH - rect.left, rect.height)
+
+    if rect.bottom <= scene.MIN_HEIGHT:
+        rect.set_origin((rect.left, scene.MIN_HEIGHT), rect.width, rect.top - scene.MIN_HEIGHT + 1)
+    elif rect.top > SCREEN_HEIGHT:
+        rect.set_origin((rect.left, rect.bottom), rect.width, SCREEN_HEIGHT - rect.bottom)
 # merge rectangles
 def merge_rects(rect_left : InvRect, rect_right : InvRect):
     width = rect_right.right - rect_left.left
@@ -209,7 +227,8 @@ def merge_rects(rect_left : InvRect, rect_right : InvRect):
     center = (rect_left.left + width//2, rect_left.bottom + height//2)
     return InvRect(center, width, height, rect_left.is_filled, rect_left.is_empty)
 
-def set_invalidate_rect(center, width=0, height=0, scale=1, square=False):
+_MIN_DIVIDE_GRID_SIZE = CELL_SIZE * 6
+def set_invalidate_rect(center, width=0, height=0, scale=1, square=False, grid_size=_MIN_DIVIDE_GRID_SIZE):
     CORR_VAL = 3
 
     width *= scale
@@ -223,90 +242,126 @@ def set_invalidate_rect(center, width=0, height=0, scale=1, square=False):
         else:
             width = height
     
-    add_invalidate(center, width, height)
+    add_invalidate(center, width, height, grid_size)
 
-def add_invalidate(center, width, height):
+def add_invalidate(center, width, height, grid_size=_MIN_DIVIDE_GRID_SIZE):
     global _rect_inv_list
 
     rect_inv = Rect.get_rect_int(Rect(center, width, height))
     rect_inv = InvRect(*rect_inv.__getitem__())
 
-    if rect_inv.left < 0:
-        rect_inv.set_origin((0, rect_inv.bottom), rect_inv.right, rect_inv.height)
-    elif rect_inv.right > SCREEN_WIDTH:
-        rect_inv.set_origin((rect_inv.left, rect_inv.bottom), SCREEN_WIDTH - rect_inv.left, rect_inv.height)
+    resize_rect_inv(rect_inv)
 
-    if rect_inv.bottom <= scene.MIN_HEIGHT:
-        rect_inv.set_origin((rect_inv.left, scene.MIN_HEIGHT), rect_inv.width, rect_inv.top - scene.MIN_HEIGHT + 1)
-    elif rect_inv.top > SCREEN_HEIGHT:
-        rect_inv.set_origin((rect_inv.left, rect_inv.bottom), rect_inv.width, SCREEN_HEIGHT - rect_inv.bottom)
-
-    MIN_DIVIDE_SIZE = CELL_SIZE * 6
-    if rect_inv.width <= MIN_DIVIDE_SIZE and rect_inv.height <= MIN_DIVIDE_SIZE:
+    if grid_size == 0 or (rect_inv.width <= grid_size and rect_inv.height <= grid_size):
+        rect_inv.is_grid = False
         _rect_inv_list.append(rect_inv)
         return
-    if is_debug_mode():
-        draw_debug_rect(rect_inv)
-
 
     # Divide rectangles by grid
-    max_row = rect_inv.height//MIN_DIVIDE_SIZE
-    max_col = rect_inv.width//MIN_DIVIDE_SIZE
+    max_row = rect_inv.height//grid_size
+    max_col = rect_inv.width//grid_size
+
+    is_before_line_filled = False
+    is_before_line_empty = False
+    line_before : InvRect = None
+
     for row in range(0, max_row + 1):
-        check_empty_count = 0
-        check_filled_count = 0
+        empty_count = 0
+        filled_count = 0
         rect_before : InvRect = None
 
         for col in range(0, max_col + 1):
-            x = rect_inv.origin[0] + (col*MIN_DIVIDE_SIZE) + MIN_DIVIDE_SIZE//2
-            y = rect_inv.origin[1] + (row*MIN_DIVIDE_SIZE) + MIN_DIVIDE_SIZE//2
-            width, height = MIN_DIVIDE_SIZE, MIN_DIVIDE_SIZE
+            x = rect_inv.origin[0] + (col*grid_size) + grid_size//2
+            y = rect_inv.origin[1] + (row*grid_size) + grid_size//2
+            width, height = grid_size, grid_size
 
             # remaining top area
             if row == max_row:
-                height = int(rect_inv.height%MIN_DIVIDE_SIZE)
+                height = int(rect_inv.height%grid_size)
                 y = rect_inv.top - height//2
             # remaining right area
             if col == max_col:
-                width = int(rect_inv.width%MIN_DIVIDE_SIZE)
+                width = int(rect_inv.width%grid_size)
                 x = rect_inv.right - width//2
 
             center = (x, y)
             rect = InvRect(center, width, height)
 
-            # merge rect in row
+            # merge rect in row #
             block_set = get_block_set(rect)
             # filled
             if False not in block_set:
-                if check_empty_count > 0:
+                if empty_count > 0:
                     _rect_inv_list.append(rect_before)
-                check_empty_count = 0
+                empty_count = 0
 
-                if check_filled_count > 0:
+                if filled_count > 0:
                     rect = merge_rects(rect_before, rect)
-                check_filled_count += 1
+                filled_count += 1
                 rect.is_filled = True
             # empty
             elif True not in block_set:
-                if check_filled_count > 0:
+                if filled_count > 0:
                     _rect_inv_list.append(rect_before)
 
-                check_filled_count = 0
-                if check_empty_count > 0:
+                filled_count = 0
+                if empty_count > 0:
                     rect = merge_rects(rect_before, rect)
-                check_empty_count += 1
+                empty_count += 1
                 rect.is_empty = True
             else:
                 _rect_inv_list.append(rect)
-                if check_filled_count > 0 or check_empty_count > 0:
+                if filled_count > 0 or empty_count > 0:
                     _rect_inv_list.append(rect_before)
-                check_empty_count = 0
-                check_filled_count = 0
+                empty_count = 0
+                filled_count = 0
 
             rect_before = rect
 
-        if check_filled_count > 0 or check_empty_count > 0:
-            _rect_inv_list.append(rect_before)
+        # if filled_count > 0 or empty_count > 0:
+        #     _rect_inv_list.append(rect_before)
+        
+        # merge rect by row #
+        if filled_count > 0 or empty_count > 0:
+            # row is filled
+            if filled_count >= max_col:
+                if is_before_line_empty:
+                    _rect_inv_list.append(line_before)
+                    line_before = None
+                if line_before is None:
+                    line_before = rect
+                else:
+                    line_before = merge_rects(line_before, rect)
+                is_before_line_filled = True
+                is_before_line_empty = False
+
+            # row is empty
+            elif empty_count > max_col:
+                if is_before_line_filled:
+                    _rect_inv_list.append(line_before)
+                    line_before = None
+                if line_before is None:
+                    line_before = rect
+                else:
+                    line_before = merge_rects(line_before, rect)
+                is_before_line_filled = False
+                is_before_line_empty = True
+
+            else:
+                if line_before is not None:
+                    _rect_inv_list.append(line_before)
+                    line_before = None
+                _rect_inv_list.append(rect_before)
+                is_before_line_empty = False
+                is_before_line_filled = False
+        else:
+            if line_before is not None:
+                _rect_inv_list.append(line_before)
+                line_before = None
+            is_before_line_empty = False
+            is_before_line_filled = False
+    if line_before is not None:
+        _rect_inv_list.append(line_before)
 
 
 

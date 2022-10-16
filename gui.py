@@ -13,12 +13,11 @@ class GUI:
 
     def draw(self):
         if self.is_draw:
-            if self.is_transparent:
-                gmap.draw_background(Rect(self.position, self.image.w, self.image.h))
             self.image.composite_draw(self.theta, self.flip, *self.position)
 
     def update(self):
-        pass
+        if self.is_transparent:
+            gmap.set_invalidate_rect(self.position, self.image.w, self.image.h, grid_size=0)
 
 
 _list_gui : list[GUI] = []

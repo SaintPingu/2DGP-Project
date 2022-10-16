@@ -34,7 +34,7 @@ class Shell(GameObject):
             gmap.draw_debug_point(self.temp)
     
     def update(self):
-        gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
+        gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True, grid_size=0)
 
         dest = (self.center + self.vector * self.speed) + self.wind.get_wind()
         self.vector = self.vector.get_rotated_dest(self.center, dest)
@@ -46,15 +46,6 @@ class Shell(GameObject):
         if rect.right < 0 or rect.left > SCREEN_WIDTH or rect.top <= MIN_HEIGHT:
             delete_shell(self)
             return
-
-        # check collision
-        for object in get_gameObjects():
-            if type(object) is Shell:
-                continue
-
-            distance = (self.center - object.center).get_norm()
-            if distance < self.detect_radius + object.detect_radius:
-                object.invalidate()
 
         head = self.get_head()
         rect_detection = Rect(head, 4, 4)

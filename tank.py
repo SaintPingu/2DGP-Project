@@ -73,10 +73,11 @@ class Tank(GroundObject):
     def draw(self):
         if self.is_rect_invalid == False:
             return
+        self.is_rect_invalid = True
 
         theta = self.get_barrel_theta()
         self.img_barrel.rotate_draw(theta, *self.barrel_position)
-        self.draw_image(self.img_tank)
+        self.img_tank.rotate_draw(self.theta, *self.center)
 
     def create(self):
         global tank_player1
@@ -155,19 +156,19 @@ class Tank(GroundObject):
     def fire(self):
         head = self.get_barrel_head()
         theta = self.get_barrel_theta()
-        crnt_shell = shell.Shell("HP", self.barrel_pivot, theta)
+        #crnt_shell = shell.Shell("HP", self.barrel_pivot, theta)
         #crnt_shell = shell.Shell("AP", self.barrel_position, theta)
+        #shell.add_shell(crnt_shell)
+        crnt_shell = shell.Shell("MUL", self.barrel_position, theta)
         shell.add_shell(crnt_shell)
-        # crnt_shell = shell.Shell("MUL", self.barrel_position, theta)
-        # shell.add_shell(crnt_shell)
-        # crnt_shell = shell.Shell("MUL", self.barrel_position, theta - 0.02)
-        # shell.add_shell(crnt_shell)
-        # crnt_shell = shell.Shell("MUL", self.barrel_position, theta + 0.02)
-        # shell.add_shell(crnt_shell)
-        # crnt_shell = shell.Shell("MUL", self.barrel_position, theta - 0.04)
-        # shell.add_shell(crnt_shell)
-        # crnt_shell = shell.Shell("MUL", self.barrel_position, theta + 0.04)
-        # shell.add_shell(crnt_shell)
+        crnt_shell = shell.Shell("MUL", self.barrel_position, theta - 0.03)
+        shell.add_shell(crnt_shell)
+        crnt_shell = shell.Shell("MUL", self.barrel_position, theta + 0.03)
+        shell.add_shell(crnt_shell)
+        crnt_shell = shell.Shell("MUL", self.barrel_position, theta - 0.06)
+        shell.add_shell(crnt_shell)
+        crnt_shell = shell.Shell("MUL", self.barrel_position, theta + 0.06)
+        shell.add_shell(crnt_shell)
 
         sprite.add_animation("Shot", head, theta=theta, parent=self)
 
