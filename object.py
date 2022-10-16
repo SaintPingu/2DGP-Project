@@ -122,7 +122,7 @@ class GameObject:
     def invalidate(self):
         pass
 
-gameObjects : list[GameObject] = []
+_gameObjects : list[GameObject] = []
 
 
 
@@ -320,34 +320,37 @@ class GroundObject(GameObject):
         vectors_bot = self.get_vectors_bot()
         for vector in vectors_bot:
             cell = get_cell(vector)
-            if is_block_cell(cell):
+            if get_block_cell(cell):
                 return False
             
         return True
 
-groundObjects : list[GroundObject] = []
+_groundObjects : list[GroundObject] = []
 
 def add_object(object : GameObject):
-    gameObjects.append(object)
+    _gameObjects.append(object)
     if object.__class__.__base__ == GroundObject:
-        groundObjects.append(object)
+        _groundObjects.append(object)
 
 def delete_object(object : GameObject):
-    gameObjects.remove(object)
+    _gameObjects.remove(object)
     if object.__class__.__base__ == GroundObject:
-        groundObjects.remove(object)
+        _groundObjects.remove(object)
     del object
 
+def get_gameObjects():
+    return _gameObjects
+
 def update_objects():
-    for object in gameObjects:
+    for object in _gameObjects:
         object.update()
                 
 def draw_objects():
-    for object in gameObjects:
+    for object in _gameObjects:
         object.draw()
 
 def check_ground(position : Vector2, radius):
-    for object in groundObjects:
+    for object in _groundObjects:
         if object.is_in_radius(position, radius):
             object.rotate_ground(True)
             object.is_rect_invalid = True

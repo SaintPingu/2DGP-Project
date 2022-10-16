@@ -1,9 +1,36 @@
 from tools import *
+import gmap
 
 class GUI:
-    def __init__(self, image : Image, position):
+    def __init__(self, image : Image, position=(0,0), theta=0, is_draw=True, flip=''):
         self.image = image
         self.position = position
+        self.theta = 0
+        self.is_draw = is_draw
+        self.is_composite = is_draw
+        self.flip = flip
 
     def draw(self):
-        self.image.draw(*self.position)
+        if self.is_draw:
+            self.image.composite_draw(self.theta, self.flip, *self.position)
+
+    def update(self):
+        pass
+
+
+_list_gui : list[GUI] = []
+
+def add_gui(gui : GUI):
+    _list_gui.append(gui)
+
+def del_gui(gui : GUI):
+    _list_gui.remove(gui)
+    del gui
+
+def update_gui():
+    for gui in _list_gui:
+        gui.update()
+
+def draw_gui():
+    for gui in _list_gui:
+        gui.draw()

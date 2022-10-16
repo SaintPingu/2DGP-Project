@@ -16,14 +16,7 @@ Y_CELL_COUNT = SCREEN_HEIGHT // CELL_SIZE
 LEFT = -1
 RIGHT = 1
 
-BLOCK_NONE = 0
-BLOCK_GROUND = 1
-
-BLOCK_DEBUG = 9999
-BLOCK_DEBUG_AIR = 9998
-
-BLOCK_SET = { BLOCK_DEBUG, BLOCK_GROUND }
-_crnt_map : list[list[int]] = []
+_crnt_map : list[list[bool]] = []
 
 class Vector2:
     def __init__(self, x=0, y=0):
@@ -222,11 +215,6 @@ def get_sign(num):
 
 
 ##### MAP #####
-def is_block(block):
-    return block in BLOCK_SET
-def is_block_cell(cell):
-    return _crnt_map[cell[1]][cell[0]] in BLOCK_SET
-
 def get_cell(position):
     return int(position[0]//CELL_SIZE), int(position[1]//CELL_SIZE)
 def get_cells(positions):
@@ -263,8 +251,8 @@ def get_detected_cells(rect : Rect):
         for cell_x in range(cell_start_x, cell_end_x + 1):
             if out_of_range(cell_x, cell_y, X_CELL_COUNT, Y_CELL_COUNT):
                 continue
-            cell = _crnt_map[cell_y][cell_x]
-            if is_block(cell):
+            block = _crnt_map[cell_y][cell_x]
+            if block:
                 result.append((cell_x, cell_y))
     
     return result
@@ -281,8 +269,23 @@ def get_block(col : int, row : int):
     return _crnt_map[row][col]
 def get_block_cell(cell : tuple):
     return _crnt_map[cell[1]][cell[0]]
-def set_block(col : int, row : int, block : int):
-    _crnt_map[row][col] = block
+def set_block(col : int, row : int, is_block : bool):
+    if type(is_block) is not bool:
+        pass
+    _crnt_map[row][col] = is_block
+
+# end is inclusive
+def get_sliced_map(start_x, start_y, end_x, end_y):
+    if start_x < 0:
+        start_x = 0
+    elif end_x >= X_CELL_COUNT:
+        end_x = X_CELL_COUNT - 1
+    if start_y < 0:
+        start_y = 0
+    elif end_y >= Y_CELL_COUNT:
+        end_y = Y_CELL_COUNT - 1
+    
+    return [_crnt_map[i][start_x:end_x + 1] for i in range(start_y, end_y + 1)]
 
 
 ##### Object #####
@@ -298,19 +301,19 @@ def get_highest_ground_cell(x, y, max_length = float('inf'), is_cell=False):
     dir_down = True
     if out_of_range(cell_start_col, cell_start_row, X_CELL_COUNT, Y_CELL_COUNT):
         return False
-    elif is_block(_crnt_map[cell_start_row][cell_start_col]):
+    elif _crnt_map[cell_start_row][cell_start_col]:
         dir_down = False
 
     if dir_down:
         for row in range(MIN_HEIGHT//CELL_SIZE, cell_start_row + 1).__reversed__():
-            if not out_of_range(cell_start_col, row, X_CELL_COUNT, Y_CELL_COUNT) and is_block(_crnt_map[row][cell_start_col]):
+            if not out_of_range(cell_start_col, row, X_CELL_COUNT, Y_CELL_COUNT) and _crnt_map[row][cell_start_col]:
                 if (cell_start_row - row) > max_length:
                     break
                 return (cell_start_col, row)
     else:
         max_row = SCREEN_HEIGHT//CELL_SIZE
         for row in range(cell_start_row + 1, max_row):
-            if not out_of_range(cell_start_col, row, X_CELL_COUNT, Y_CELL_COUNT) and not is_block(_crnt_map[row][cell_start_col]):
+            if not out_of_range(cell_start_col, row, X_CELL_COUNT, Y_CELL_COUNT) and not _crnt_map[row][cell_start_col]:
                 if (row - cell_start_row) > max_length:
                     break
                 return (cell_start_col, row - 1)
@@ -346,7 +349,7 @@ def read_mapfile(index : int):
         for colIdx, ch in enumerate(line):
             if colIdx >= X_CELL_COUNT:
                 break
-            _crnt_map[rowIdx][colIdx] = int(ch)
+            _crnt_map[rowIdx][colIdx] = bool(int(ch))
 
     file.close()
 
@@ -361,7 +364,7 @@ def save_mapfile():
 
     for row in _crnt_map:
         for col in row:
-            file.write(str(col))
+            file.write(str(int(col)))
         file.write('\n')
     
     file.close()

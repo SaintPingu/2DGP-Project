@@ -46,11 +46,9 @@ class Tank(GroundObject):
             vectors_coll = self.get_collision_vectors()
             for vector in vectors_coll:
                 cell = get_cell(vector)
-                block = get_block_cell(cell)
-                if block is not False and is_block(block):
+                if get_block_cell(cell):
                     dont_move(prev_theta, prev_rect.center)
                     return False
-
         
         if self.rotate_ground() == False:
             dont_move(prev_theta, prev_rect.center)

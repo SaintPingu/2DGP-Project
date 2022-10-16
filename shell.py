@@ -48,7 +48,7 @@ class Shell(GameObject):
             return
 
         # check collision
-        for object in gameObjects:
+        for object in get_gameObjects():
             if type(object) is Shell:
                 continue
 
@@ -60,7 +60,7 @@ class Shell(GameObject):
         rect_detection = Rect(head, 4, 4)
         detected_cells = get_detected_cells(rect_detection)
         for detected_cell in detected_cells:
-            if not out_of_range_cell(detected_cell) and is_block_cell(detected_cell):
+            if not out_of_range_cell(detected_cell) and get_block_cell(detected_cell):
                 self.explosion(head)
                 gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
                 delete_shell(self)
@@ -77,7 +77,7 @@ class Shell(GameObject):
             self.theta *= -1
 
     def explosion(self, head : Vector2):
-        gmap.draw_block(self.explosion_radius, head, BLOCK_NONE)
+        gmap.draw_block(self.explosion_radius, head, False)
         check_ground(head, self.explosion_radius)
         sprite.add_animation("Explosion", head, scale=self.explosion_radius/10)
         
