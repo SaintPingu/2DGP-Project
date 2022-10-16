@@ -1,5 +1,6 @@
 from pico2d import *
 import math
+import random
 
 DEBUG = False
 
@@ -125,25 +126,6 @@ class Vector2:
         result -= origin
         
         return origin + result.get_rotated(theta)
-
-    def get_rotated_vDir(self, vDest, vDir, t:float=1):
-        if t < 0:
-            t = 0
-        elif t > 1:
-            t = 1
-
-        vToTarget = (vDest - self).normalized()
-        a = math.atan2(vDir.x, vDir.y)
-        b = math.atan2(vToTarget.x, vToTarget.y)
-        theta = a - b
-
-        rot_degree = math.degrees(theta)
-        if(math.fabs(rot_degree) > 180):
-            rot_degree -= get_sign(rot_degree) * 360
-        if(math.fabs(rot_degree) > 45):
-            rot_degree = get_sign(rot_degree) * 45
-        vDir = self.get_rotated(vDir, math.radians(rot_degree))
-        return vDir
     
     def lerp(self, dst, t):
         transform = Vector2()

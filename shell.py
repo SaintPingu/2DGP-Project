@@ -25,6 +25,7 @@ class Shell(GameObject):
         self.speed, self.damage, self.explosion_radius = get_attributes(shell_name)
         self.temp = None
         self.is_destroyed = False
+        self.wind : gmap.env.Wind = gmap.wind
 
     def draw(self):
         self.is_rect_invalid = True
@@ -34,7 +35,11 @@ class Shell(GameObject):
     
     def update(self):
         gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
-        self.offset(*(self.vector * self.speed))
+
+        dest = (self.center + self.vector * self.speed) + self.wind.get_wind()
+        self.vector = self.vector.get_rotated_dest(self.center, dest)
+        self.set_center(dest)
+
         rect = self.get_squre()
 
         # out of range

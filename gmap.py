@@ -5,6 +5,7 @@ from tools import *
 from object import *
 import scene
 import tank
+import environment as env
 
 img_map : Image
 img_debug : Image
@@ -20,21 +21,23 @@ is_print_mouse_pos = False
 rect_inv_list : list[Rect] = []
 rect_debug_list : list[Rect] = []
 
-tank_obj = None
+tank_obj : tank = None
+wind : env.Wind = None
 
 
 def init():
-    global img_debug, img_debug_air
+    global img_debug, img_debug_air, wind
     img_debug = load_image_path('debug.png')
     img_debug_air = load_image_path('debug_air.png')
-
+    wind = env.Wind()
+    wind.randomize()
 
 ##### DRAW ######
 def modify_map(events : list):
     global is_draw_mode
     global is_create_block, is_delete_block, is_print_mouse_pos
     global radius_draw
-    global tank_obj
+    global tank_obj, wind
     global DEBUG
 
     if is_draw_mode == False:
@@ -61,6 +64,8 @@ def modify_map(events : list):
                 save_mapfile()
             elif event.key == SDLK_F6:
                 draw_map(True)
+            elif event.key == SDLK_F7:
+                wind.randomize()
             elif event.key == SDLK_F9:
                 if tank_obj == None:
                     tank_obj = tank.Tank()
