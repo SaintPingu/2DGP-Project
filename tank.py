@@ -156,7 +156,7 @@ class Tank(GroundObject):
         head = self.get_barrel_head()
         theta = self.get_barrel_theta()
         crnt_shell = shell.Shell("HP", self.barrel_pivot, theta)
-        # crnt_shell = shell.Shell("AP", self.barrel_position, theta)
+        #crnt_shell = shell.Shell("AP", self.barrel_position, theta)
         shell.add_shell(crnt_shell)
         # crnt_shell = shell.Shell("MUL", self.barrel_position, theta)
         # shell.add_shell(crnt_shell)

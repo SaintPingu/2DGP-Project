@@ -117,6 +117,15 @@ def draw_ground(rect : Rect):
 def draw_background(rect : Rect):
     scene.img_background.clip_draw(int(rect.origin[0]), int(rect.origin[1]), int(rect.width), int(rect.height), *rect.get_fCenter())
 
+def get_blocK_set(rect_inv : Rect):
+    cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect_inv)
+    sliced_map = get_sliced_map(cell_start_x, cell_start_y, cell_end_x, cell_end_y)
+
+    block_set = set()
+    for row in sliced_map:
+        block_set |= (set(row))
+    return block_set
+
 def draw_map(is_draw_full=False):
     global rect_inv_list
 
@@ -128,13 +137,7 @@ def draw_map(is_draw_full=False):
 
     # draw background
     for rect_inv in list(rect_inv_list):
-
-        cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect_inv)
-        sliced_map = get_sliced_map(cell_start_x, cell_start_y, cell_end_x, cell_end_y)
-
-        block_set = set()
-        for row in sliced_map:
-            block_set |= (set(row))
+        block_set = get_blocK_set(rect_inv)
 
         # filled of blocks
         if False not in block_set:
@@ -232,7 +235,58 @@ def add_invalidate(center, width, height):
     elif rect_inv.top > SCREEN_HEIGHT:
         rect_inv.set_origin((rect_inv.left, rect_inv.bottom), rect_inv.width, SCREEN_HEIGHT - rect_inv.bottom)
 
-    rect_inv_list.append(rect_inv)
+    MIN_DIVIDE_SIZE = CELL_SIZE * 8
+    if rect_inv.width <= MIN_DIVIDE_SIZE and rect_inv.height <= MIN_DIVIDE_SIZE:
+        rect_inv_list.append(rect_inv)
+        return
+    if is_debug_mode():
+        draw_debug_rect(rect_inv)
+
+    # Sqaure
+    max_row = rect_inv.height//MIN_DIVIDE_SIZE
+    max_col = rect_inv.width//MIN_DIVIDE_SIZE
+    for row in range(0, max_row + 1):
+        for col in range(0, max_col + 1):
+            x = rect_inv.origin[0] + (col*MIN_DIVIDE_SIZE) + MIN_DIVIDE_SIZE//2
+            y = rect_inv.origin[1] + (row*MIN_DIVIDE_SIZE) + MIN_DIVIDE_SIZE//2
+            width, height = MIN_DIVIDE_SIZE, MIN_DIVIDE_SIZE
+
+            # remaining top area
+            if row == max_row:
+                height = int(rect_inv.height%MIN_DIVIDE_SIZE)
+                y = rect_inv.top - height//2
+            # remaining right area
+            if col == max_col:
+                width = int(rect_inv.width%MIN_DIVIDE_SIZE)
+                x = rect_inv.right - width//2
+
+            center = (x, y)
+            rect = Rect(center, width, height)
+            rect_inv_list.append(rect)
+            if is_debug_mode():
+                draw_debug_rect(rect)
+
+    # remaining area #
+    # top
+    # if rect_inv.width % MIN_DIVIDE_SIZE != 0:
+    #     remain_height = (rect_inv.height - (rect_inv.height//MIN_DIVIDE_SIZE) * MIN_DIVIDE_SIZE)
+    #     x = rect_inv.center[0]
+    #     y = rect_inv.top - remain_height//2
+    #     rect = Rect((x,y), rect_inv.width, remain_height)
+    #     rect_inv_list.append(rect)
+    #     if is_debug_mode():
+    #         draw_debug_rect(rect)
+    # # right
+    # if rect_inv.height % MIN_DIVIDE_SIZE != 0:
+    #     remain_height = rect_inv.height - (rect_inv.height - (rect_inv.height//MIN_DIVIDE_SIZE) * MIN_DIVIDE_SIZE)
+    #     y = rect_inv.origin[1] + remain_height//2
+    #     remain_width = (rect_inv.width - (rect_inv.width//MIN_DIVIDE_SIZE) * MIN_DIVIDE_SIZE)
+    #     x = rect_inv.right - remain_width//2
+    #     rect = Rect((x,y), remain_width, remain_height)
+    #     rect_inv_list.append(rect)
+    #     if is_debug_mode():
+    #         draw_debug_rect(rect)
+
 
 
 
@@ -264,3 +318,4 @@ def draw_debug_point(point):
     rect_debug_list.append(Rect(point, 2, 2))
 def draw_debug_rect(rect : Rect):
     rect_debug_list.append(rect)
+    

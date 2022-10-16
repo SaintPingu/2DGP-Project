@@ -1,4 +1,5 @@
 import os
+import time
 from tools import *
 import scene
 import gmap
@@ -10,7 +11,14 @@ open_canvas(SCREEN_WIDTH, SCREEN_HEIGHT, sync=True)
 scene.init()
 
 running = True
+current_time = time.time() + 1
 while running:
+    frame_time = time.time() - current_time
+    frame_rate = 1.0 / frame_time
+    current_time += frame_time
+    if frame_rate < 60:
+        print("Frame Time: %f sec, Frame Rate: %f fps" %(frame_time,frame_rate))
+
     scene.draw_scene()
 
     events = get_events()
