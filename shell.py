@@ -60,12 +60,13 @@ class Shell(GameObject):
         rect_detection = Rect(head, 4, 4)
         detected_cells = get_detected_cells(rect_detection)
         for detected_cell in detected_cells:
-            if not out_of_range_cell(detected_cell) and get_block_cell(detected_cell):
+            if not out_of_range_cell(*detected_cell) and get_block_cell(detected_cell):
                 self.explosion(head)
                 gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
                 delete_shell(self)
                 return
-        # gmap.draw_debug_rect(rect_detection)
+        if is_debug_mode():
+            gmap.draw_debug_rect(rect_detection)
 
         self.is_rect_invalid = True
 

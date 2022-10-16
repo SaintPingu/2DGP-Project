@@ -2,16 +2,17 @@ from pico2d import *
 import math
 import random
 
-DEBUG = False
+_is_debug_mode = False
 
-CELL_SIZE = 2   # recommend an even number
+CELL_SIZE = 2   # recommend an even number (min : 2)
 
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 1000
 MIN_HEIGHT = 108
 
 X_CELL_COUNT = SCREEN_WIDTH // CELL_SIZE
-Y_CELL_COUNT = SCREEN_HEIGHT // CELL_SIZE
+Y_CELL_COUNT = (SCREEN_HEIGHT-MIN_HEIGHT) // CELL_SIZE
+Y_CELL_MIN = MIN_HEIGHT//CELL_SIZE
 
 LEFT = -1
 RIGHT = 1
@@ -203,6 +204,8 @@ def load_image_path(image : str):
 
 def out_of_range(x, y, max_x, max_y):
     return ((x < 0) or (x >= max_x) or (y < 0) or (y >= max_y))
+def out_of_range_cell(cell_x, cell_y):
+    return ((cell_x < 0) or (cell_x >= X_CELL_COUNT) or (cell_y < 0) or (cell_y >= Y_CELL_COUNT))
 
 def get_length(x1, y1, x2, y2):
     return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
@@ -212,11 +215,16 @@ def to_int_pos(position):
 
 def get_sign(num):
     return num / math.fabs(num)
+def is_debug_mode():
+    return _is_debug_mode
+def toggle_debug_mode():
+    global _is_debug_mode
+    _is_debug_mode = not _is_debug_mode
 
 
 ##### MAP #####
 def get_cell(position):
-    return int(position[0]//CELL_SIZE), int(position[1]//CELL_SIZE)
+    return int(position[0]//CELL_SIZE), int((position[1]-MIN_HEIGHT)//CELL_SIZE)
 def get_cells(positions):
     result = []
     for pos in positions:
@@ -224,22 +232,22 @@ def get_cells(positions):
     return result
 
 def get_pos_from_cell(colIdx : int, rowIdx : int):
-    return ((colIdx * CELL_SIZE) + CELL_SIZE//2), ((rowIdx * CELL_SIZE) + CELL_SIZE//2)
+    return ((colIdx * CELL_SIZE) + CELL_SIZE//2), ((rowIdx * CELL_SIZE) + CELL_SIZE//2) + MIN_HEIGHT
 def get_origin_from_cell(colIdx : int, rowIdx : int):
-    return ((colIdx * CELL_SIZE) + CELL_SIZE//2) - CELL_SIZE//2, ((rowIdx * CELL_SIZE) + CELL_SIZE//2) - CELL_SIZE//2
+    return ((colIdx * CELL_SIZE) + CELL_SIZE//2) - CELL_SIZE//2, ((rowIdx * CELL_SIZE) + CELL_SIZE//2) - CELL_SIZE//2 + MIN_HEIGHT
 
-def get_cell_range(center, width, height, extra_range=0):
-    width = (width//CELL_SIZE) + extra_range
-    height = (height//CELL_SIZE) + extra_range
+# def get_cell_range(center, width, height, extra_range=0):
+#     width = (width//CELL_SIZE) + extra_range
+#     height = (height//CELL_SIZE) + extra_range
 
-    start_x, start_y = get_cell(center)
-    start_x -= width//2
-    start_y -= height//2
+#     start_x, start_y = get_cell(center)
+#     start_x -= width//2
+#     start_y -= height//2
 
-    return start_x, start_y, start_x + width, start_y + height
+#     return start_x, start_y, start_x + width, start_y + height
 
 def get_block(cell):
-    if out_of_range(cell[0], cell[1], X_CELL_COUNT, Y_CELL_COUNT):
+    if out_of_range_cell((cell[0], cell[1])):
         return False
     return _crnt_map[cell[1]][cell[0]]
 
@@ -249,7 +257,7 @@ def get_detected_cells(rect : Rect):
     cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect)
     for cell_y in range(cell_start_y, cell_end_y + 1):
         for cell_x in range(cell_start_x, cell_end_x + 1):
-            if out_of_range(cell_x, cell_y, X_CELL_COUNT, Y_CELL_COUNT):
+            if out_of_range_cell(cell_x, cell_y):
                 continue
             block = _crnt_map[cell_y][cell_x]
             if block:
@@ -261,9 +269,6 @@ def get_start_end_cells(rect : Rect):
     cell_start_x, cell_start_y = get_cell(rect.origin)
     cell_end_x, cell_end_y = get_cell( (rect.origin[0] + rect.width, rect.origin[1] + rect.height) )
     return cell_start_x, cell_start_y, cell_end_x, cell_end_y
-
-def out_of_range_cell(cell):
-    return ((cell[0] < 0) or (cell[0] >= X_CELL_COUNT) or (cell[1] < 0) or (cell[1] >= Y_CELL_COUNT))
 
 def get_block(col : int, row : int):
     return _crnt_map[row][col]
@@ -278,11 +283,11 @@ def set_block(col : int, row : int, is_block : bool):
 def get_sliced_map(start_x, start_y, end_x, end_y):
     if start_x < 0:
         start_x = 0
-    elif end_x >= X_CELL_COUNT:
+    if end_x >= X_CELL_COUNT:
         end_x = X_CELL_COUNT - 1
     if start_y < 0:
         start_y = 0
-    elif end_y >= Y_CELL_COUNT:
+    if end_y >= Y_CELL_COUNT:
         end_y = Y_CELL_COUNT - 1
     
     return [_crnt_map[i][start_x:end_x + 1] for i in range(start_y, end_y + 1)]
@@ -299,21 +304,20 @@ def get_highest_ground_cell(x, y, max_length = float('inf'), is_cell=False):
     max_length /= CELL_SIZE
 
     dir_down = True
-    if out_of_range(cell_start_col, cell_start_row, X_CELL_COUNT, Y_CELL_COUNT):
+    if out_of_range_cell(cell_start_col, cell_start_row):
         return False
     elif _crnt_map[cell_start_row][cell_start_col]:
         dir_down = False
 
     if dir_down:
-        for row in range(MIN_HEIGHT//CELL_SIZE, cell_start_row + 1).__reversed__():
-            if not out_of_range(cell_start_col, row, X_CELL_COUNT, Y_CELL_COUNT) and _crnt_map[row][cell_start_col]:
+        for row in range(0, cell_start_row + 1).__reversed__():
+            if not out_of_range_cell(cell_start_col, row) and _crnt_map[row][cell_start_col]:
                 if (cell_start_row - row) > max_length:
                     break
                 return (cell_start_col, row)
     else:
-        max_row = SCREEN_HEIGHT//CELL_SIZE
-        for row in range(cell_start_row + 1, max_row):
-            if not out_of_range(cell_start_col, row, X_CELL_COUNT, Y_CELL_COUNT) and not _crnt_map[row][cell_start_col]:
+        for row in range(cell_start_row + 1, Y_CELL_COUNT):
+            if not out_of_range_cell(cell_start_col, row) and not _crnt_map[row][cell_start_col]:
                 if (row - cell_start_row) > max_length:
                     break
                 return (cell_start_col, row - 1)
@@ -335,10 +339,10 @@ def read_mapfile(index : int):
     from scene import img_background
     global _crnt_map, img_map
 
-    _crnt_map = [[0]*X_CELL_COUNT for col in range(Y_CELL_COUNT)]
+    _crnt_map = [[False]*X_CELL_COUNT for col in range(Y_CELL_COUNT)]
 
     if index == -1:
-        img_background.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + MIN_HEIGHT//2)    # Empty background
+        img_background.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)    # Empty background
         return
 
     fileName = 'map_' + str(index) + '.txt'
@@ -354,7 +358,7 @@ def read_mapfile(index : int):
     file.close()
 
     img_map = load_image_path('map_' + str(index) + '.png')
-    img_map.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + MIN_HEIGHT//2)
+    img_map.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + Y_CELL_MIN)
 
 def save_mapfile():
     global _crnt_map, X_CELL_COUNT, Y_CELL_COUNT

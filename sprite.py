@@ -11,7 +11,7 @@ def init():
     SPRITES = { "Shot" : img_sprite_shot, "Explosion" : img_sprite_explosion_hp }
 
 class Sprite:
-    def __init__(self, sprite_name:str, position, max_frame:int, frame_width:int, frame_height:int, theta=0, max_frame_col:int =0, delay:int=0, scale=1, is_play_once=True, origin=None):
+    def __init__(self, sprite_name:str, position, max_frame:int, frame_width:int, frame_height:int, theta=0, max_frame_col:int =1, delay:int=0, scale=1, is_play_once=True, origin=None):
         assert sprite_name in SPRITES.keys()
 
         self.sprite : Image = SPRITES[sprite_name]
@@ -75,10 +75,13 @@ class Sprite:
             if self.frame >= self.max_frame:
                 if self.is_play_once:
                     is_running = False
-            elif self.max_frame_col != 0:
+            elif self.max_frame_col > 1:
                 if self.frame % self.max_frame_col == 0:
                     self.frame_row += 1
-            gmap.set_invalidate_rect(self.position, self.frame_width*self.scale, self.frame_height*self.scale, square=True)
+
+            inv_width = self.frame_width*self.scale
+            inv_height = self.frame_height*self.scale
+            gmap.set_invalidate_rect(self.position, inv_width, inv_height, square=True)
         return is_running
     
 animations : list[Sprite] = []

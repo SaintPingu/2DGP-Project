@@ -238,7 +238,7 @@ class GroundObject(GameObject):
                     continue
 
             cell = get_cell(vector)
-            if out_of_range(cell[0], cell[1], X_CELL_COUNT, Y_CELL_COUNT):
+            if out_of_range_cell(cell[0], cell[1]):
                 continue
 
             ground_cell = get_highest_ground_cell(*cell, is_cell=True)

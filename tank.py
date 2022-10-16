@@ -49,6 +49,8 @@ class Tank(GroundObject):
                 if get_block_cell(cell):
                     dont_move(prev_theta, prev_rect.center)
                     return False
+            if is_debug_mode():
+                gmap.draw_debug_vectors(vectors_coll)
         
         if self.rotate_ground() == False:
             dont_move(prev_theta, prev_rect.center)
@@ -125,8 +127,9 @@ class Tank(GroundObject):
         vec_normal = self.get_vec_right().get_rotated(math.pi/2)
         self.barrel_pivot = self.center + (vec_normal * 3)
         self.barrel_position = self.barrel_pivot + self.vec_dir_barrel * (self.img_barrel.w/2)
-        # gmap.draw_debug_vector(self.barrel_pivot)
-        # gmap.draw_debug_vector(self.center)
+        if is_debug_mode():
+            gmap.draw_debug_vector(self.barrel_pivot)
+            gmap.draw_debug_vector(self.center)
         return prev_barrel_rect
 
     def rotate_barrel(self, target : Vector2 = None):

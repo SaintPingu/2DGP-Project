@@ -36,7 +36,6 @@ def modify_map(events : list):
     global is_create_block, is_delete_block, is_print_mouse_pos
     global radius_draw
     global tank_obj, wind
-    global DEBUG
 
     if is_draw_mode == False:
         return
@@ -56,7 +55,7 @@ def modify_map(events : list):
                 stop_draw_mode()
                 return
             elif event.key == SDLK_F2:
-                DEBUG = not DEBUG
+                toggle_debug_mode()
                 return
             elif event.key == SDLK_F5:
                 save_mapfile()
@@ -113,55 +112,58 @@ def stop_draw_mode():
     radius_draw = DEFAULT_DRAW_RADIUS
     is_draw_mode = False
 
+def draw_ground(rect : Rect):
+    img_ground.clip_draw(int(rect.origin[0]), int(rect.origin[1]), int(rect.width), int(rect.height), *rect.get_fCenter())
 def draw_background(rect : Rect):
-    scene.img_background.clip_draw(int(rect.origin[0]), int(rect.origin[1] - scene.MIN_HEIGHT), int(rect.width), int(rect.height), *rect.get_fCenter())
+    scene.img_background.clip_draw(int(rect.origin[0]), int(rect.origin[1]), int(rect.width), int(rect.height), *rect.get_fCenter())
 
 def draw_map(is_draw_full=False):
     global rect_inv_list
 
     if is_draw_full:
         rect_inv_list.clear()
-        rect_inv_list.append(Rect((SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + scene.MIN_HEIGHT//2), SCREEN_WIDTH, SCREEN_HEIGHT - scene.MIN_HEIGHT//2))
+        rect_inv_list.append(Rect((SCREEN_WIDTH//2, SCREEN_HEIGHT//2), SCREEN_WIDTH, SCREEN_HEIGHT))
     elif len(rect_inv_list) == 0:
         return
 
     # draw background
-    for rect_inv in rect_inv_list:
-        scene.img_background.clip_draw(int(rect_inv.origin[0]), int(rect_inv.origin[1] - scene.MIN_HEIGHT), int(rect_inv.width), int(rect_inv.height), *rect_inv.get_fCenter())
-        if DEBUG:
+    for rect_inv in list(rect_inv_list):
+
+        cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect_inv)
+        sliced_map = get_sliced_map(cell_start_x, cell_start_y, cell_end_x, cell_end_y)
+
+        block_set = set()
+        for row in sliced_map:
+            block_set |= (set(row))
+
+        # filled of blocks
+        if False not in block_set:
+            draw_ground(rect_inv)
+            rect_inv_list.remove(rect_inv)
+            continue
+        # empty
+        elif True not in block_set:
+            rect_inv_list.remove(rect_inv)
+
+        draw_background(rect_inv)
+        if is_debug_mode():
             draw_rectangle(rect_inv.origin[0], rect_inv.origin[1], rect_inv.origin[0] + int(rect_inv.width), rect_inv.origin[1] + int(rect_inv.height))
 
     # draw grounds
     for rect_inv in rect_inv_list:
         cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect_inv)
-        sliced_map = get_sliced_map(cell_start_x, cell_start_y, cell_end_x, cell_end_y)
 
-        block_count = 0
-        for row in sliced_map:
-            for col in row:
-                block_count += col
-        if block_count <= 0:
-            continue
-
-        for rowIdx, row in enumerate(sliced_map):
-            for colIdx, block in enumerate(row):
-                x = cell_start_x + colIdx
-                y = cell_start_y + rowIdx
-                if out_of_range(x, y, X_CELL_COUNT, Y_CELL_COUNT):
+        for cell_y in range(cell_start_y, cell_end_y + 1):
+            for cell_x in range(cell_start_x, cell_end_x + 1):
+                if out_of_range_cell(cell_x, cell_y):
                     continue
-                elif block is False:
+                elif get_block(cell_x, cell_y) == False:
                     continue
 
-                posX, posY = get_pos_from_cell(x, y)
-                originX, originY = get_origin_from_cell(x, y)
+                posX, posY = get_pos_from_cell(cell_x, cell_y)
+                originX, originY = get_origin_from_cell(cell_x, cell_y)
 
                 img_ground.clip_draw(originX, originY, CELL_SIZE, CELL_SIZE, posX, posY)
-                set_block(x, y, True)
-                block_count -= 1
-                if block_count <= 0:
-                    break
-            if block_count <= 0:
-                    break
 
 
     rect_inv_list.clear()
@@ -184,14 +186,14 @@ def draw_block(radius, position, is_block):
         for y in range(-radius, radius + 1):
             cell_x = col+x
             cell_y = row+y
-            if out_of_range(cell_x, cell_y, X_CELL_COUNT, Y_CELL_COUNT):
+            if out_of_range_cell(cell_x, cell_y):
                 continue
-            elif row + y < scene.MIN_HEIGHT // CELL_SIZE:
+            elif get_block(cell_x, cell_y) == is_block:
                 continue
             cell_pos = get_pos_from_cell(cell_x, cell_y)
             distance = (Vector2(*position) - Vector2(*cell_pos)).get_norm()
             if distance <= radius * CELL_SIZE + COLL_VAL:
-                set_block(col + x, row + y, is_block)
+                set_block(cell_x, cell_y, is_block)
 
     add_invalidate(position, radius*2 * CELL_SIZE, radius*2 * CELL_SIZE)
 
@@ -254,7 +256,7 @@ def draw_debug_cells(cells):
     for cell in cells:
         draw_debug_cell(cell)
 def draw_debug_vector(vector):
-    rect_debug_list.append(Rect(vector, 2, 2))
+    rect_debug_list.append(Rect(vector, 1, 1))
 def draw_debug_vectors(vectors):
     for vector in vectors:
         draw_debug_vector(vector)

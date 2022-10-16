@@ -23,7 +23,7 @@ def init():
     shell.init()
     sprite.init()
 
-    gui.add_gui(gui.GUI(img_gui_control, (SCREEN_WIDTH//2, img_gui_control.h//2)))
+    gui.add_gui(gui.GUI(img_gui_control, (SCREEN_WIDTH//2, img_gui_control.h//2), is_transparent=False))
 
 def draw_scene():
     update_objects()
@@ -31,9 +31,9 @@ def draw_scene():
     #gui.update_gui()
 
     gmap.draw_map()
+    gui.draw_gui()
     draw_objects()
     sprite.draw_animations()
-    gui.draw_gui()
     gmap.draw_debugs()
     
     update_canvas()
