@@ -1,5 +1,5 @@
 from tools import *
-from object import *
+import object
 import gmap
 import sprite
 
@@ -19,7 +19,7 @@ def exit():
         del image
 
 
-class Shell(GameObject):
+class Shell(object.GameObject):
     def __init__(self, shell_name : str, position, theta):
         assert shell_name in SHELLS.keys()
 
@@ -54,9 +54,9 @@ class Shell(GameObject):
 
         head = self.get_head()
         rect_detection = Rect(head, 4, 4)
-        detected_cells = get_detected_cells(rect_detection)
+        detected_cells = gmap.get_detected_cells(rect_detection)
         for detected_cell in detected_cells:
-            if not out_of_range_cell(*detected_cell) and get_block_cell(detected_cell):
+            if not gmap.out_of_range_cell(*detected_cell) and gmap.get_block_cell(detected_cell):
                 self.explosion(head)
                 gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
                 delete_shell(self)
@@ -75,12 +75,12 @@ class Shell(GameObject):
 
     def explosion(self, head : Vector2):
         gmap.draw_block(self.explosion_radius, head, False)
-        check_ground(head, self.explosion_radius)
+        object.check_ground(head, self.explosion_radius)
         sprite.add_animation("Explosion", head, scale=self.explosion_radius/10)
         
 
     def get_head(self) -> Vector2:
-        return self.center + (self.vector.normalized() * self.img_shell.w/CELL_SIZE)
+        return self.center + (self.vector.normalized() * self.img_shell.w/gmap.CELL_SIZE)
 
 
 
@@ -90,11 +90,11 @@ fired_shells : list[Shell] = []
 
 def add_shell(shell : Shell):
     fired_shells.append(shell)
-    add_object(shell)
+    object.add_object(shell)
 
 def delete_shell(shell : Shell):
     fired_shells.remove(shell)
-    delete_object(shell)
+    object.delete_object(shell)
 
 def get_attributes(shell_name : str) -> tuple[float, float]:
     assert shell_name in SHELLS.keys()

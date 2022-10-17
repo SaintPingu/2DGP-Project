@@ -17,13 +17,14 @@ def enter():
     object.enter()
     gui.enter()
     gmap.enter()
-    read_mapfile(1)
     tank.enter()
+    gmap.read_mapfile(1)
     shell.enter()
     sprite.enter()
     env.enter()
 
-    gui.add_gui(gui.GUI(img_gui_control, (SCREEN_WIDTH//2, img_gui_control.h//2), is_transparent=False))
+    gui.add_gui(gui.GUI(img_gui_control, (SCREEN_WIDTH//2, img_gui_control.h//2), is_fixed=True))
+    set_debug_mode(False)
 
 def exit():
     env.exit()

@@ -1,22 +1,26 @@
 from tools import *
-from object import *
+import object
 import gui
 import gmap
 
 class Wind:
     def __init__(self):
-        image_cloud = load_image_path('gui_cloud.png')
+        self.image_cloud = load_image_path('gui_cloud.png')
         self.image_wind = load_image_path('gui_wind_lines.png')
-        pos_cloud = (SCREEN_WIDTH//2, SCREEN_HEIGHT - image_cloud.h)
-        self.wind_pos_left = (pos_cloud[0] - image_cloud.w, pos_cloud[1])
-        self.wind_pos_right = (pos_cloud[0] + image_cloud.w, pos_cloud[1])
-        gui_cloud = gui.GUI(image_cloud, pos_cloud)
+        pos_cloud = (SCREEN_WIDTH//2, SCREEN_HEIGHT - self.image_cloud.h)
+        self.wind_pos_left = (pos_cloud[0] - self.image_cloud.w, pos_cloud[1])
+        self.wind_pos_right = (pos_cloud[0] + self.image_cloud.w, pos_cloud[1])
+        gui_cloud = gui.GUI(self.image_cloud, pos_cloud)
         self.gui_wind = gui.GUI(self.image_wind, is_draw=False)
         gui.add_gui(gui_cloud)
         gui.add_gui(self.gui_wind)
         
         self.direction : int = 0
         self.speed : float = 0
+    
+    def release(self):
+        del self.image_cloud
+        del self.image_wind
 
     def randomize(self):
         gmap.set_invalidate_rect(self.gui_wind.position, self.image_wind.w, self.image_wind.h)
@@ -43,7 +47,7 @@ class Wind:
 
 _CLOUD_MIN_HEIGHT = 800
 _CLOUD_IMAGE_COUNT = 9
-class Cloud(GameObject):
+class Cloud(object.GameObject):
     def __init__(self):
         super().__init__()
         self.wind = gmap.wind
@@ -84,7 +88,7 @@ class Cloud(GameObject):
         self.resize()
 
     def update(self):
-        rect_inv = Rect(self.center, self.width, self.height)
+        rect_inv = Rect(self.center, self.width + 3, self.height + 3)
         gmap.resize_rect_inv(rect_inv)
         gmap.draw_background(rect_inv)
         speed = self.wind.speed * 100
@@ -110,7 +114,7 @@ def enter(cloud_count=10):
         _images_cloud.append(image)
     
     for _ in range(cloud_count):
-        add_object(Cloud())
+        object.add_object(Cloud())
 
 def exit():
     global _images_cloud

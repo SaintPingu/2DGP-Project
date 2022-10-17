@@ -15,6 +15,9 @@ class GameObject:
 
         detect_square = self.get_squre()
         self.detect_radius = (Vector2(*detect_square.center) - Vector2(detect_square.left, detect_square.top)).get_norm()
+    
+    def release(self):
+        pass
 
     # update based on center, width, height, theta
     def update_object(self):
@@ -42,7 +45,8 @@ class GameObject:
         self.update_object()
 
     def set_center(self, center):
-        self.center = Vector2(*center)
+        self.center.x = center[0]
+        self.center.y = center[1]
         self.update_object()
 
     def draw_image(self, image : Image, scale = 1):
@@ -52,7 +56,7 @@ class GameObject:
         image.rotate_draw(self.theta, *self.center, image.w*scale, image.h*scale)
 
     def get_rect(self):
-        return Rect(self.center, self.width, self.height)
+        return Rect(tuple(self.center), self.width, self.height)
     
     def get_squre(self):
         width = self.width
@@ -89,7 +93,8 @@ class GameObject:
         self.width *= scale
         self.height *= scale
         rect = self.get_rect()
-        self.center = Vector2(rect.origin[0] + self.width//2, rect.origin[1] + self.height//2)
+        self.center.x = rect.origin[0] + self.width//2
+        self.center.y = rect.origin[1] + self.height//2
         self.update_object()
 
     def draw(self):
@@ -103,6 +108,7 @@ class GameObject:
 
 
 
+import gmap
 class GroundObject(GameObject):
     def __init__(self, center=(0, 0), width=0, height=0, theta=0):
         super().__init__(center, width, height, theta)
@@ -136,7 +142,7 @@ class GroundObject(GameObject):
 
     def get_vectors_bot(self):
         t = 0
-        inc_t = 1 / (self.width * CELL_SIZE)
+        inc_t = 1 / (self.width * gmap.CELL_SIZE)
 
         result : list[Vector2] = []
         while t <= 1:
@@ -167,13 +173,12 @@ class GroundObject(GameObject):
 
     def update_ground(self):
         if self.is_floating():
-            prev_rect = self.get_rect()
             self.attach_ground(True)
 
     # _BUG_ : pass through a thin wall
     def get_vec_highest(self, ignore_height=False):
         vectors_bot = self.get_vectors_bot()
-        bot_cells = get_cells(vectors_bot)
+        bot_cells = gmap.get_cells(vectors_bot)
 
         vec_highest = Vector2.zero()
         vec_befroe : Vector2 = None
@@ -188,12 +193,12 @@ class GroundObject(GameObject):
 
         # Find
         for idx, cell in enumerate(bot_cells):
-            result = get_highest_ground_cell(cell[0], cell[1], max_length, True)
+            result = gmap.get_highest_ground_cell(cell[0], cell[1], max_length, True)
             if result is False:
                 continue
             
             col, row = result
-            _, height = get_pos_from_cell(col, row)
+            _, height = gmap.get_pos_from_cell(col, row)
             if height > vec_highest.y:
                 vec_highest.x = vectors_bot[idx].x
                 vec_highest.y = height
@@ -216,6 +221,7 @@ class GroundObject(GameObject):
         vec_pivot, idx_pivot = self.attach_ground(ignore_height)
         if vec_pivot is False:
             if self.is_created: # delete : fall
+                self.invalidate()
                 delete_object(self)
             return False
         vectors_bot = self.get_vectors_bot()
@@ -244,25 +250,20 @@ class GroundObject(GameObject):
                 if vector.x > self.bot_center.x:
                     continue
 
-            cell = get_cell(vector)
-            if out_of_range_cell(cell[0], cell[1]):
+            cell = gmap.get_cell(vector)
+            if gmap.out_of_range_cell(cell[0], cell[1]):
                 continue
 
-            ground_cell = get_highest_ground_cell(*cell, is_cell=True)
+            ground_cell = gmap.get_highest_ground_cell(*cell, is_cell=True)
             if ground_cell is False:
                 continue
                 
-            vec_ground = Vector2(*get_pos_from_cell(*ground_cell))
+            vec_ground = Vector2(*gmap.get_pos_from_cell(*ground_cell))
             if vec_ground.y == vec_pivot.y:
                 flat_count += 1
                 continue
             elif vec_ground.y > max_y or vec_ground.y < min_y:
                 continue
-
-            # max_length = (vec_pivot - vector).get_norm() + 4
-            # length = (vec_pivot - vec_ground).get_norm()
-            # if length > max_length:
-            #     continue
             
             theta = vec_ground.get_theta_axis(axis, vec_pivot)
             if dir_check == RIGHT:
@@ -314,10 +315,10 @@ class GroundObject(GameObject):
                 if vector.x > self.bot_center.x:
                     continue
             
-            cell = get_cell(vector)
-            ground_cell = get_highest_ground_cell(*cell, is_cell=True)
+            cell = gmap.get_cell(vector)
+            ground_cell = gmap.get_highest_ground_cell(*cell, is_cell=True)
             if ground_cell is not False:
-                ground_point = Vector2(*get_pos_from_cell(*ground_cell))
+                ground_point = Vector2(*gmap.get_pos_from_cell(*ground_cell))
                 length = (self.bot_center - ground_point).get_norm()
                 if length <= max_length:
                     return False
@@ -326,8 +327,8 @@ class GroundObject(GameObject):
     def is_floating(self):
         vectors_bot = self.get_vectors_bot()
         for vector in vectors_bot:
-            cell = get_cell(vector)
-            if get_block_cell(cell):
+            cell = gmap.get_cell(vector)
+            if gmap.get_block_cell(cell):
                 return False
             
         return True
@@ -358,6 +359,7 @@ def delete_object(object : GameObject):
     _gameObjects.remove(object)
     if object.__class__.__base__ == GroundObject:
         _groundObjects.remove(object)
+    object.release()
     del object
 
 def get_gameObjects():
@@ -376,4 +378,4 @@ def check_ground(position : Vector2, radius):
         if object.is_in_radius(position, radius):
             object.rotate_ground(True)
             object.is_rect_invalid = True
-            object.update()
+            object.invalidate()

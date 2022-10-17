@@ -1,4 +1,3 @@
-from object import GameObject
 from tools import *
 import gmap
 
@@ -37,7 +36,7 @@ class Sprite:
         self.max_frame_col = max_frame_col
         self.frame_row = 0
         self.crnt_delay = 0
-        self.parent_object : GameObject = None
+        self.parent_object = None
 
         self.raidus = 0
         if self.frame_width > self.frame_height:
@@ -50,7 +49,7 @@ class Sprite:
         self.origin = Vector2(*origin)
         self.origin.y = self.sprite.h - self.origin.y
     
-    def set_parent(self, object : GameObject):
+    def set_parent(self, object):
         self.parent_object = object
 
     def draw(self):

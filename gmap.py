@@ -2,9 +2,18 @@ if __name__ == "__main__":
     quit()
 
 from tools import *
-from object import *
-import tank
+import object
 import environment as env
+
+
+CELL_SIZE = 2   # recommend an even number (min : 2)
+
+X_CELL_COUNT = SCREEN_WIDTH // CELL_SIZE
+Y_CELL_COUNT = (SCREEN_HEIGHT-MIN_HEIGHT) // CELL_SIZE
+Y_CELL_MIN = MIN_HEIGHT//CELL_SIZE
+
+_crnt_map : list[list[bool]]
+
 
 img_background : Image
 _img_ground : Image
@@ -19,7 +28,7 @@ _is_print_mouse_pos = False
 _rect_inv_list : list[InvRect] = []
 _rect_debug_list : list[InvRect] = []
 
-tank_obj : tank = None
+selected_tank = None
 wind : env.Wind = None
 
 def enter():
@@ -48,18 +57,22 @@ def exit():
     del _rect_inv_list
     del _rect_debug_list
 
-    global wind
+    global wind, selected_tank
+    wind.release()
     del wind
+    selected_tank = None
 
-    global tank_obj
-    tank_obj = None
+    global _crnt_map
+    _crnt_map.clear()
+    del _crnt_map
 
 ##### DRAW ######
 def handle_events(events : list):
+    import tank
     global is_draw_mode
     global _is_create_block, _is_delete_block, _is_print_mouse_pos
     global _radius_draw
-    global tank_obj, wind
+    global selected_tank, wind
 
     if is_draw_mode == False:
         return
@@ -77,10 +90,10 @@ def handle_events(events : list):
                 _radius_draw //= 2
             elif event.key == SDLK_F1:
                 stop_draw_mode()
-                return
+                continue
             elif event.key == SDLK_F2:
                 toggle_debug_mode()
-                return
+                continue
             elif event.key == SDLK_F5:
                 save_mapfile()
             elif event.key == SDLK_F6:
@@ -88,22 +101,22 @@ def handle_events(events : list):
             elif event.key == SDLK_F7:
                 wind.randomize()
             elif event.key == SDLK_F9:
-                if tank_obj == None:
-                    tank_obj = tank.Tank()
-                    add_object(tank_obj)
+                if selected_tank == None:
+                    selected_tank = tank.new_tank()
                 else:
-                    set_invalidate_rect(*tank_obj.get_rect().__getitem__())
-                    delete_object(tank_obj)
-                    tank_obj = None
+                    selected_tank.invalidate()
+                    object.delete_object(selected_tank)
+                    selected_tank = None
             elif event.key == SDLK_F10:
                 _is_print_mouse_pos = not _is_print_mouse_pos
             continue
 
         elif event.type == SDL_MOUSEBUTTONDOWN:
             if event.button == SDL_BUTTON_LEFT:
-                if tank_obj:
-                    tank_obj.create()
-                    return
+                if selected_tank:
+                    selected_tank.create()
+                    tank.select(selected_tank)
+                    continue
                 _is_create_block = True
             elif event.button == SDL_BUTTON_RIGHT:
                 _is_delete_block = True
@@ -119,8 +132,9 @@ def handle_events(events : list):
 
         if mouse_pos[0] < 0:
             continue
-        if tank_obj and not tank_obj.is_created:
-            tank_obj.set_pos(mouse_pos)
+        if selected_tank and selected_tank.is_created == False:
+            selected_tank.invalidate()
+            selected_tank.set_pos(mouse_pos)
         elif _is_create_block:
             create_block(_radius_draw, mouse_pos)
         elif _is_delete_block:
@@ -245,6 +259,7 @@ def resize_rect_inv(rect : Rect):
         rect.set_origin((rect.left, MIN_HEIGHT), rect.width, rect.top - MIN_HEIGHT + 1)
     elif rect.top > SCREEN_HEIGHT:
         rect.set_origin((rect.left, rect.bottom), rect.width, SCREEN_HEIGHT - rect.bottom)
+
 # merge rectangles
 def merge_rects(rect_left : InvRect, rect_right : InvRect):
     width = rect_right.right - rect_left.left
@@ -255,7 +270,7 @@ def merge_rects(rect_left : InvRect, rect_right : InvRect):
 _DEFAULT_DIVIDE_GRID_SIZE = CELL_SIZE * 7
 _MIN_DIVIDE_GRID_SIZE = CELL_SIZE * 4
 def set_invalidate_rect(center, width=0, height=0, scale=1, square=False, grid_size=_DEFAULT_DIVIDE_GRID_SIZE):
-    CORR_VAL = 3
+    CORR_VAL = 2
 
     width *= scale
     height *= scale
@@ -398,6 +413,103 @@ def add_invalidate(center, width, height, grid_size=_DEFAULT_DIVIDE_GRID_SIZE):
 
 
 
+##### MAP #####
+def out_of_range_cell(cell_x, cell_y):
+    return ((cell_x < 0) or (cell_x >= X_CELL_COUNT) or (cell_y < 0) or (cell_y >= Y_CELL_COUNT))
+
+def get_cell(position):
+    return int(position[0]//CELL_SIZE), int((position[1]-MIN_HEIGHT)//CELL_SIZE)
+def get_cells(positions):
+    result = []
+    for pos in positions:
+        result.append(get_cell(pos))
+    return result
+
+def get_pos_from_cell(colIdx : int, rowIdx : int):
+    return ((colIdx * CELL_SIZE) + CELL_SIZE//2), ((rowIdx * CELL_SIZE) + CELL_SIZE//2) + MIN_HEIGHT
+def get_origin_from_cell(colIdx : int, rowIdx : int):
+    return ((colIdx * CELL_SIZE) + CELL_SIZE//2) - CELL_SIZE//2, ((rowIdx * CELL_SIZE) + CELL_SIZE//2) - CELL_SIZE//2 + MIN_HEIGHT
+
+def get_block(cell):
+    if out_of_range_cell((cell[0], cell[1])):
+        return False
+    return _crnt_map[cell[1]][cell[0]]
+
+def get_detected_cells(rect : Rect):
+    global _crnt_map
+    result = []
+    cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect)
+    for cell_y in range(cell_start_y, cell_end_y + 1):
+        for cell_x in range(cell_start_x, cell_end_x + 1):
+            if out_of_range_cell(cell_x, cell_y):
+                continue
+            block = _crnt_map[cell_y][cell_x]
+            if block:
+                result.append((cell_x, cell_y))
+    
+    return result
+                
+def get_start_end_cells(rect : Rect):
+    cell_start_x, cell_start_y = get_cell(rect.origin)
+    cell_end_x, cell_end_y = get_cell( (rect.origin[0] + rect.width, rect.origin[1] + rect.height) )
+    return cell_start_x, cell_start_y, cell_end_x, cell_end_y
+
+def get_block(col : int, row : int):
+    return _crnt_map[row][col]
+def get_block_cell(cell : tuple):
+    return _crnt_map[cell[1]][cell[0]]
+def set_block(col : int, row : int, is_block : bool):
+    if type(is_block) is not bool:
+        pass
+    _crnt_map[row][col] = is_block
+
+# end is inclusive
+def get_sliced_map(start_x, start_y, end_x, end_y):
+    if start_x < 0:
+        start_x = 0
+    if end_x >= X_CELL_COUNT:
+        end_x = X_CELL_COUNT - 1
+    if start_y < 0:
+        start_y = 0
+    if end_y >= Y_CELL_COUNT:
+        end_y = Y_CELL_COUNT - 1
+    
+    return [_crnt_map[i][start_x:end_x + 1] for i in range(start_y, end_y + 1)]
+
+
+##### Object #####
+def get_highest_ground_cell(x, y, max_length = float('inf'), is_cell=False):
+    global _crnt_map
+
+    cell_start_col, cell_start_row = int(x), int(y)
+    if not is_cell:
+        cell_start_col, cell_start_row = get_cell((x, y))
+    
+    max_length /= CELL_SIZE
+
+    dir_down = True
+    if out_of_range_cell(cell_start_col, cell_start_row):
+        return False
+    elif _crnt_map[cell_start_row][cell_start_col]:
+        dir_down = False
+
+    if dir_down:
+        for row in range(0, cell_start_row + 1).__reversed__():
+            if not out_of_range_cell(cell_start_col, row) and _crnt_map[row][cell_start_col]:
+                if (cell_start_row - row) > max_length:
+                    break
+                return (cell_start_col, row)
+    else:
+        for row in range(cell_start_row + 1, Y_CELL_COUNT):
+            if not out_of_range_cell(cell_start_col, row) and not _crnt_map[row][cell_start_col]:
+                if (row - cell_start_row) > max_length:
+                    break
+                return (cell_start_col, row - 1)
+
+    return False
+
+
+
 
 
 ##### DEBUG #####
@@ -423,4 +535,52 @@ def draw_debug_point(point):
     _rect_debug_list.append(Rect(point, 2, 2))
 def draw_debug_rect(rect : Rect):
     _rect_debug_list.append(rect)
+
+
+
+
+
+
+##### FILE I/O #####
+def read_mapfile(index : int):
+    import tank
+    from gmap import img_background
+    global _crnt_map, img_map
+
+    _crnt_map = [[False]*X_CELL_COUNT for col in range(Y_CELL_COUNT)]
+
+    if index == -1:
+        img_background.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)    # Empty background
+        return
+
+    fileName = 'map_' + str(index) + '.txt'
+    file = open('maps/' + fileName, 'r')
+
+    for rowIdx, row in enumerate(_crnt_map):
+        line = file.readline()
+        for colIdx, ch in enumerate(line):
+            if colIdx >= X_CELL_COUNT:
+                break
+            _crnt_map[rowIdx][colIdx] = bool(int(ch))
+
+    tank.read_info(file)
+    file.close()
+
+    img_map = load_image_path('map_' + str(index) + '.png')
+    img_map.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + Y_CELL_MIN)
+
+def save_mapfile():
+    import tank
+    global _crnt_map, X_CELL_COUNT, Y_CELL_COUNT
+
+    fileName = 'map_save' + '.txt'
+    file = open('maps/' + fileName, 'w')
+
+    for row in _crnt_map:
+        for col in row:
+            file.write(str(int(col)))
+        file.write('\n')
+
+    tank.write_info(file)
     
+    file.close()
