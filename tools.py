@@ -1,6 +1,7 @@
 from pico2d import *
 import math
 import random
+import time
 
 _is_debug_mode = False
 
@@ -17,7 +18,7 @@ Y_CELL_MIN = MIN_HEIGHT//CELL_SIZE
 LEFT = -1
 RIGHT = 1
 
-_crnt_map : list[list[bool]] = []
+_crnt_map : list[list[bool]]
 
 class Vector2:
     def __init__(self, x=0, y=0):
@@ -207,7 +208,9 @@ def convert_pico2d(x, y):
 def load_image_path(image : str):
     name = 'images/' + image
     result = load_image(name)
-    print('load : ' + name)
+    if _is_debug_mode:
+        print('load : ' + name)
+
     return result
 
 def out_of_range(x, y, max_x, max_y):
@@ -231,6 +234,11 @@ def toggle_debug_mode():
 
 
 ##### MAP #####
+def delete_map():
+    global _crnt_map
+    _crnt_map.clear()
+    del _crnt_map
+
 def get_cell(position):
     return int(position[0]//CELL_SIZE), int((position[1]-MIN_HEIGHT)//CELL_SIZE)
 def get_cells(positions):
@@ -367,6 +375,9 @@ def read_mapfile(index : int):
 
     img_map = load_image_path('map_' + str(index) + '.png')
     img_map.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + Y_CELL_MIN)
+
+    global _is_debug_mode
+    _is_debug_mode = False
 
 def save_mapfile():
     global _crnt_map, X_CELL_COUNT, Y_CELL_COUNT

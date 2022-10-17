@@ -98,13 +98,24 @@ class Cloud(GameObject):
             self.randomize()
             
 
-_images_cloud : list[Image] = []
+_images_cloud : list[Image]
 
-def init(cloud_count=10):
+def enter(cloud_count=10):
+    global _images_cloud
+    _images_cloud = []
+
     for i in range(_CLOUD_IMAGE_COUNT):
         image = load_image_path('cloud_' + str(i) + '.png')
         image.opacify(0.7)
         _images_cloud.append(image)
     
-    for n in range(cloud_count):
+    for _ in range(cloud_count):
         add_object(Cloud())
+
+def exit():
+    global _images_cloud
+    
+    for image in _images_cloud:
+        del image
+    _images_cloud.clear()
+    del _images_cloud

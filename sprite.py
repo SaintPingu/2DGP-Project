@@ -2,13 +2,23 @@ from object import GameObject
 from tools import *
 import gmap
 
-SPRITES = {}
+SPRITES : set
 
-def init():
+def enter():
     global SPRITES
     img_sprite_shot = load_image_path('sprite_shot.png')
     img_sprite_explosion_hp = load_image_path('sprite_explosion.png')
     SPRITES = { "Shot" : img_sprite_shot, "Explosion" : img_sprite_explosion_hp }
+
+def exit():
+    global SPRITES, animations
+    for image in SPRITES.values():
+        del image
+    del SPRITES
+
+    for animation in animations:
+        del animation
+    animations.clear()
 
 class Sprite:
     def __init__(self, sprite_name:str, position, max_frame:int, frame_width:int, frame_height:int, theta=0, max_frame_col:int =1, delay:int=0, scale=1, is_play_once=True, origin=None):

@@ -3,7 +3,6 @@ if __name__ == "__main__":
 
 from tools import *
 from object import *
-import scene
 import tank
 import environment as env
 
@@ -23,16 +22,40 @@ _rect_debug_list : list[InvRect] = []
 tank_obj : tank = None
 wind : env.Wind = None
 
-
-def init():
+def enter():
     global wind, img_background, _img_ground
     img_background = load_image_path('background.png')
     _img_ground = load_image_path('ground.png')
     wind = env.Wind()
     wind.randomize()
 
+    global _rect_inv_list, _rect_debug_list
+    _rect_inv_list = []
+    _rect_debug_list = []
+
+def exit():
+    global img_background, _img_ground
+    del img_background
+    del _img_ground
+
+    global _rect_inv_list, _rect_debug_list
+    for rect in _rect_inv_list:
+        del rect
+    for rect in _rect_debug_list:
+        del rect
+    _rect_inv_list.clear()
+    _rect_debug_list.clear()
+    del _rect_inv_list
+    del _rect_debug_list
+
+    global wind
+    del wind
+
+    global tank_obj
+    tank_obj = None
+
 ##### DRAW ######
-def modify_map(events : list):
+def handle_events(events : list):
     global is_draw_mode
     global _is_create_block, _is_delete_block, _is_print_mouse_pos
     global _radius_draw
@@ -75,6 +98,7 @@ def modify_map(events : list):
             elif event.key == SDLK_F10:
                 _is_print_mouse_pos = not _is_print_mouse_pos
             continue
+
         elif event.type == SDL_MOUSEBUTTONDOWN:
             if event.button == SDL_BUTTON_LEFT:
                 if tank_obj:
@@ -83,6 +107,7 @@ def modify_map(events : list):
                 _is_create_block = True
             elif event.button == SDL_BUTTON_RIGHT:
                 _is_delete_block = True
+
         elif event.type == SDL_MOUSEBUTTONUP:
             _is_create_block = False
             _is_delete_block = False
@@ -216,8 +241,8 @@ def resize_rect_inv(rect : Rect):
     elif rect.right > SCREEN_WIDTH:
         rect.set_origin((rect.left, rect.bottom), SCREEN_WIDTH - rect.left, rect.height)
 
-    if rect.bottom <= scene.MIN_HEIGHT:
-        rect.set_origin((rect.left, scene.MIN_HEIGHT), rect.width, rect.top - scene.MIN_HEIGHT + 1)
+    if rect.bottom <= MIN_HEIGHT:
+        rect.set_origin((rect.left, MIN_HEIGHT), rect.width, rect.top - MIN_HEIGHT + 1)
     elif rect.top > SCREEN_HEIGHT:
         rect.set_origin((rect.left, rect.bottom), rect.width, SCREEN_HEIGHT - rect.bottom)
 # merge rectangles
@@ -227,8 +252,9 @@ def merge_rects(rect_left : InvRect, rect_right : InvRect):
     center = (rect_left.left + width//2, rect_left.bottom + height//2)
     return InvRect(center, width, height, rect_left.is_filled, rect_left.is_empty)
 
-_MIN_DIVIDE_GRID_SIZE = CELL_SIZE * 6
-def set_invalidate_rect(center, width=0, height=0, scale=1, square=False, grid_size=_MIN_DIVIDE_GRID_SIZE):
+_DEFAULT_DIVIDE_GRID_SIZE = CELL_SIZE * 7
+_MIN_DIVIDE_GRID_SIZE = CELL_SIZE * 4
+def set_invalidate_rect(center, width=0, height=0, scale=1, square=False, grid_size=_DEFAULT_DIVIDE_GRID_SIZE):
     CORR_VAL = 3
 
     width *= scale
@@ -244,7 +270,7 @@ def set_invalidate_rect(center, width=0, height=0, scale=1, square=False, grid_s
     
     add_invalidate(center, width, height, grid_size)
 
-def add_invalidate(center, width, height, grid_size=_MIN_DIVIDE_GRID_SIZE):
+def add_invalidate(center, width, height, grid_size=_DEFAULT_DIVIDE_GRID_SIZE):
     global _rect_inv_list
 
     rect_inv = Rect.get_rect_int(Rect(center, width, height))
@@ -310,7 +336,10 @@ def add_invalidate(center, width, height, grid_size=_MIN_DIVIDE_GRID_SIZE):
                 empty_count += 1
                 rect.is_empty = True
             else:
-                _rect_inv_list.append(rect)
+                if grid_size > _MIN_DIVIDE_GRID_SIZE:
+                    add_invalidate(*rect.__getitem__(), _MIN_DIVIDE_GRID_SIZE)
+                else:
+                    _rect_inv_list.append(rect)
                 if filled_count > 0 or empty_count > 0:
                     _rect_inv_list.append(rect_before)
                 empty_count = 0

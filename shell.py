@@ -6,12 +6,17 @@ import sprite
 
 SHELLS = {}
 
-def init():
+def enter():
     global SHELLS
     img_shell_ap = load_image_path('shell_ap.png')
     img_shell_hp = load_image_path('shell_hp.png')
     img_shell_mul = load_image_path('shell_multiple.png')
     SHELLS = { "AP" : img_shell_ap, "HP" : img_shell_hp, "MUL" : img_shell_mul }
+
+def exit():
+    global SHELLS
+    for image in SHELLS.values():
+        del image
 
 
 class Shell(GameObject):

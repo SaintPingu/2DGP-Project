@@ -10,6 +10,10 @@ class GUI:
         self.is_composite = is_draw
         self.flip = flip
         self.is_transparent = is_transparent
+    
+    def __del__(self):
+        if self.image:
+            del self.image
 
     def draw(self):
         if self.is_draw:
@@ -20,12 +24,25 @@ class GUI:
             gmap.set_invalidate_rect(self.position, self.image.w, self.image.h, grid_size=0)
 
 
-_list_gui : list[GUI] = []
+_list_gui : list[GUI]
+
+def enter():
+    global _list_gui
+    _list_gui = []
+    
+def exit():
+    global _list_gui
+
+    for gui in _list_gui:
+        del gui
+    _list_gui.clear()
+    del _list_gui
 
 def add_gui(gui : GUI):
     _list_gui.append(gui)
 
 def del_gui(gui : GUI):
+    global _list_gui
     _list_gui.remove(gui)
     del gui
 

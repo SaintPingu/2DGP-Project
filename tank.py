@@ -7,10 +7,17 @@ import sprite
 tank_green : Image = None
 barrel_green : Image = None
 
-def init():
-    global tank_green, barrel_green
+def enter():
+    global tank_green, barrel_green, tank_player1
     tank_green = load_image_path('tank_green.png')
     barrel_green = load_image_path('barrel_green.png')
+    tank_player1 = None
+
+def exit():
+    global tank_player1, tank_green, barrel_green
+    del tank_green
+    del barrel_green
+    del tank_player1
 
 class Tank(GroundObject):
     def __init__(self, center=(0,0)):
@@ -157,18 +164,18 @@ class Tank(GroundObject):
         head = self.get_barrel_head()
         theta = self.get_barrel_theta()
         #crnt_shell = shell.Shell("HP", self.barrel_pivot, theta)
-        #crnt_shell = shell.Shell("AP", self.barrel_position, theta)
-        #shell.add_shell(crnt_shell)
-        crnt_shell = shell.Shell("MUL", self.barrel_position, theta)
+        crnt_shell = shell.Shell("AP", self.barrel_position, theta)
         shell.add_shell(crnt_shell)
-        crnt_shell = shell.Shell("MUL", self.barrel_position, theta - 0.03)
-        shell.add_shell(crnt_shell)
-        crnt_shell = shell.Shell("MUL", self.barrel_position, theta + 0.03)
-        shell.add_shell(crnt_shell)
-        crnt_shell = shell.Shell("MUL", self.barrel_position, theta - 0.06)
-        shell.add_shell(crnt_shell)
-        crnt_shell = shell.Shell("MUL", self.barrel_position, theta + 0.06)
-        shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, theta)
+        # shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, theta - 0.03)
+        # shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, theta + 0.03)
+        # shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, theta - 0.06)
+        # shell.add_shell(crnt_shell)
+        # crnt_shell = shell.Shell("MUL", self.barrel_position, theta + 0.06)
+        # shell.add_shell(crnt_shell)
 
         sprite.add_animation("Shot", head, theta=theta, parent=self)
 

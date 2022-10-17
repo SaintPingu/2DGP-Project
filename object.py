@@ -79,10 +79,6 @@ class GameObject:
 
     def set_pos(self, center):
         self.set_center(center)
-
-    def draw_debug_rect(self):
-        rect = self.get_rect()
-        draw_rectangle(rect.left, rect.bottom, rect.right, rect.top)
     
     def is_in_radius(self, position : Vector2, radius):
         distance = (position - self.center).get_norm()
@@ -104,8 +100,6 @@ class GameObject:
     
     def invalidate(self):
         pass
-
-_gameObjects : list[GameObject] = []
 
 
 
@@ -338,7 +332,22 @@ class GroundObject(GameObject):
             
         return True
 
-_groundObjects : list[GroundObject] = []
+_gameObjects : list[GameObject]
+_groundObjects : list[GroundObject]
+
+def enter():
+    global _gameObjects, _groundObjects
+    _gameObjects = []
+    _groundObjects = []
+    
+def exit():
+    global _gameObjects, _groundObjects
+    for object in _gameObjects:
+        delete_object(object)
+    _gameObjects.clear()
+    _groundObjects.clear()
+    del _gameObjects
+    del _groundObjects
 
 def add_object(object : GameObject):
     _gameObjects.append(object)
