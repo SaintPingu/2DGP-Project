@@ -1,6 +1,31 @@
 from tools import *
 import gmap
 
+_img_hp : Image
+def enter():
+    global _list_gui, _img_hp
+    _list_gui = []
+    _img_hp = load_image_path('hp_bar.png')
+    
+def exit():
+    global _list_gui, _img_hp
+
+    for gui in _list_gui:
+        gui.release()
+    _list_gui.clear()
+    del _list_gui
+    _list_gui = None
+
+    del _img_hp
+
+def update():
+    for gui in _list_gui:
+        gui.update()
+
+def draw():
+    for gui in _list_gui:
+        gui.draw()
+
 class GUI:
     def __init__(self, image : Image, position=(0,0), theta=0, is_draw=True, flip='', is_fixed=False):
         self.image = image
@@ -11,7 +36,7 @@ class GUI:
         self.flip = flip
         self.is_fixed = is_fixed
     
-    def release(self, is_delete_image=True, is_invalidate=False):
+    def release(self, is_delete_image=True):
         if is_delete_image and self.image:
             del self.image
 
@@ -33,53 +58,62 @@ class GUI_HP(GUI):
         self.max_hp = owner.hp
         self.width = _img_hp.w
         self.height = _img_hp.h
-        self.position = Vector2(*self.owner.center)
+        self.position = self.owner.center[0], self.owner.center[1]
         self.update()
-    
-    def release(self):
-        super().release(False)
 
     def draw(self):
-        self.image.draw(*self.position, self.width, self.height)
+        if self.is_draw:
+            self.image.draw(*self.position, self.width, self.height)
     
     def update(self):
         super().update()
-        self.position.x = self.owner.center.x
-        self.position.y = self.owner.get_rect().top + 10
+        self.position = (self.owner.center.x, self.owner.get_rect().top + 10)
 
     def resize(self, hp):
         pass
 
-_img_hp : Image
-_list_gui : list[GUI]
-
-def enter():
-    global _list_gui, _img_hp
-    _list_gui = []
-    _img_hp = load_image_path('hp_bar.png')
+class GUI_Select_Tank(GUI):
+    def __init__(self, image: Image):
+        super().__init__(image)
+        self.owner = None
+        self.is_positive_y = True
+        self.y_floating = 0
     
-def exit():
-    global _list_gui, _img_hp
+    def draw(self):
+        if self.owner:
+            super().draw()
+    
+    def update(self):
+        MAX_FLOATING_Y = 5
+        if self.owner:
+            if self.is_positive_y:
+                self.y_floating += 0.2
+                if self.y_floating >= MAX_FLOATING_Y:
+                    self.is_positive_y = False
+            else:
+                self.y_floating -= 0.2
+                if self.y_floating <= -MAX_FLOATING_Y:
+                    self.is_positive_y = True
 
-    for gui in _list_gui:
-        gui.release()
-    _list_gui.clear()
-    del _list_gui
+            super().update()
+            self.position = (self.owner.center.x, self.owner.get_rect().top + 35 + self.y_floating)
+    
+    def set_owner(self, owner):
+        self.owner = owner
+        if self.owner is None:
+            self.invalidatae()
+            self.y_floating = 0
+            self.is_positive_y = True
+        else:
+            self.update()
 
-    del _img_hp
+_list_gui : list[GUI]
 
 def add_gui(gui : GUI):
     _list_gui.append(gui)
 
 def del_gui(gui : GUI):
     global _list_gui
-    _list_gui.remove(gui)
-    del gui
-
-def update_gui():
-    for gui in _list_gui:
-        gui.update()
-
-def draw_gui():
-    for gui in _list_gui:
-        gui.draw()
+    if _list_gui:
+        _list_gui.remove(gui)
+        gui.release()

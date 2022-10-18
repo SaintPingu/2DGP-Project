@@ -28,7 +28,6 @@ class Wind:
         rand_speed = 0.001 + random.random() * 0.01
         self.direction = rand_direction
         self.speed = rand_speed
-        print(self.direction)
 
         self.gui_wind.is_draw = False
         self.gui_wind.flip = ''

@@ -56,6 +56,8 @@ def exit():
     _rect_debug_list.clear()
     del _rect_inv_list
     del _rect_debug_list
+    _rect_inv_list = None
+    _rect_debug_list = None
 
     global wind, selected_tank
     wind.release()
@@ -66,7 +68,57 @@ def exit():
     _crnt_map.clear()
     del _crnt_map
 
-##### DRAW ######
+def draw(is_draw_full=False):
+    global _rect_inv_list
+
+    if is_draw_full:
+        _rect_inv_list.clear()
+        _rect_inv_list.append(InvRect((SCREEN_WIDTH//2, SCREEN_HEIGHT//2), SCREEN_WIDTH, SCREEN_HEIGHT))
+    elif len(_rect_inv_list) == 0:
+        return
+
+    # draw background
+    for rect_inv in list(_rect_inv_list):
+        if is_debug_mode():
+            draw_debug_rect(rect_inv)
+
+        if rect_inv.is_grid == False:
+            block_set = get_block_set(rect_inv)
+            if False not in block_set:
+                rect_inv.is_filled = True
+            elif True not in block_set:
+                rect_inv.is_empty = True
+
+        if rect_inv.is_filled:
+            draw_ground(rect_inv)
+            _rect_inv_list.remove(rect_inv)
+            continue
+        # empty
+        elif rect_inv.is_empty:
+            _rect_inv_list.remove(rect_inv)
+
+        draw_background(rect_inv)
+
+    # draw grounds
+    for rect_inv in _rect_inv_list:
+        cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect_inv)
+
+        for cell_y in range(cell_start_y, cell_end_y + 1):
+            for cell_x in range(cell_start_x, cell_end_x + 1):
+                if out_of_range_cell(cell_x, cell_y):
+                    continue
+                elif get_block(cell_x, cell_y) == False:
+                    continue
+
+                posX, posY = get_pos_from_cell(cell_x, cell_y)
+                originX, originY = get_origin_from_cell(cell_x, cell_y)
+
+                _img_ground.clip_draw(originX, originY, CELL_SIZE, CELL_SIZE, posX, posY)
+
+
+    _rect_inv_list.clear()
+
+
 def handle_events(events : list):
     import tank
     global is_draw_mode
@@ -97,7 +149,7 @@ def handle_events(events : list):
             elif event.key == SDLK_F5:
                 save_mapfile()
             elif event.key == SDLK_F6:
-                draw_map(True)
+                draw(True)
             elif event.key == SDLK_F7:
                 wind.randomize()
             elif event.key == SDLK_F9:
@@ -115,7 +167,7 @@ def handle_events(events : list):
             if event.button == SDL_BUTTON_LEFT:
                 if selected_tank:
                     selected_tank.create()
-                    tank.select(selected_tank)
+                    tank.select_tank(selected_tank)
                     continue
                 _is_create_block = True
             elif event.button == SDL_BUTTON_RIGHT:
@@ -165,56 +217,6 @@ def get_block_set(rect_inv : Rect):
     for row in sliced_map:
         block_set |= (set(row))
     return block_set
-
-def draw_map(is_draw_full=False):
-    global _rect_inv_list
-
-    if is_draw_full:
-        _rect_inv_list.clear()
-        _rect_inv_list.append(InvRect((SCREEN_WIDTH//2, SCREEN_HEIGHT//2), SCREEN_WIDTH, SCREEN_HEIGHT))
-    elif len(_rect_inv_list) == 0:
-        return
-
-    # draw background
-    for rect_inv in list(_rect_inv_list):
-        if is_debug_mode():
-            draw_debug_rect(rect_inv)
-
-        if rect_inv.is_grid == False:
-            block_set = get_block_set(rect_inv)
-            if False not in block_set:
-                rect_inv.is_filled = True
-            elif True not in block_set:
-                rect_inv.is_empty = True
-
-        if rect_inv.is_filled:
-            draw_ground(rect_inv)
-            _rect_inv_list.remove(rect_inv)
-            continue
-        # empty
-        elif rect_inv.is_empty:
-            _rect_inv_list.remove(rect_inv)
-
-        draw_background(rect_inv)
-
-    # draw grounds
-    for rect_inv in _rect_inv_list:
-        cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect_inv)
-
-        for cell_y in range(cell_start_y, cell_end_y + 1):
-            for cell_x in range(cell_start_x, cell_end_x + 1):
-                if out_of_range_cell(cell_x, cell_y):
-                    continue
-                elif get_block(cell_x, cell_y) == False:
-                    continue
-
-                posX, posY = get_pos_from_cell(cell_x, cell_y)
-                originX, originY = get_origin_from_cell(cell_x, cell_y)
-
-                _img_ground.clip_draw(originX, originY, CELL_SIZE, CELL_SIZE, posX, posY)
-
-
-    _rect_inv_list.clear()
 
 
 
@@ -270,7 +272,7 @@ def merge_rects(rect_left : InvRect, rect_right : InvRect):
 _DEFAULT_DIVIDE_GRID_SIZE = CELL_SIZE * 7
 _MIN_DIVIDE_GRID_SIZE = CELL_SIZE * 4
 def set_invalidate_rect(center, width=0, height=0, scale=1, square=False, grid_size=_DEFAULT_DIVIDE_GRID_SIZE):
-    CORR_VAL = 2
+    CORR_VAL = 4
 
     width *= scale
     height *= scale

@@ -158,8 +158,8 @@ class Rect:
     def get_rect_int(self):
         result = Rect()
         result.center = to_int_pos(self.center)
-        result.width = int(self.width)
-        result.height = int(self.height)
+        result.width = math.ceil(self.width)
+        result.height = math.ceil(self.height)
         result.update()
         return result
 

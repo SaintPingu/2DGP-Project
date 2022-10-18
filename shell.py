@@ -37,9 +37,9 @@ class Shell(object.GameObject):
         self.draw_image(self.img_shell)
         if self.temp:
             gmap.draw_debug_point(self.temp)
-    
+
     def update(self):
-        gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True, grid_size=0)
+        self.invalidate()
 
         dest = (self.center + self.vector * self.speed) + self.wind.get_wind()
         self.vector = self.vector.get_rotated_dest(self.center, dest)
@@ -58,7 +58,7 @@ class Shell(object.GameObject):
         for detected_cell in detected_cells:
             if not gmap.out_of_range_cell(*detected_cell) and gmap.get_block_cell(detected_cell):
                 self.explosion(head)
-                gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
+                self.invalidate()
                 delete_shell(self)
                 return
         if is_debug_mode():
@@ -67,11 +67,17 @@ class Shell(object.GameObject):
         self.is_rect_invalid = True
 
         # apply rotation and gravity
-        self.vector = self.vector.lerp(Vector2.down(), 0.003)
+        self.vector = self.vector.lerp(Vector2.down(), 0.006)
         self.theta = self.vector.get_theta(Vector2.right())
         if self.vector.y < 0:
             self.speed += 0.05
             self.theta *= -1
+
+    def invalidate(self, is_grid=False):
+        if is_grid:
+            gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
+        else:
+            gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True, grid_size=0)
 
     def explosion(self, head : Vector2):
         gmap.draw_block(self.explosion_radius, head, False)
@@ -88,9 +94,22 @@ class Shell(object.GameObject):
 
 fired_shells : list[Shell] = []
 
-def add_shell(shell : Shell):
+def add_shell(shell_name, position, theta):
+    shell = Shell(shell_name, position, theta)
     fired_shells.append(shell)
     object.add_object(shell)
+
+    if shell_name == "MUL":
+        for n in range(3):
+            t = 0.05 * (n+1)
+            shell_1 = Shell(shell_name, position, theta + t)
+            shell_2 = Shell(shell_name, position, theta - t)
+            fired_shells.append(shell_1)
+            fired_shells.append(shell_2)
+            object.add_object(shell_1)
+            object.add_object(shell_2)
+            
+
 
 def delete_shell(shell : Shell):
     fired_shells.remove(shell)
@@ -104,15 +123,15 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
     explosion_radius = 0
 
     if shell_name == "HP":
-        speed = 6
+        speed = 15
         damage = 10
         explosion_radius = 15
     elif shell_name == "AP":
-        speed = 7
+        speed = 18
         damage = 30
         explosion_radius = 8
     elif shell_name == "MUL":
-        speed = 5
+        speed = 10
         damage = 2
         explosion_radius = 4
     else:

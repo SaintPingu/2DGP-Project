@@ -19,6 +19,15 @@ def exit():
         del animation
     animations.clear()
 
+def update():
+    for animation in animations:
+        if animation.update() is False:
+            animations.remove(animation)
+
+def draw():
+    for animation in animations:
+        animation.draw()
+
 class Sprite:
     def __init__(self, sprite_name:str, position, max_frame:int, frame_width:int, frame_height:int, theta=0, max_frame_col:int =1, delay:int=0, scale=1, is_play_once=True, origin=None):
         assert sprite_name in SPRITES.keys()
@@ -104,12 +113,3 @@ def add_animation(sprite_name : Sprite, center, theta=0, scale=1.0, parent=None)
         sprite = Sprite(sprite_name, center, 14, 75, 75, max_frame_col=4, delay=5, scale=scale, origin=(0, 75))
 
     animations.append(sprite)
-
-def update_animations():
-    for animation in animations:
-        if animation.update() is False:
-            animations.remove(animation)
-
-def draw_animations():
-    for animation in animations:
-        animation.draw()

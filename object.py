@@ -1,5 +1,27 @@
 from tools import *
 
+def enter():
+    global _gameObjects, _groundObjects
+    _gameObjects = []
+    _groundObjects = []
+    
+def exit():
+    global _gameObjects, _groundObjects
+    for object in _gameObjects:
+        delete_object(object)
+    _gameObjects.clear()
+    _groundObjects.clear()
+    del _gameObjects
+    del _groundObjects
+    
+def update():
+    for object in _gameObjects:
+        object.update()
+
+def draw():
+    for object in reversed(_gameObjects):
+        object.draw()
+
 class GameObject:
     def __init__(self, center=(0,0), width=0, height=0, theta=0):
         self.center : Vector2 = Vector2(*center)
@@ -241,7 +263,6 @@ class GroundObject(GameObject):
         min_y = self.bot_center.y - self.width//2
         # get minimum theta
         min_theta = float("inf")
-        flat_count = 0
         for vector in vectors_bot:
             if dir_check == RIGHT:
                 if vector.x < self.bot_center.x:
@@ -259,10 +280,7 @@ class GroundObject(GameObject):
                 continue
                 
             vec_ground = Vector2(*gmap.get_pos_from_cell(*ground_cell))
-            if vec_ground.y == vec_pivot.y:
-                flat_count += 1
-                continue
-            elif vec_ground.y > max_y or vec_ground.y < min_y:
+            if vec_ground.y > max_y or vec_ground.y < min_y:
                 continue
             
             theta = vec_ground.get_theta_axis(axis, vec_pivot)
@@ -274,10 +292,7 @@ class GroundObject(GameObject):
         
         # didn't find highest ground point for bottom vectors
         if min_theta == float("inf"):
-            if flat_count > 0:
-                min_theta = 0
-            else:
-                min_theta = self.theta
+            min_theta = self.theta
         elif math.fabs(math.degrees(min_theta)) > 75 and ignore_height == False:
             return False
 
@@ -336,20 +351,6 @@ class GroundObject(GameObject):
 _gameObjects : list[GameObject]
 _groundObjects : list[GroundObject]
 
-def enter():
-    global _gameObjects, _groundObjects
-    _gameObjects = []
-    _groundObjects = []
-    
-def exit():
-    global _gameObjects, _groundObjects
-    for object in _gameObjects:
-        delete_object(object)
-    _gameObjects.clear()
-    _groundObjects.clear()
-    del _gameObjects
-    del _groundObjects
-
 def add_object(object : GameObject):
     _gameObjects.append(object)
     if object.__class__.__base__ == GroundObject:
@@ -365,17 +366,9 @@ def delete_object(object : GameObject):
 def get_gameObjects():
     return _gameObjects
 
-def update_objects():
-    for object in _gameObjects:
-        object.update()
-                
-def draw_objects():
-    for object in reversed(_gameObjects):
-        object.draw()
-
 def check_ground(position : Vector2, radius):
     for object in _groundObjects:
         if object.is_in_radius(position, radius):
+            object.invalidate()
             object.rotate_ground(True)
             object.is_rect_invalid = True
-            object.invalidate()

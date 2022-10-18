@@ -36,15 +36,16 @@ def exit():
     object.exit()
 
 def update():
-    object.update_objects()
-    sprite.update_animations()
-    gui.update_gui()
+    object.update()
+    sprite.update()
+    gui.update()
+    tank.update()
 
 def draw():
-    gmap.draw_map()
-    gui.draw_gui()
-    object.draw_objects()
-    sprite.draw_animations()
+    gmap.draw()
+    gui.draw()
+    object.draw()
+    sprite.draw()
     gmap.draw_debugs()
     
     update_canvas()
