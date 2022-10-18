@@ -29,14 +29,11 @@ _rect_inv_list : list[InvRect] = []
 _rect_debug_list : list[InvRect] = []
 
 selected_tank = None
-wind : env.Wind = None
 
 def enter():
-    global wind, img_background, _img_ground
+    global img_background, _img_ground
     img_background = load_image_path('background.png')
     _img_ground = load_image_path('ground.png')
-    wind = env.Wind()
-    wind.randomize()
 
     global _rect_inv_list, _rect_debug_list
     _rect_inv_list = []
@@ -59,9 +56,7 @@ def exit():
     _rect_inv_list = None
     _rect_debug_list = None
 
-    global wind, selected_tank
-    wind.release()
-    del wind
+    global selected_tank
     selected_tank = None
 
     global _crnt_map
@@ -124,7 +119,7 @@ def handle_events(events : list):
     global is_draw_mode
     global _is_create_block, _is_delete_block, _is_print_mouse_pos
     global _radius_draw
-    global selected_tank, wind
+    global selected_tank
 
     if is_draw_mode == False:
         return
@@ -136,6 +131,13 @@ def handle_events(events : list):
                 continue
             elif SDLK_1 <= event.key <= SDLK_9:
                 _radius_draw = event.key - SDLK_0
+                if selected_tank:
+                    if event.key == SDLK_1:
+                        selected_tank.set_team("green")
+                    elif event.key == SDLK_2:
+                        selected_tank.set_team("blue")
+                    elif event.key == SDLK_3:
+                        selected_tank.set_team("red")
             elif event.key == SDLK_KP_MULTIPLY:
                 _radius_draw *= 2
             elif event.key == SDLK_KP_DIVIDE:
@@ -151,7 +153,7 @@ def handle_events(events : list):
             elif event.key == SDLK_F6:
                 draw(True)
             elif event.key == SDLK_F7:
-                wind.randomize()
+                env.wind.randomize()
             elif event.key == SDLK_F9:
                 if selected_tank == None:
                     selected_tank = tank.new_tank()
@@ -168,6 +170,7 @@ def handle_events(events : list):
                 if selected_tank:
                     selected_tank.create()
                     tank.select_tank(selected_tank)
+                    selected_tank = None
                     continue
                 _is_create_block = True
             elif event.button == SDL_BUTTON_RIGHT:
@@ -294,6 +297,9 @@ def add_invalidate(center, width, height, grid_size=_DEFAULT_DIVIDE_GRID_SIZE):
     rect_inv = InvRect(*rect_inv.__getitem__())
 
     resize_rect_inv(rect_inv)
+
+    if rect_inv.center[0] == 8:
+        pass
 
     if grid_size == 0 or (rect_inv.width <= grid_size and rect_inv.height <= grid_size):
         rect_inv.is_grid = False
@@ -516,7 +522,7 @@ def get_highest_ground_cell(x, y, max_length = float('inf'), is_cell=False):
 
 ##### DEBUG #####
 def draw_debugs():
-    if len(_rect_debug_list) > 0:
+    if is_debug_mode():
         for rect in _rect_debug_list:
             draw_rectangle(rect.origin[0], rect.origin[1], rect.origin[0]+rect.width, rect.origin[1]+rect.height)
         _rect_debug_list.clear()
@@ -533,8 +539,8 @@ def draw_debug_vector(vector):
 def draw_debug_vectors(vectors):
     for vector in vectors:
         draw_debug_vector(vector)
-def draw_debug_point(point):
-    _rect_debug_list.append(Rect(point, 2, 2))
+def draw_debug_point(point, size):
+    _rect_debug_list.append(Rect(point, size, size))
 def draw_debug_rect(rect : Rect):
     _rect_debug_list.append(rect)
 

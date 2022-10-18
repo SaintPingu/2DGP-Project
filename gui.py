@@ -56,18 +56,21 @@ class GUI_HP(GUI):
         super().__init__(_img_hp)
         self.owner = owner
         self.max_hp = owner.hp
+        self.max_width = _img_hp.w
         self.width = _img_hp.w
         self.height = _img_hp.h
         self.position = self.owner.center[0], self.owner.center[1]
-        self.update()
 
     def draw(self):
         if self.is_draw:
             self.image.draw(*self.position, self.width, self.height)
     
     def update(self):
-        super().update()
-        self.position = (self.owner.center.x, self.owner.get_rect().top + 10)
+        self.invalidatae()
+        self.position = (self.owner.center.x, self.owner.get_rect().top + 20)
+    
+    def update_gauge(self):
+        self.width = self.max_width * (self.owner.hp / self.max_hp)
 
     def resize(self, hp):
         pass
@@ -96,7 +99,7 @@ class GUI_Select_Tank(GUI):
                     self.is_positive_y = True
 
             super().update()
-            self.position = (self.owner.center.x, self.owner.get_rect().top + 35 + self.y_floating)
+            self.position = (self.owner.center.x, self.owner.get_rect().top + 45 + self.y_floating)
     
     def set_owner(self, owner):
         self.owner = owner

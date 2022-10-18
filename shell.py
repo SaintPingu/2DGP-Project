@@ -2,6 +2,7 @@ from tools import *
 import object
 import gmap
 import sprite
+import tank
 
 
 SHELLS = {}
@@ -30,27 +31,28 @@ class Shell(object.GameObject):
         self.speed, self.damage, self.explosion_radius = get_attributes(shell_name)
         self.temp = None
         self.is_destroyed = False
-        self.wind : gmap.env.Wind = gmap.wind
 
     def draw(self):
         self.is_rect_invalid = True
         self.draw_image(self.img_shell)
         if self.temp:
             gmap.draw_debug_point(self.temp)
-
-    def update(self):
-        self.invalidate()
-
-        dest = (self.center + self.vector * self.speed) + self.wind.get_wind()
+    
+    def move(self):
+        dest = (self.center + self.vector * self.speed) + gmap.env.wind.get_wind_vector()
         self.vector = self.vector.get_rotated_dest(self.center, dest)
         self.set_center(dest)
 
+    def update(self):
+        self.invalidate()
         rect = self.get_squre()
 
         # out of range
         if rect.right < 0 or rect.left > SCREEN_WIDTH or rect.top <= MIN_HEIGHT:
             delete_shell(self)
             return
+        
+        self.move()
 
         head = self.get_head()
         rect_detection = Rect(head, 4, 4)
@@ -81,6 +83,7 @@ class Shell(object.GameObject):
 
     def explosion(self, head : Vector2):
         gmap.draw_block(self.explosion_radius, head, False)
+        tank.check_hit(head, self.explosion_radius, self.damage)
         object.check_ground(head, self.explosion_radius)
         sprite.add_animation("Explosion", head, scale=self.explosion_radius/10)
         
@@ -94,8 +97,12 @@ class Shell(object.GameObject):
 
 fired_shells : list[Shell] = []
 
-def add_shell(shell_name, position, theta):
-    shell = Shell(shell_name, position, theta)
+def add_shell(shell_name, head_position, theta):
+    shell = Shell(shell_name, head_position, theta)
+    shell_head = shell.get_head()
+    position = head_position + (head_position - shell_head)*2
+    gmap.draw_debug_point(position, 3)
+    shell.set_pos(position)
     fired_shells.append(shell)
     object.add_object(shell)
 

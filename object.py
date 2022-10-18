@@ -108,7 +108,7 @@ class GameObject:
     
     def is_in_radius(self, position : Vector2, radius):
         distance = (position - self.center).get_norm()
-        if distance < self.detect_radius + radius:
+        if distance < self.detect_radius + radius*2:
             return True
 
     def resize(self, scale : float):
@@ -370,5 +370,6 @@ def check_ground(position : Vector2, radius):
     for object in _groundObjects:
         if object.is_in_radius(position, radius):
             object.invalidate()
+            #if object.rotate_ground() == False:
             object.rotate_ground(True)
             object.is_rect_invalid = True

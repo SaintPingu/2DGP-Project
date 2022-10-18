@@ -5,14 +5,25 @@ import shell
 import sprite
 import gui
 
-tank_green : Image = None
-barrel_green : Image = None
+image_tank_green : Image = None
+image_barrel_green : Image = None
+image_tank_blue : Image = None
+image_barrel_blue : Image = None
+image_tank_red : Image = None
+image_barrel_red : Image = None
+
 gui_selection : gui.GUI_Select_Tank = None
 
 def enter():
-    global tank_green, barrel_green, gui_selection
-    tank_green = load_image_path('tank_green.png')
-    barrel_green = load_image_path('barrel_green.png')
+    global image_tank_green, image_barrel_green, image_tank_blue, image_barrel_blue, image_tank_red, image_barrel_red
+    image_tank_green = load_image_path('tank_green.png')
+    image_barrel_green = load_image_path('barrel_green.png')
+    image_tank_blue = load_image_path('tank_blue.png')
+    image_barrel_blue = load_image_path('barrel_blue.png')
+    image_tank_red = load_image_path('tank_red.png')
+    image_barrel_red = load_image_path('barrel_red.png')
+
+    global gui_selection
     selection_arrow = load_image_path('selection_arrow.png')
     gui_selection = gui.GUI_Select_Tank(selection_arrow)
     gui.add_gui(gui_selection)
@@ -22,9 +33,9 @@ def enter():
     crnt_index = 0
 
 def exit():
-    global  tank_green, barrel_green, gui_selection
-    del tank_green
-    del barrel_green
+    global  image_tank_green, image_barrel_green, gui_selection
+    del image_tank_green
+    del image_barrel_green
     gui_selection = None
 
     global tank_list, crnt_tank
@@ -40,22 +51,23 @@ def update():
         _wait_count += 1
         if _wait_count > 60:
             select_next_tank()
+            gmap.env.wind.randomize()
             _wait_count = 0
         
 
 class Tank(object.GroundObject):
     def __init__(self, center=(0,0)):
-        self.image = tank_green
-        self.image_barrel = barrel_green
+        self.image = image_tank_green
+        self.image_barrel = image_barrel_green
 
         self.barrel_position = Vector2()
         self.barrel_pivot = Vector2()
         self.vec_dir_barrel = Vector2.right()
 
         self.index = 0
-        self.is_AI = False
+        self.team = "green"
         self.hp = 100
-        self.crnt_shell = None
+        self.crnt_shell = "AP"
 
         super().__init__(center, self.image.w, self.image.h)
         self.gui_hp = gui.GUI_HP(self)
@@ -65,6 +77,21 @@ class Tank(object.GroundObject):
         if tank_list:
             tank_list.remove(self)
         gui.del_gui(self.gui_hp)
+
+    def set_team(self, team : str):
+        self.team = team
+        if team == "green":
+            self.image = image_tank_green
+            self.image_barrel = image_barrel_green
+        elif team == "blue":
+            self.image = image_tank_blue
+            self.image_barrel = image_barrel_blue
+        elif team == "red" or team == 'ai':
+            self.image = image_tank_red
+            self.image_barrel = image_barrel_red
+        else:
+            assert False
+
 
     def invalidate(self):
         gmap.set_invalidate_rect(self.barrel_position, self.image_barrel.w, self.image_barrel.h, square=True, grid_size=0)
@@ -195,10 +222,15 @@ class Tank(object.GroundObject):
     def fire(self):
         head = self.get_barrel_head()
         theta = self.get_barrel_theta()
-        self.crnt_shell = "AP"
-        shell.add_shell(self.crnt_shell, self.barrel_position, theta)
+        shell.add_shell(self.crnt_shell, head, theta)
         sprite.add_animation("Shot", head, theta=theta, parent=self)
         select_tank(None)
+    ##########
+    def get_damage(self, damage):
+        self.gui_hp.invalidatae()
+        self.gui_hp.update_gauge()
+        self.hp -= damage
+        print("hit")
 
 tank_list : list[Tank]
 crnt_tank : Tank = None
@@ -238,6 +270,11 @@ def check_invalidate(position, radius):
         if tank.is_in_radius(position, radius):
             tank.is_rect_invalid = True
 
+def check_hit(position : Vector2, radius, damage):
+    for tank in tank_list:
+        if tank.is_in_radius(position, radius):
+            tank.get_damage(damage)
+
 def stop_tank():
     if crnt_tank:
         crnt_tank.stop()
@@ -263,16 +300,16 @@ def read_info(file):
     file.readline()
 
     while True:
-        tank = Tank()
         data = file.readline()
         if data == END_OF_LINE:
             if len(tank_list) > 0:
                 select_tank(tank_list[0])
             return
 
+        tank = Tank()
         values = data.split()
         tank.index = int(values[0])
-        tank.is_AI = bool(values[1])
+        tank.set_team(values[1])
         tank.hp = int(values[2])
         tank.center.x = float(values[3])
         tank.center.y = float(values[4])

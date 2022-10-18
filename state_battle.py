@@ -69,6 +69,12 @@ def handle_events():
                 tank.move_tank(RIGHT)
             elif event.key == SDLK_LEFT:
                 tank.move_tank(LEFT)
+            elif event.key == SDLK_1:
+                tank.crnt_tank.crnt_shell = "AP"
+            elif event.key == SDLK_2:
+                tank.crnt_tank.crnt_shell = "HP"
+            elif event.key == SDLK_3:
+                tank.crnt_tank.crnt_shell = "MUL"
 
         elif event.type == SDL_KEYUP:
             if event.key == SDLK_RIGHT:

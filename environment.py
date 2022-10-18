@@ -3,6 +3,35 @@ import object
 import gui
 import gmap
 
+
+def enter(cloud_count=10):
+    global _images_cloud
+    _images_cloud = []
+
+    for i in range(_CLOUD_IMAGE_COUNT):
+        image = load_image_path('cloud_' + str(i) + '.png')
+        image.opacify(0.7)
+        _images_cloud.append(image)
+    
+    for _ in range(cloud_count):
+        object.add_object(Cloud())
+
+    global wind
+    wind = Wind()
+    wind.randomize()
+
+def exit():
+    global _images_cloud
+    
+    for image in _images_cloud:
+        del image
+    _images_cloud.clear()
+    del _images_cloud
+
+    global wind
+    wind.release()
+    del wind
+
 class Wind:
     def __init__(self):
         self.image_cloud = load_image_path('gui_cloud.png')
@@ -40,7 +69,7 @@ class Wind:
             self.gui_wind.position = self.wind_pos_right
             
     
-    def get_wind(self) -> Vector2:
+    def get_wind_vector(self) -> Vector2:
         return Vector2(self.direction * self.speed, 0)
 
 
@@ -49,7 +78,6 @@ _CLOUD_IMAGE_COUNT = 9
 class Cloud(object.GameObject):
     def __init__(self):
         super().__init__()
-        self.wind = gmap.wind
         self.image : Image = None
         self.scale = 0
         self.randomize(True)
@@ -79,9 +107,9 @@ class Cloud(object.GameObject):
         if is_init:
             x = random.randint(0, SCREEN_WIDTH)
             self.set_center((x, y))
-        elif self.wind.direction < 0:
+        elif wind.direction < 0:
             self.set_pos((SCREEN_WIDTH + self.width//2 + rand_x, y))
-        elif self.wind.direction > 0:
+        elif wind.direction > 0:
             self.set_pos((-self.width//2 - rand_x, y))
             
         self.resize()
@@ -90,35 +118,16 @@ class Cloud(object.GameObject):
         rect_inv = Rect(self.center, self.width + 3, self.height + 3)
         gmap.resize_rect_inv(rect_inv)
         gmap.draw_background(rect_inv)
-        speed = self.wind.speed * 100
-        self.offset(self.wind.direction * speed, 0)
+        speed = wind.speed * 100
+        self.offset(wind.direction * speed, 0)
         self.is_rect_invalid = True
 
         rect = self.get_rect()
-        if rect.right < 0 and self.wind.direction < 0:
+        if rect.right < 0 and wind.direction < 0:
             self.randomize()
-        elif rect.left > SCREEN_WIDTH and self.wind.direction > 0:
+        elif rect.left > SCREEN_WIDTH and wind.direction > 0:
             self.randomize()
             
 
 _images_cloud : list[Image]
-
-def enter(cloud_count=10):
-    global _images_cloud
-    _images_cloud = []
-
-    for i in range(_CLOUD_IMAGE_COUNT):
-        image = load_image_path('cloud_' + str(i) + '.png')
-        image.opacify(0.7)
-        _images_cloud.append(image)
-    
-    for _ in range(cloud_count):
-        object.add_object(Cloud())
-
-def exit():
-    global _images_cloud
-    
-    for image in _images_cloud:
-        del image
-    _images_cloud.clear()
-    del _images_cloud
+wind : Wind = None
