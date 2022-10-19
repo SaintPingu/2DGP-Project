@@ -87,14 +87,15 @@ class GUI_Select_Tank(GUI):
             super().draw()
     
     def update(self):
-        MAX_FLOATING_Y = 5
         if self.owner:
+            MAX_FLOATING_Y = 5
+            FLOATING_AMOUNT = 0.2
             if self.is_positive_y:
-                self.y_floating += 0.2
+                self.y_floating += FLOATING_AMOUNT
                 if self.y_floating >= MAX_FLOATING_Y:
                     self.is_positive_y = False
             else:
-                self.y_floating -= 0.2
+                self.y_floating -= FLOATING_AMOUNT
                 if self.y_floating <= -MAX_FLOATING_Y:
                     self.is_positive_y = True
 

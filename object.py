@@ -108,7 +108,7 @@ class GameObject:
     
     def is_in_radius(self, position : Vector2, radius):
         distance = (position - self.center).get_norm()
-        if distance < self.detect_radius + radius*2:
+        if distance < self.detect_radius + radius:
             return True
 
     def resize(self, scale : float):
@@ -162,17 +162,29 @@ class GroundObject(GameObject):
     def get_vec_right(self):
         return (self.bot_right - self.bot_left).normalized()
 
-    def get_vectors_bot(self):
-        t = 0
+    def get_normal(self):
+        return self.get_vec_right().get_rotated(math.pi/2)
+
+    # t = 0 ~ 0.5
+    def get_vectors_bot(self, t=0):
+        max_t = 1 - t
         inc_t = 1 / (self.width * gmap.CELL_SIZE)
 
         result : list[Vector2] = []
-        while t <= 1:
+        while t <= max_t:
             position = self.bot_left.lerp(self.bot_right, t)
             result.append(position)
             t += inc_t
 
         return result
+    
+    def get_vectors_top(self, t=0):
+        vectors_top = self.get_vectors_bot(t)
+        vec_normal = self.get_normal()
+        for n in range(len(vectors_top)):
+            vectors_top[n] += vec_normal*self.height
+
+        return vectors_top
 
     def move(self):
         if self.dir == 0:

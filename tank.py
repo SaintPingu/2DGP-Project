@@ -33,16 +33,21 @@ def enter():
     crnt_index = 0
 
 def exit():
-    global  image_tank_green, image_barrel_green, gui_selection
+    global  image_tank_green, image_barrel_green, image_tank_blue, image_barrel_blue, image_tank_red, image_barrel_red, gui_selection
     del image_tank_green
     del image_barrel_green
+    del image_tank_blue
+    del image_barrel_blue
+    del image_tank_red
+    del image_barrel_red
     gui_selection = None
 
-    global tank_list, crnt_tank
+    global tank_list, crnt_tank, _wait_count
     tank_list.clear()
     del tank_list
     tank_list = None
     crnt_tank = None
+    _wait_count = 0
 
 _wait_count = 0
 def update():
@@ -131,14 +136,15 @@ class Tank(object.GroundObject):
 
         # don't move if collision by the wall
         if self.dir != 0:
-            vectors_coll = self.get_collision_vectors()
+            vectors_coll = self.get_side_vectors()
             for vector in vectors_coll:
                 cell = gmap.get_cell(vector)
                 if gmap.get_block_cell(cell):
                     dont_move(prev_theta, prev_rect.center)
                     return False
             if is_debug_mode():
-                gmap.draw_debug_vectors(vectors_coll)
+                #gmap.draw_debug_vectors(vectors_coll)
+                pass
         
         if self.rotate_ground() == False:
             dont_move(prev_theta, prev_rect.center)
@@ -152,20 +158,23 @@ class Tank(object.GroundObject):
 
         return True
 
-    def get_collision_vectors(self):
+    def get_side_vectors(self, dir=None):
         vec_start = Vector2()
         vec_end = Vector2()
-        if self.dir == LEFT:
+
+        if dir is None:
+            dir = self.dir
+
+        if dir == LEFT:
             vec_start = self.bot_left
             vec_end = self.top_left
-        elif self.dir == RIGHT:
+        elif dir == RIGHT:
             vec_start = self.bot_right
             vec_end = self.top_right
         else:
-            raise Exception
+            assert False
 
-        vec_end.y += 2
-        vec_end = vec_end.get_rotated_origin(vec_start, math.radians(30 * self.dir))
+        vec_end = vec_end.get_rotated_origin(vec_start, math.radians(30 * dir))
 
         t = 0.5
         inc_t = 1 / self.height
@@ -176,6 +185,28 @@ class Tank(object.GroundObject):
             t += inc_t
 
         return result
+    
+    def get_collision_cells(self):
+        collision_vectors : list[Vector2] = []
+        collision_vectors.extend(self.get_vectors_bot())
+        collision_vectors.extend(self.get_vectors_top(0.2))
+        collision_vectors.extend(self.get_side_vectors(LEFT))
+        collision_vectors.extend(self.get_side_vectors(RIGHT))
+
+        result_cells : set[Vector2] = set()
+        for vector in collision_vectors:
+            result_cells.add(gmap.get_cell(vector))
+
+        return result_cells
+
+    def check_collision(self, position : Vector2, radius):
+        collision_cells = self.get_collision_cells()
+        for cell in collision_cells:
+            cell_pos = Vector2(*gmap.get_pos_from_cell(*cell))
+            distance = (cell_pos - position).get_norm()
+            if distance <= gmap.CELL_SIZE//2 + radius:
+                return True
+        return False
 
     ##### Barrel #####
     def get_barrel_head(self):
@@ -188,7 +219,7 @@ class Tank(object.GroundObject):
 
     def set_barrel_pos(self):
         prev_barrel_rect = Rect(self.barrel_position, self.image_barrel.w, self.image_barrel.h)
-        vec_normal = self.get_vec_right().get_rotated(math.pi/2)
+        vec_normal = self.get_normal()
         self.barrel_pivot = self.center + (vec_normal * 3)
         self.barrel_position = self.barrel_pivot + self.vec_dir_barrel * (self.image_barrel.w/2)
         if is_debug_mode():
@@ -230,7 +261,6 @@ class Tank(object.GroundObject):
         self.gui_hp.invalidatae()
         self.gui_hp.update_gauge()
         self.hp -= damage
-        print("hit")
 
 tank_list : list[Tank]
 crnt_tank : Tank = None
@@ -247,7 +277,6 @@ def new_tank():
 def add_tank(tank):
     tank_list.append(tank)
     object.add_object(tank)
-    return tank
 
 def select_tank(tank):
     global crnt_tank, gui_selection
@@ -273,6 +302,15 @@ def check_invalidate(position, radius):
 def check_hit(position : Vector2, radius, damage):
     for tank in tank_list:
         if tank.is_in_radius(position, radius):
+            if tank.check_collision(position, radius):
+                tank.get_damage(damage)
+                return tank.center
+    return False
+
+
+def check_explosion(position : Vector2, radius, damage):
+    for tank in tank_list:
+        if tank.is_in_radius(position, radius):
             tank.get_damage(damage)
 
 def stop_tank():
@@ -296,7 +334,7 @@ def fire():
         crnt_tank.fire()
 
 
-def read_info(file):
+def read_data(file):
     file.readline()
 
     while True:
@@ -318,13 +356,13 @@ def read_info(file):
         tank.create()
         add_tank(tank)
 
-def write_info(file):
+def write_data(file):
     file.write('[ tank list ]\n')
     for tank in tank_list:
         if tank.is_created == False:
             continue
         file.write(str(tank.index) + ' ')
-        file.write(str(int(tank.is_AI)) + ' ')
+        file.write(str(tank.team) + ' ')
         file.write(str(tank.hp) + ' ')
         file.write(str(tank.center.x) + ' ')
         file.write(str(tank.center.y) + ' ')

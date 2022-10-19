@@ -31,6 +31,7 @@ class Shell(object.GameObject):
         self.speed, self.damage, self.explosion_radius = get_attributes(shell_name)
         self.temp = None
         self.is_destroyed = False
+        self.DETECTION_RADIUS = 2
 
     def draw(self):
         self.is_rect_invalid = True
@@ -52,19 +53,11 @@ class Shell(object.GameObject):
             delete_shell(self)
             return
         
-        self.move()
-
         head = self.get_head()
-        rect_detection = Rect(head, 4, 4)
-        detected_cells = gmap.get_detected_cells(rect_detection)
-        for detected_cell in detected_cells:
-            if not gmap.out_of_range_cell(*detected_cell) and gmap.get_block_cell(detected_cell):
-                self.explosion(head)
-                self.invalidate()
-                delete_shell(self)
-                return
-        if is_debug_mode():
-            gmap.draw_debug_rect(rect_detection)
+        if self.check_tanks(head) == True:
+            return
+        elif self.check_grounds(head) == True:
+            return
 
         self.is_rect_invalid = True
 
@@ -74,6 +67,32 @@ class Shell(object.GameObject):
         if self.vector.y < 0:
             self.speed += 0.05
             self.theta *= -1
+            
+        self.move()
+    
+    # Check collision by tanks
+    def check_tanks(self, head):
+        head = self.get_head()
+        tank_pos = tank.check_hit(head, self.DETECTION_RADIUS, self.damage)
+        if tank_pos is False:
+            return False
+
+        explosion_pos = head + (tank_pos - head)*0.5
+        self.explosion(explosion_pos)
+        return True
+
+    # Check collision by grounds
+    def check_grounds(self, head):
+        rect_detection = Rect(head, self.DETECTION_RADIUS*2, self.DETECTION_RADIUS*2)
+        detected_cells = gmap.get_detected_cells(rect_detection)
+        if is_debug_mode():
+            gmap.draw_debug_rect(rect_detection)
+
+        for detected_cell in detected_cells:
+            if not gmap.out_of_range_cell(*detected_cell) and gmap.get_block_cell(detected_cell):
+                self.explosion(head)
+                return True
+        return False
 
     def invalidate(self, is_grid=False):
         if is_grid:
@@ -83,9 +102,12 @@ class Shell(object.GameObject):
 
     def explosion(self, head : Vector2):
         gmap.draw_block(self.explosion_radius, head, False)
-        tank.check_hit(head, self.explosion_radius, self.damage)
+        tank.check_explosion(head, self.explosion_radius, self.damage)
         object.check_ground(head, self.explosion_radius)
         sprite.add_animation("Explosion", head, scale=self.explosion_radius/10)
+        self.invalidate()
+        delete_shell(self)
+
         
 
     def get_head(self) -> Vector2:
@@ -100,8 +122,7 @@ fired_shells : list[Shell] = []
 def add_shell(shell_name, head_position, theta):
     shell = Shell(shell_name, head_position, theta)
     shell_head = shell.get_head()
-    position = head_position + (head_position - shell_head)*2
-    gmap.draw_debug_point(position, 3)
+    position = head_position + (head_position - shell_head)
     shell.set_pos(position)
     fired_shells.append(shell)
     object.add_object(shell)

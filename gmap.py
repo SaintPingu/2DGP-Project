@@ -15,7 +15,7 @@ Y_CELL_MIN = MIN_HEIGHT//CELL_SIZE
 _crnt_map : list[list[bool]]
 
 
-img_background : Image
+_img_background : Image
 _img_ground : Image
 
 DEFAULT_DRAW_RADIUS = 3
@@ -31,8 +31,8 @@ _rect_debug_list : list[InvRect] = []
 selected_tank = None
 
 def enter():
-    global img_background, _img_ground
-    img_background = load_image_path('background.png')
+    global _img_background, _img_ground
+    _img_background = load_image_path('background.png')
     _img_ground = load_image_path('ground.png')
 
     global _rect_inv_list, _rect_debug_list
@@ -40,8 +40,8 @@ def enter():
     _rect_debug_list = []
 
 def exit():
-    global img_background, _img_ground
-    del img_background
+    global _img_background, _img_ground
+    del _img_background
     del _img_ground
 
     global _rect_inv_list, _rect_debug_list
@@ -74,8 +74,8 @@ def draw(is_draw_full=False):
 
     # draw background
     for rect_inv in list(_rect_inv_list):
-        if is_debug_mode():
-            draw_debug_rect(rect_inv)
+        # if is_debug_mode():
+        #     draw_debug_rect(rect_inv)
 
         if rect_inv.is_grid == False:
             block_set = get_block_set(rect_inv)
@@ -88,7 +88,6 @@ def draw(is_draw_full=False):
             draw_ground(rect_inv)
             _rect_inv_list.remove(rect_inv)
             continue
-        # empty
         elif rect_inv.is_empty:
             _rect_inv_list.remove(rect_inv)
 
@@ -144,7 +143,7 @@ def handle_events(events : list):
                 _radius_draw //= 2
             elif event.key == SDLK_F1:
                 stop_draw_mode()
-                continue
+                return
             elif event.key == SDLK_F2:
                 toggle_debug_mode()
                 continue
@@ -210,7 +209,7 @@ def stop_draw_mode():
 def draw_ground(rect : Rect):
     _img_ground.clip_draw(int(rect.origin[0]), int(rect.origin[1]), int(rect.width), int(rect.height), *rect.get_fCenter())
 def draw_background(rect : Rect):
-    img_background.clip_draw(int(rect.origin[0]), int(rect.origin[1]), int(rect.width), int(rect.height), *rect.get_fCenter())
+    _img_background.clip_draw(int(rect.origin[0]), int(rect.origin[1]), int(rect.width), int(rect.height), *rect.get_fCenter())
 
 def get_block_set(rect_inv : Rect):
     cell_start_x, cell_start_y, cell_end_x, cell_end_y = get_start_end_cells(rect_inv)
@@ -369,9 +368,6 @@ def add_invalidate(center, width, height, grid_size=_DEFAULT_DIVIDE_GRID_SIZE):
                 filled_count = 0
 
             rect_before = rect
-
-        # if filled_count > 0 or empty_count > 0:
-        #     _rect_inv_list.append(rect_before)
         
         # merge rect by row #
         if filled_count > 0 or empty_count > 0:
@@ -432,6 +428,7 @@ def get_cells(positions):
     for pos in positions:
         result.append(get_cell(pos))
     return result
+    
 
 def get_pos_from_cell(colIdx : int, rowIdx : int):
     return ((colIdx * CELL_SIZE) + CELL_SIZE//2), ((rowIdx * CELL_SIZE) + CELL_SIZE//2) + MIN_HEIGHT
@@ -552,13 +549,13 @@ def draw_debug_rect(rect : Rect):
 ##### FILE I/O #####
 def read_mapfile(index : int):
     import tank
-    from gmap import img_background
-    global _crnt_map, img_map
+    global _img_background, _crnt_map, img_map
 
     _crnt_map = [[False]*X_CELL_COUNT for col in range(Y_CELL_COUNT)]
 
+    # Draw empty background
     if index == -1:
-        img_background.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)    # Empty background
+        _img_background.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
         return
 
     fileName = 'map_' + str(index) + '.txt'
@@ -571,7 +568,7 @@ def read_mapfile(index : int):
                 break
             _crnt_map[rowIdx][colIdx] = bool(int(ch))
 
-    tank.read_info(file)
+    tank.read_data(file)
     file.close()
 
     img_map = load_image_path('map_' + str(index) + '.png')
@@ -579,7 +576,7 @@ def read_mapfile(index : int):
 
 def save_mapfile():
     import tank
-    global _crnt_map, X_CELL_COUNT, Y_CELL_COUNT
+    global _crnt_map
 
     fileName = 'map_save' + '.txt'
     file = open('maps/' + fileName, 'w')
@@ -589,6 +586,6 @@ def save_mapfile():
             file.write(str(int(col)))
         file.write('\n')
 
-    tank.write_info(file)
+    tank.write_data(file)
     
     file.close()
