@@ -208,7 +208,10 @@ def stop_draw_mode():
 
 def draw_ground(rect : Rect):
     _img_ground.clip_draw(int(rect.origin[0]), int(rect.origin[1]), int(rect.width), int(rect.height), *rect.get_fCenter())
-def draw_background(rect : Rect):
+def draw_background(rect : Rect, is_resized=True):
+    if is_resized is False:
+        rect = Rect.get_rect_int(rect)
+        resize_rect_inv(rect)
     _img_background.clip_draw(int(rect.origin[0]), int(rect.origin[1]), int(rect.width), int(rect.height), *rect.get_fCenter())
 
 def get_block_set(rect_inv : Rect):
