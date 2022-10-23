@@ -1,3 +1,4 @@
+from abc import update_abstractmethods
 from tools import *
 import object
 import gmap
@@ -117,10 +118,21 @@ class Tank(object.GroundObject):
         self.is_created = True
 
     def update(self):
-        self.move()
         self.update_barrel()
+        if crnt_tank != self:
+            return
+        if self.team == "ai":
+            self.run_ai()
+            return
+
+        self.move()
         if is_debug_mode():
             gmap.draw_debug_cells(self.get_collision_cells())
+
+    def get_damage(self, damage):
+        self.gui_hp.invalidatae()
+        self.gui_hp.update_gauge()
+        self.hp -= damage
 
     ##### Movement #####
     def set_pos(self, center):
@@ -252,12 +264,65 @@ class Tank(object.GroundObject):
         theta = self.get_barrel_theta()
         shell.add_shell(self.crnt_shell, head, theta)
         sprite.add_animation("Shot", head, theta=theta, parent=self)
+        self.dir = 0
         select_tank(None)
     ##########
-    def get_damage(self, damage):
-        self.gui_hp.invalidatae()
-        self.gui_hp.update_gauge()
-        self.hp -= damage
+
+
+    def run_ai(self):
+        target = Vector2(self.center.x +100, self.center.y+100)
+        self.update_barrel(target)
+        
+        # initial degree
+        dir = get_sign(tank_list[1].center.x - self.center.x)
+        if dir == RIGHT:
+            degree = 45
+        else:
+            degree = 90 + 45
+
+        check_degree = 45/2
+
+        while True:
+            # create virtual shell
+            self.vec_dir_barrel = self.get_vec_right().get_rotated(math.radians(degree))
+            virtual_shell = shell.Shell(self.crnt_shell, self.get_barrel_head(), self.get_barrel_theta())
+            virtual_shell.is_simulation = True
+
+            # get impact point
+            while True:
+                result = virtual_shell.update()
+                # virtual_shell.draw()
+                # update_canvas()
+                if result >= 0:
+                    if result == 1: # tank on point
+                        self.set_barrel_pos()
+                        self.update_barrel()
+                        self.fire()
+                        return
+                    
+                    # get shell to tank vector
+                    v = (tank_list[1].center - virtual_shell.center)
+                    rotation_degree = 0
+                    if v.x < 0:
+                        if degree >= 45:
+                            rotation_degree = check_degree
+                        else:
+                            rotation_degree = -check_degree
+                    else:
+                        if degree < 45:
+                            rotation_degree = check_degree
+                        else:
+                            rotation_degree = -check_degree
+
+                    degree += rotation_degree
+                    check_degree /= 2
+                    if check_degree <= 0.01:
+                        self.set_barrel_pos()
+                        self.update_barrel()
+                        self.fire()
+                        return
+                    break
+
 
 tank_list : list[Tank]
 crnt_tank : Tank = None

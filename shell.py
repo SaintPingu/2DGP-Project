@@ -32,6 +32,7 @@ class Shell(object.GameObject):
         self.is_destroyed = False
         self.DETECTION_RADIUS = 2
         self.prev_head : Vector2() = None
+        self.is_simulation = False
 
     def draw(self):
         self.is_rect_invalid = True
@@ -49,7 +50,7 @@ class Shell(object.GameObject):
         # out of range
         if rect.right < 0 or rect.left > SCREEN_WIDTH or rect.top <= MIN_HEIGHT:
             delete_shell(self)
-            return
+            return 0
         
         head = self.get_head()
         if self.prev_head is None:
@@ -58,9 +59,9 @@ class Shell(object.GameObject):
         collision_vectors = gmap.get_vectors(head, self.prev_head)
 
         if self.check_tanks(head, collision_vectors) == True:
-            return
+            return 1
         elif self.check_grounds(head) == True:
-            return
+            return 0
 
         self.is_rect_invalid = True
 
@@ -68,11 +69,13 @@ class Shell(object.GameObject):
         self.vector = self.vector.lerp(Vector2.down(), 0.006)
         self.theta = self.vector.get_theta(Vector2.right())
         if self.vector.y < 0:
-            self.speed += 0.05
+            self.speed += 0.1
             self.theta *= -1
             
         self.move()
         self.prev_head = head
+
+        return -1
     
     # Check collision by tanks
     def check_tanks(self, head, collision_vectors):
@@ -99,12 +102,18 @@ class Shell(object.GameObject):
         return False
 
     def invalidate(self, is_grid=False):
+        if self.is_simulation:
+            return
+
         if is_grid:
             gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True)
         else:
             gmap.set_invalidate_rect(self.center, self.img_shell.w, self.img_shell.h, square=True, grid_size=0)
 
     def explosion(self, head : Vector2):
+        if self.is_simulation:
+            return
+
         gmap.draw_block(self.explosion_radius, head, False)
         tank.check_explosion(head, self.explosion_radius, self.damage)
         object.check_ground(head, self.explosion_radius)
@@ -144,6 +153,9 @@ def add_shell(shell_name, head_position, theta):
 
 
 def delete_shell(shell : Shell):
+    if shell.is_simulation is True:
+        return
+        
     fired_shells.remove(shell)
     object.delete_object(shell)
 
