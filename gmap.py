@@ -481,6 +481,20 @@ def get_sliced_map(start_x, start_y, end_x, end_y):
     
     return [_crnt_map[i][start_x:end_x + 1] for i in range(start_y, end_y + 1)]
 
+def get_vectors(v1 : Vector2, v2 : Vector2, t=0, max_t=1) -> list[Vector2]:
+    max_length = (v2 - v1).get_norm() 
+    if max_length <= 0:
+        return [v1]
+
+    inc_t = 1 / (max_length * CELL_SIZE)
+    result : list[Vector2] = []
+    while t <= max_t:
+        position = v1.lerp(v2, t)
+        result.append(position)
+        t += inc_t
+
+    return result
+
 
 ##### Object #####
 def get_highest_ground_cell(x, y, max_length = float('inf'), is_cell=False):
@@ -512,6 +526,7 @@ def get_highest_ground_cell(x, y, max_length = float('inf'), is_cell=False):
                 return (cell_start_col, row - 1)
 
     return False
+
 
 
 

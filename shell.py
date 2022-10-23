@@ -29,15 +29,13 @@ class Shell(object.GameObject):
 
         self.vector = Vector2.right().get_rotated(theta)
         self.speed, self.damage, self.explosion_radius = get_attributes(shell_name)
-        self.temp = None
         self.is_destroyed = False
         self.DETECTION_RADIUS = 2
+        self.prev_head : Vector2() = None
 
     def draw(self):
         self.is_rect_invalid = True
         self.draw_image(self.img_shell)
-        if self.temp:
-            gmap.draw_debug_point(self.temp)
     
     def move(self):
         dest = (self.center + self.vector * self.speed) + gmap.env.wind.get_wind_vector()
@@ -54,7 +52,12 @@ class Shell(object.GameObject):
             return
         
         head = self.get_head()
-        if self.check_tanks(head) == True:
+        if self.prev_head is None:
+            self.prev_head = head
+
+        collision_vectors = gmap.get_vectors(head, self.prev_head)
+
+        if self.check_tanks(head, collision_vectors) == True:
             return
         elif self.check_grounds(head) == True:
             return
@@ -69,11 +72,12 @@ class Shell(object.GameObject):
             self.theta *= -1
             
         self.move()
+        self.prev_head = head
     
     # Check collision by tanks
-    def check_tanks(self, head):
+    def check_tanks(self, head, collision_vectors):
         head = self.get_head()
-        tank_pos = tank.check_hit(head, self.DETECTION_RADIUS, self.damage)
+        tank_pos = tank.check_hit(head, collision_vectors, self.DETECTION_RADIUS, self.damage)
         if tank_pos is False:
             return False
 

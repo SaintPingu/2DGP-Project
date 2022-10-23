@@ -166,20 +166,11 @@ class GroundObject(GameObject):
         return self.get_vec_right().get_rotated(math.pi/2)
 
     # t = 0 ~ 0.5
-    def get_vectors_bot(self, t=0):
-        max_t = 1 - t
-        inc_t = 1 / (self.width * gmap.CELL_SIZE)
-
-        result : list[Vector2] = []
-        while t <= max_t:
-            position = self.bot_left.lerp(self.bot_right, t)
-            result.append(position)
-            t += inc_t
-
-        return result
+    def get_vectors_bot(self, t=0, max_t=1):
+        return gmap.get_vectors(self.bot_left, self.bot_right, t, max_t)
     
-    def get_vectors_top(self, t=0):
-        vectors_top = self.get_vectors_bot(t)
+    def get_vectors_top(self, t=0, max_t=1):
+        vectors_top = self.get_vectors_bot(t, max_t)
         vec_normal = self.get_normal()
         for n in range(len(vectors_top)):
             vectors_top[n] += vec_normal*self.height
@@ -312,6 +303,9 @@ class GroundObject(GameObject):
         self.set_theta(min_theta)
         self.attach_ground()
         vectors_bot = self.get_vectors_bot()
+        if idx_pivot >= len(vectors_bot):
+            idx_pivot = len(vectors_bot) - 1
+
         vector_correction = (vec_pivot - vectors_bot[idx_pivot])
         if vector_correction.x != 0 and vector_correction.y != 0:
             pass

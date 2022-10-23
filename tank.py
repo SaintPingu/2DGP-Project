@@ -119,6 +119,8 @@ class Tank(object.GroundObject):
     def update(self):
         self.move()
         self.update_barrel()
+        if is_debug_mode():
+            gmap.draw_debug_cells(self.get_collision_cells())
 
     ##### Movement #####
     def set_pos(self, center):
@@ -158,6 +160,7 @@ class Tank(object.GroundObject):
 
         return True
 
+    ##### Collision #####
     def get_side_vectors(self, dir=None):
         vec_start = Vector2()
         vec_end = Vector2()
@@ -176,20 +179,12 @@ class Tank(object.GroundObject):
 
         vec_end = vec_end.get_rotated_origin(vec_start, math.radians(30 * dir))
 
-        t = 0.5
-        inc_t = 1 / self.height
-        result : list[Vector2] = []
-        while t <= 1:
-            position = vec_start.lerp(vec_end, t)
-            result.append(position)
-            t += inc_t
+        return gmap.get_vectors(vec_start, vec_end, 0.5)
 
-        return result
-    
     def get_collision_cells(self):
         collision_vectors : list[Vector2] = []
         collision_vectors.extend(self.get_vectors_bot())
-        collision_vectors.extend(self.get_vectors_top(0.2))
+        collision_vectors.extend(self.get_vectors_top(0.3, 0.7))
         collision_vectors.extend(self.get_side_vectors(LEFT))
         collision_vectors.extend(self.get_side_vectors(RIGHT))
 
@@ -199,12 +194,14 @@ class Tank(object.GroundObject):
 
         return result_cells
 
-    def check_collision(self, position : Vector2, radius):
+    def check_collision(self, vectors : list[Vector2]):
         collision_cells = self.get_collision_cells()
-        for cell in collision_cells:
-            cell_pos = Vector2(*gmap.get_pos_from_cell(*cell))
-            distance = (cell_pos - position).get_norm()
-            if distance <= gmap.CELL_SIZE//2 + radius:
+
+        target_cells : set[Vector2] = set()
+        for vector in vectors:
+            target_cells.add(gmap.get_cell(vector))
+
+        if len(collision_cells & target_cells) > 0:
                 return True
         return False
 
@@ -222,9 +219,9 @@ class Tank(object.GroundObject):
         vec_normal = self.get_normal()
         self.barrel_pivot = self.center + (vec_normal * 3)
         self.barrel_position = self.barrel_pivot + self.vec_dir_barrel * (self.image_barrel.w/2)
-        if is_debug_mode():
-            gmap.draw_debug_vector(self.barrel_pivot)
-            gmap.draw_debug_vector(self.center)
+        # if is_debug_mode():
+        #     gmap.draw_debug_vector(self.barrel_pivot)
+        #     gmap.draw_debug_vector(self.center)
         return prev_barrel_rect
 
     def update_barrel(self, target : Vector2 = None):
@@ -299,10 +296,10 @@ def check_invalidate(position, radius):
         if tank.is_in_radius(position, radius):
             tank.is_rect_invalid = True
 
-def check_hit(position : Vector2, radius, damage):
+def check_hit(position : Vector2, collision_vectors, radius, damage):
     for tank in tank_list:
         if tank.is_in_radius(position, radius):
-            if tank.check_collision(position, radius):
+            if tank.check_collision(collision_vectors):
                 tank.get_damage(damage)
                 return tank.center
     return False
