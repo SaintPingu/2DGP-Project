@@ -111,6 +111,11 @@ class GUI_Select_Tank(GUI):
         else:
             self.update()
 
+class GUI_Fuel(GUI):
+    def __init__(self, image: Image):
+        super().__init__(image)
+        self.owner = None
+
 _list_gui : list[GUI]
 
 def add_gui(gui : GUI):

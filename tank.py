@@ -66,20 +66,26 @@ def update():
         
 
 class Tank(object.GroundObject):
+    MAX_FUEL = 100
     def __init__(self, center=(0,0)):
         self.image = image_tank_green
         self.image_barrel = image_barrel_green
+        super().__init__(center, self.image.w, self.image.h)
 
         self.barrel_position = Vector2()
         self.barrel_pivot = Vector2()
         self.vec_dir_barrel = Vector2.right()
 
+        # tank
         self.index = 0
         self.team = "green"
+
+        # attributes
+        self.speed = 5
         self.hp = 100
+        self.fuel = Tank.MAX_FUEL
         self.crnt_shell = "AP"
 
-        super().__init__(center, self.image.w, self.image.h)
         self.gui_hp = gui.GUI_HP(self)
         gui.add_gui(self.gui_hp)
     
@@ -135,11 +141,17 @@ class Tank(object.GroundObject):
         self.hp -= damage
 
     ##### Movement #####
+    def selected(self):
+        self.fuel = Tank.MAX_FUEL
+
     def set_pos(self, center):
         def dont_move(prev_theta, prev_center):
             self.set_theta(prev_theta)
             self.set_center(prev_center)
 
+        if self.fuel <= 0:
+            return False
+            
         prev_rect = self.get_rect()
         prev_theta = self.theta
 
@@ -164,6 +176,7 @@ class Tank(object.GroundObject):
             dont_move(prev_theta, prev_rect.center)
             return False
         
+        self.fuel -= 1
         # invalidate
         prev_barrel_rect = self.set_barrel_pos()
         gmap.set_invalidate_rect(*prev_barrel_rect.__getitem__(), square=True, grid_size=0)
@@ -171,6 +184,10 @@ class Tank(object.GroundObject):
         self.is_rect_invalid = True
 
         return True
+    
+    def get_rotation_degree(self):
+        theta = Vector2.right().get_theta(self.get_vec_right())
+        return math.degrees(theta)
 
     ##### Collision #####
     def get_side_vectors(self, dir=None):
@@ -274,15 +291,28 @@ class Tank(object.GroundObject):
 ##### AI #####
 class Tank_AI(Tank):
     MAX_CHECK_COUNT = 60
+    degree_table = {
+        0 : 5,
+        1 : 3,
+        2 : 1,
+        3 : 0.5,
+        4 : 0.3,
+        5 : 0.1,
+    }
     def __init__(self, center=(0, 0)):
         super().__init__(center)
         self.init_values()
         self.is_checking = False
+        self.is_moving = False
+        self.shell_is_close = False
         self.count_check = 0
         self.min_distance = float('inf')
         self.result_vector : Vector2 = None
 
+        self.degree_level = 0
         self.crnt_degree = 0
+        self.start_degree = 0
+        self.max_degree = 0
         self.update_delay = 0
         self.check_dir = None
         self.target_tank : Tank = None
@@ -292,20 +322,37 @@ class Tank_AI(Tank):
     
     def init_values(self):
         self.is_checking = False
+        self.is_moving = True
+        self.shell_is_close = False
         self.min_distance = float('inf')
         self.result_vector = None
 
+        self.degree_level = 0
         self.count_check = 0
+        self.start_degree = 0
         self.crnt_degree = 0
+        self.max_degree = 0
         self.update_delay = 0
         self.check_dir = None
+        self.precise_dir = None
         self.target_tank = None
         self.virtual_shell = None
 
     def set_direction(self):
-        self.crnt_degree = TANK_MAX_DEG
+        self.crnt_degree = self.get_rotation_degree() + 10
         self.target_tank = tank_list[0]
         self.check_dir = get_sign(self.target_tank.center.x - self.center.x)
+        self.precise_dir = 1
+        self.max_degree = self.get_max_degree()
+
+    def get_max_degree(self):
+        degree = 90 - math.degrees(Vector2.get_theta(self.get_vec_right(), Vector2.up()))
+        if self.check_dir == LEFT:
+            degree -= 180
+            degree *= -1
+
+        return 90 + TANK_MAX_DEG - degree + self.crnt_degree
+
 
     def update(self):
         START_UPDATE_DELAY = 60
@@ -325,8 +372,6 @@ class Tank_AI(Tank):
         shell = None
 
     def run_ai(self):
-        PER_DEGREE = 0.5
-
         if self.is_checking == False:
             self.is_checking = True
 
@@ -344,22 +389,39 @@ class Tank_AI(Tank):
         # get impact point
         while self.count_check < Tank_AI.MAX_CHECK_COUNT:
             result = self.virtual_shell.update()
-            #self.virtual_shell.draw()
-            #update_canvas()
+            # if self.degree_level >= 5:
+            #     self.virtual_shell.draw()
+            #     update_canvas()
+
             if result is not True:
                 self.set_barrel_pos()
-                if type(result) == Tank: # tank on point
-                    self.fire(self.virtual_shell)
-                    return
+                # if type(result) == Tank: # tank on point
+                #     self.fire(self.virtual_shell)
+                #     return
                 
                 distance = math.fabs(self.virtual_shell.center.x - self.target_tank.center.x)
                 if distance < self.min_distance:
                     self.min_distance = distance
                     self.result_vector = self.vec_dir_barrel
                 
-                self.crnt_degree += PER_DEGREE
+                self.shell_is_close = False
+                if distance < 5:
+                    self.fire(self.virtual_shell)
+                    return
+                elif distance < 30:
+                    self.degree_level = 5
+                elif distance < 60:
+                    self.degree_level = 4
+                elif distance < 120:
+                    self.degree_level = 3
+                elif distance < 200:
+                    self.degree_level = 2
+                elif distance < 300:
+                    self.degree_level = 1
+                
+                self.crnt_degree += Tank_AI.degree_table[self.degree_level]
 
-                if self.crnt_degree >= 90 + TANK_MAX_DEG: # tank is hided under ground
+                if self.crnt_degree >= self.max_degree: # tank is hided under ground
                     self.vec_dir_barrel = self.result_vector
                     self.update_barrel()
                     self.fire(self.virtual_shell)
@@ -395,6 +457,10 @@ def add_tank(tank):
 def select_tank(tank):
     global crnt_tank, gui_selection
     crnt_tank = tank
+    
+    if crnt_tank is not None:
+        crnt_tank.selected()
+
     gui_selection.set_owner(crnt_tank)
 
 def select_next_tank():

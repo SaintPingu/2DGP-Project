@@ -75,6 +75,8 @@ def handle_events():
                 tank.crnt_tank.crnt_shell = "HP"
             elif event.key == SDLK_3:
                 tank.crnt_tank.crnt_shell = "MUL"
+            elif event.key == SDLK_5:
+                tank.crnt_tank.fuel = tank.Tank.MAX_FUEL
 
         elif event.type == SDL_KEYUP:
             if event.key == SDLK_RIGHT:

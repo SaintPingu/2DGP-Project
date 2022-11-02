@@ -140,6 +140,7 @@ class GroundObject(GameObject):
         self.top_left = Vector2()
         self.top_right = Vector2()
         self.bot_center = Vector2()
+        self.speed = 1
 
         self.update_object()
 
