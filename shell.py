@@ -18,6 +18,9 @@ def exit():
     global SHELLS
     for image in SHELLS.values():
         del image
+    
+    for shell in fired_shells:
+        delete_shell(shell)
 
 
 class Shell(object.GameObject):

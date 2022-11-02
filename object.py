@@ -181,7 +181,7 @@ class GroundObject(GameObject):
 
     def move(self):
         if self.dir == 0:
-            return
+            return False
         elif self.dir == LEFT:
             self.vDir = self.get_vec_left()
         else:
@@ -191,6 +191,9 @@ class GroundObject(GameObject):
 
         if self.set_pos(vDest) == False:
             self.stop()
+            return False
+        
+        return True
 
     def start_move(self, dir):
         self.dir += dir

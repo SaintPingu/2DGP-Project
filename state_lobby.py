@@ -1,23 +1,24 @@
 from tools import *
 import framework
-import state_lobby
+import state_title
+import state_battle
 
-image = None
+_image = None
 
 def enter():
-    global image
-    image = load_image_path('title.png')
+    global _image
+    _image = load_image_path('lobby.png')
 
 def exit():
-    global image
-    del image
+    global _image
+    del _image
 
 def update():
     pass
 
 def draw():
     clear_canvas()
-    image.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
+    _image.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
     update_canvas()
 
 
@@ -28,7 +29,8 @@ def handle_events():
             framework.quit()
         elif event.type == SDL_KEYDOWN:
             if event.key == SDLK_ESCAPE:
-                framework.quit()
-                return
-            framework.change_state(state_lobby)
+                framework.change_state(state_title)
+            else:
+                framework.change_state(state_battle)
+            break
 
