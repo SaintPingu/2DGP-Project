@@ -273,25 +273,34 @@ class Tank(object.GroundObject):
 
 ##### AI #####
 class Tank_AI(Tank):
+    MAX_CHECK_COUNT = 60
     def __init__(self, center=(0, 0)):
         super().__init__(center)
         self.init_values()
-        self.min_distance = 0
-        self.result_degree = 0
+        self.is_checking = False
+        self.count_check = 0
+        self.min_distance = float('inf')
+        self.result_vector : Vector2 = None
 
         self.crnt_degree = 0
         self.update_delay = 0
         self.check_dir = None
         self.target_tank : Tank = None
+        self.virtual_shell : shell.Shell = None
+
+        self.init_values()
     
     def init_values(self):
+        self.is_checking = False
         self.min_distance = float('inf')
-        self.result_degree = 0
+        self.result_vector = None
 
+        self.count_check = 0
         self.crnt_degree = 0
         self.update_delay = 0
         self.check_dir = None
         self.target_tank = None
+        self.virtual_shell = None
 
     def set_direction(self):
         self.crnt_degree = TANK_MAX_DEG
@@ -313,45 +322,58 @@ class Tank_AI(Tank):
         super().fire()
         self.init_values()
         del shell
+        shell = None
 
     def run_ai(self):
-        PER_DEGREE = 1
+        PER_DEGREE = 0.5
 
-        target = Vector2(self.center.x +100, self.center.y+100)
-        self.update_barrel(target)
+        if self.is_checking == False:
+            self.is_checking = True
 
-        if self.check_dir == None:
-            self.set_direction()
+            if self.check_dir == None:
+                self.set_direction()
 
-        # create virtual shell
-        if self.check_dir == RIGHT:
-            self.vec_dir_barrel = Vector2.right().get_rotated(math.radians(self.crnt_degree - (TANK_MAX_DEG * 2)))
-        else:
-            self.vec_dir_barrel = Vector2.left().get_rotated(math.radians(-self.crnt_degree))
-            
-        virtual_shell = shell.Shell(self.crnt_shell, self.get_barrel_head(), self.get_barrel_theta(), True)
+            # create virtual shell
+            if self.check_dir == RIGHT:
+                self.vec_dir_barrel = Vector2.right().get_rotated(math.radians(self.crnt_degree - (TANK_MAX_DEG * 2)))
+            else:
+                self.vec_dir_barrel = Vector2.left().get_rotated(math.radians(-self.crnt_degree))
+                
+            self.virtual_shell = shell.Shell(self.crnt_shell, self.get_barrel_head(), self.get_barrel_theta(), True)
 
         # get impact point
-        while True:
-            result = virtual_shell.update()
-            # virtual_shell.draw()
-            # update_canvas()
+        while self.count_check < Tank_AI.MAX_CHECK_COUNT:
+            result = self.virtual_shell.update()
+            #self.virtual_shell.draw()
+            #update_canvas()
             if result is not True:
                 self.set_barrel_pos()
                 if type(result) == Tank: # tank on point
-                    self.fire(virtual_shell)
+                    self.fire(self.virtual_shell)
                     return
                 
-                distance = (virtual_shell.center - self.target_tank.center)
+                distance = math.fabs(self.virtual_shell.center.x - self.target_tank.center.x)
+                if distance < self.min_distance:
+                    self.min_distance = distance
+                    self.result_vector = self.vec_dir_barrel
                 
                 self.crnt_degree += PER_DEGREE
 
                 if self.crnt_degree >= 90 + TANK_MAX_DEG: # tank is hided under ground
-                    self.fire(virtual_shell)
+                    self.vec_dir_barrel = self.result_vector
+                    self.update_barrel()
+                    self.fire(self.virtual_shell)
                     return
 
-                del virtual_shell
+                del self.virtual_shell
+                self.virtual_shell = None
                 break
+            self.count_check += 1
+
+        self.count_check = 0
+        if self.virtual_shell is None:
+            self.is_checking = False
+        
 
 
 tank_list : list[Tank]
