@@ -77,12 +77,16 @@ def handle_events():
                 tank.crnt_tank.crnt_shell = "MUL"
             elif event.key == SDLK_5:
                 tank.crnt_tank.fuel = tank.Tank.MAX_FUEL
+            elif event.key == SDLK_SPACE:
+                tank.fill_gauge()
 
         elif event.type == SDL_KEYUP:
             if event.key == SDLK_RIGHT:
                 tank.stop_tank()
             elif event.key == SDLK_LEFT:
                 tank.stop_tank()
+            elif event.key == SDLK_SPACE:
+                tank.stop_gauge()
 
         elif event.type == SDL_MOUSEMOTION:
             mouse_pos = convert_pico2d(event.x, event.y)
@@ -90,4 +94,4 @@ def handle_events():
 
         elif event.type == SDL_MOUSEBUTTONDOWN:
             if event.button == SDL_BUTTON_LEFT:
-                tank.fire()
+                tank.lock()

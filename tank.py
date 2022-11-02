@@ -1,4 +1,3 @@
-from abc import update_abstractmethods
 from tools import *
 import object
 import gmap
@@ -14,6 +13,8 @@ image_tank_red : Image = None
 image_barrel_red : Image = None
 
 gui_selection : gui.GUI_Select_Tank = None
+gui_launch : gui.GUI_LAUNCH = None
+gui_gauge : gui.GUI_GUAGE = None
 
 
 
@@ -26,10 +27,14 @@ def enter():
     image_tank_red = load_image_path('tank_red.png')
     image_barrel_red = load_image_path('barrel_red.png')
 
-    global gui_selection
+    global gui_selection, gui_launch, gui_gauge
     selection_arrow = load_image_path('selection_arrow.png')
     gui_selection = gui.GUI_Select_Tank(selection_arrow)
+    gui_launch = gui.GUI_LAUNCH()
+    gui_gauge = gui.GUI_GUAGE()
     gui.add_gui(gui_selection)
+    gui.add_gui(gui_launch)
+    gui.add_gui(gui_gauge)
 
     global tank_list, crnt_index
     tank_list = []
@@ -85,6 +90,7 @@ class Tank(object.GroundObject):
         self.hp = 100
         self.fuel = Tank.MAX_FUEL
         self.crnt_shell = "AP"
+        self.is_locked = False
 
         # gui
         self.gui_hp = gui.GUI_HP(self)
@@ -260,7 +266,9 @@ class Tank(object.GroundObject):
         return prev_barrel_rect
 
     def update_barrel(self, target : Vector2 = None):
-        if target is None:
+        if self.is_locked:
+            return
+        elif target is None:
             target = self.get_barrel_head()
         self.vec_dir_barrel = self.vec_dir_barrel.get_rotated_dest(self.barrel_pivot, target)
 
@@ -282,10 +290,18 @@ class Tank(object.GroundObject):
     def select_shell(self, shell_name):
         self.crnt_shell = shell_name
 
+    def lock(self):
+        self.is_locked = True
+        gui_launch.set_state('fire')
+    
+    def unlock(self):
+        self.is_locked = False
+        gui_launch.set_state('locked')
+
     def fire(self):
         head = self.get_barrel_head()
         theta = self.get_barrel_theta()
-        shell.add_shell(self.crnt_shell, head, theta)
+        shell.add_shell(self.crnt_shell, head, theta, gui_gauge.get_filled())
         sprite.add_animation("Shot", head, theta=theta, parent=self)
         self.dir = 0
         select_tank(None)
@@ -396,6 +412,7 @@ class Tank_AI(Tank):
 
     def fire(self):
         self.set_barrel_pos()
+        gui_gauge.set_fill(1)
         super().fire()
         self.init_values()
         del self.virtual_shell
@@ -426,7 +443,7 @@ class Tank_AI(Tank):
             else:
                 self.vec_dir_barrel = Vector2.left().get_rotated(math.radians(-self.crnt_degree))
                 
-            self.virtual_shell = shell.Shell(self.crnt_shell, self.get_barrel_head(), self.get_barrel_theta(), True)
+            self.virtual_shell = shell.Shell(self.crnt_shell, self.get_barrel_head(), self.get_barrel_theta(), is_simulation=True)
 
         # get impact point
         while self.count_update < Tank_AI.MAX_CHECK_COUNT:
@@ -528,6 +545,7 @@ def select_tank(tank):
         if prev_tank:
             prev_tank.deselect()
         crnt_tank.select()
+        gui_gauge.reset()
 
     gui_selection.set_owner(crnt_tank)
 
@@ -577,6 +595,23 @@ def send_mouse_pos(x, y):
 def draw_debug():
     if crnt_tank:
         pass
+
+def lock():
+    if crnt_tank:
+        crnt_tank.lock()
+
+def unlock():
+    if crnt_tank:
+        crnt_tank.unlock()
+
+def fill_gauge():
+    if crnt_tank:
+        gui_gauge.fill(True)
+    
+def stop_gauge():
+    if crnt_tank:
+        gui_gauge.fill(False)
+        crnt_tank.fire()
 
 def fire():
     if crnt_tank:

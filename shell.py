@@ -24,7 +24,7 @@ def exit():
 
 
 class Shell(object.GameObject):
-    def __init__(self, shell_name : str, position, theta, is_simulation=False):
+    def __init__(self, shell_name : str, position, theta, power = 1, is_simulation=False):
         assert shell_name in SHELLS.keys()
 
         self.img_shell : Image = SHELLS[shell_name]
@@ -32,6 +32,7 @@ class Shell(object.GameObject):
 
         self.vector = Vector2.right().get_rotated(theta)
         self.speed, self.damage, self.explosion_radius = get_attributes(shell_name)
+        self.speed *= power
         self.is_destroyed = False
         self.DETECTION_RADIUS = 2
         self.prev_head : Vector2() = None
@@ -138,8 +139,8 @@ class Shell(object.GameObject):
 
 fired_shells : list[Shell] = []
 
-def add_shell(shell_name, head_position, theta):
-    shell = Shell(shell_name, head_position, theta)
+def add_shell(shell_name, head_position, theta, power = 1):
+    shell = Shell(shell_name, head_position, theta, power)
     shell_head = shell.get_head()
     position = head_position + (head_position - shell_head)
     shell.set_pos(position)
@@ -161,9 +162,10 @@ def add_shell(shell_name, head_position, theta):
 def delete_shell(shell : Shell):
     if shell.is_simulation is True:
         return
-        
-    fired_shells.remove(shell)
-    object.delete_object(shell)
+
+    if shell in fired_shells:    
+        fired_shells.remove(shell)
+        object.delete_object(shell)
 
 def get_attributes(shell_name : str) -> tuple[float, float]:
     assert shell_name in SHELLS.keys()

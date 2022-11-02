@@ -135,6 +135,79 @@ class GUI_Fuel(GUI):
     def draw(self):
         if self.owner and self.owner.is_turn == True:
             super().draw()
+        
+class GUI_LAUNCH(GUI):
+    def __init__(self):
+        self.image_locked = load_image_path('gui_locked.png')
+        self.image_fire = load_image_path('gui_fire.png')
+        super().__init__(self.image_locked)
+
+        self.state_list = ['locked', 'fire']
+        self.position = (815, 55)
+
+        self.state_table = {
+            'locked' : self.image_locked,
+            'fire' : self.image_fire,
+        }
+        
+
+    def release(self):
+        del self.image_locked
+        del self.image_fire
+
+    def set_state(self, state):
+        wrong_count = 0
+        for s in self.state_list:
+            if s == state:
+                break
+            wrong_count += 1
+
+        if wrong_count == len(self.state_list):
+            assert(0)
+
+        self.image = self.state_table[state]
+
+class GUI_GUAGE(GUI):
+    def __init__(self):
+        self.image_guage = load_image_path('gui_gauge.png')
+        image_guage_box = load_image_path('gui_gauge_box.png')
+        super().__init__(image_guage_box)
+
+        self.position = (1115, 55)
+        self.t = 0
+        self.is_fill = False
+    
+    def update(self):
+        super().update()
+        if self.is_fill and self.t < 1:
+            self.t += 0.01
+
+    def reset(self):
+        self.t = 0
+    
+    def fill(self, is_fill):
+        self.is_fill = is_fill
+    
+    def set_fill(self, amount):
+        self.t = amount
+        self.t = clamp(0, self.t, 1)
+    def get_filled(self):
+        return self.t
+
+    def draw(self):
+        super().draw()
+
+        width = int(self.image_guage.w * self.t) 
+        gauge_position = Vector2()
+        gauge_position.x = int((self.position[0] - self.image_guage.w/ 2) + width/2)
+        gauge_position.y = self.position[1]
+
+        self.image_guage.clip_draw(0, 0, width, self.image_guage.h, *gauge_position)
+
+        
+
+
+
     
 
 _list_gui : list[GUI]
