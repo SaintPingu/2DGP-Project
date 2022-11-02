@@ -1,4 +1,5 @@
 from tools import *
+import inspect
 
 def enter():
     global _gameObjects, _groundObjects
@@ -359,8 +360,12 @@ _groundObjects : list[GroundObject]
 
 def add_object(object : GameObject):
     _gameObjects.append(object)
-    if object.__class__.__base__ == GroundObject:
-        _groundObjects.append(object)
+
+    parent = object.__class__
+    while parent != GameObject:
+        parent = parent.__base__
+        if parent == GroundObject:
+            _groundObjects.append(object)
 
 def delete_object(object : GameObject):
     _gameObjects.remove(object)

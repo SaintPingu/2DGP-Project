@@ -21,7 +21,7 @@ def exit():
 
 
 class Shell(object.GameObject):
-    def __init__(self, shell_name : str, position, theta):
+    def __init__(self, shell_name : str, position, theta, is_simulation=False):
         assert shell_name in SHELLS.keys()
 
         self.img_shell : Image = SHELLS[shell_name]
@@ -32,7 +32,9 @@ class Shell(object.GameObject):
         self.is_destroyed = False
         self.DETECTION_RADIUS = 2
         self.prev_head : Vector2() = None
-        self.is_simulation = False
+        self.is_simulation = is_simulation
+        if is_simulation:
+            self.damage = 0
 
     def draw(self):
         self.is_rect_invalid = True
@@ -50,7 +52,7 @@ class Shell(object.GameObject):
         # out of range
         if rect.right < 0 or rect.left > SCREEN_WIDTH or rect.top <= MIN_HEIGHT:
             delete_shell(self)
-            return 0
+            return False
         
         head = self.get_head()
         if self.prev_head is None:
@@ -58,10 +60,11 @@ class Shell(object.GameObject):
 
         collision_vectors = gmap.get_vectors(head, self.prev_head)
 
-        if self.check_tanks(head, collision_vectors) == True:
-            return 1
+        target_tank = self.check_tanks(head, collision_vectors)
+        if target_tank is not False:
+            return target_tank
         elif self.check_grounds(head) == True:
-            return 0
+            return False
 
         self.is_rect_invalid = True
 
@@ -75,18 +78,18 @@ class Shell(object.GameObject):
         self.move()
         self.prev_head = head
 
-        return -1
+        return True
     
     # Check collision by tanks
     def check_tanks(self, head, collision_vectors):
         head = self.get_head()
-        tank_pos = tank.check_hit(head, collision_vectors, self.DETECTION_RADIUS, self.damage)
-        if tank_pos is False:
+        target_tank = tank.check_hit(head, collision_vectors, self.DETECTION_RADIUS, self.damage)
+        if target_tank is False:
             return False
 
-        explosion_pos = head + (tank_pos - head)*0.5
+        explosion_pos = head + (target_tank.center - head)*0.5
         self.explosion(explosion_pos)
-        return True
+        return target_tank
 
     # Check collision by grounds
     def check_grounds(self, head):
