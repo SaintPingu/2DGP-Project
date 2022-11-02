@@ -71,6 +71,7 @@ class GUI_HP(GUI):
     def update(self):
         self.invalidatae()
         self.position = (self.owner.center.x, self.owner.get_rect().top + 20)
+        self.update_gauge()
     
     def update_gauge(self):
         self.width = self.max_width * (self.owner.hp / self.max_hp)

@@ -14,6 +14,8 @@ RIGHT = 1
 
 END_OF_LINE = 'END\n'
 
+GRAVITY = 0.01
+
 class Vector2:
     def __init__(self, x=0, y=0):
         self.x : float = x

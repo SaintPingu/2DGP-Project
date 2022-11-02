@@ -372,6 +372,9 @@ def add_object(object : GameObject):
             _groundObjects.append(object)
 
 def delete_object(object : GameObject):
+    if object not in _gameObjects:
+        return
+        
     _gameObjects.remove(object)
     if object.__class__.__base__ == GroundObject:
         _groundObjects.remove(object)

@@ -8,19 +8,24 @@ import tank
 SHELLS = {}
 
 def enter():
-    global SHELLS
+    global SHELLS, fired_shells
     img_shell_ap = load_image_path('shell_ap.png')
     img_shell_hp = load_image_path('shell_hp.png')
     img_shell_mul = load_image_path('shell_multiple.png')
     SHELLS = { "AP" : img_shell_ap, "HP" : img_shell_hp, "MUL" : img_shell_mul }
 
+    fired_shells = []
+
 def exit():
-    global SHELLS
+    global SHELLS, fired_shells
     for image in SHELLS.values():
         del image
     
     for shell in fired_shells:
         delete_shell(shell)
+
+    fired_shells.clear()
+    del fired_shells
 
 
 class Shell(object.GameObject):
@@ -73,10 +78,13 @@ class Shell(object.GameObject):
         self.is_rect_invalid = True
 
         # apply rotation and gravity
-        self.vector = self.vector.lerp(Vector2.down(), 0.006)
+        gravity = 0.006 + 5/(self.speed*1000)
+        # if self.speed < 10:
+        #     gravity *= 5/self.speed
+        self.vector = self.vector.lerp(Vector2.down(), gravity)
         self.theta = self.vector.get_theta(Vector2.right())
         if self.vector.y < 0:
-            self.speed += 0.1
+            self.speed += 0.05
             self.theta *= -1
             
         self.move()
@@ -150,8 +158,8 @@ def add_shell(shell_name, head_position, theta, power = 1):
     if shell_name == "MUL":
         for n in range(3):
             t = 0.05 * (n+1)
-            shell_1 = Shell(shell_name, position, theta + t)
-            shell_2 = Shell(shell_name, position, theta - t)
+            shell_1 = Shell(shell_name, position, theta + t, power)
+            shell_2 = Shell(shell_name, position, theta - t, power)
             fired_shells.append(shell_1)
             fired_shells.append(shell_2)
             object.add_object(shell_1)
