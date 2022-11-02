@@ -4,6 +4,7 @@ import gmap
 import shell
 import sprite
 import gui
+import environment as env
 
 image_tank_green : Image = None
 image_barrel_green : Image = None
@@ -266,21 +267,20 @@ class Tank(object.GroundObject):
         return prev_barrel_rect
 
     def update_barrel(self, target : Vector2 = None):
-        if self.is_locked:
-            return
-        elif target is None:
-            target = self.get_barrel_head()
-        self.vec_dir_barrel = self.vec_dir_barrel.get_rotated_dest(self.barrel_pivot, target)
+        if self.is_locked == False:
+            if target is None:
+                target = self.get_barrel_head()
+            self.vec_dir_barrel = self.vec_dir_barrel.get_rotated_dest(self.barrel_pivot, target)
 
-        # 190 degree rotation
-        if self.vec_dir_barrel.x < 0:
-            left_dir = self.get_vec_left().get_rotated(math.radians(Tank.MAX_DEGREE))
-            if self.vec_dir_barrel.y <= left_dir.y:
-                self.vec_dir_barrel = left_dir
-        else:
-            right_dir = self.get_vec_right().get_rotated(math.radians(-Tank.MAX_DEGREE))
-            if self.vec_dir_barrel.y <= right_dir.y:
-                self.vec_dir_barrel = right_dir
+            # 190 degree rotation
+            if self.vec_dir_barrel.x < 0:
+                left_dir = self.get_vec_left().get_rotated(math.radians(Tank.MAX_DEGREE))
+                if self.vec_dir_barrel.y <= left_dir.y:
+                    self.vec_dir_barrel = left_dir
+            else:
+                right_dir = self.get_vec_right().get_rotated(math.radians(-Tank.MAX_DEGREE))
+                if self.vec_dir_barrel.y <= right_dir.y:
+                    self.vec_dir_barrel = right_dir
 
         prev_barrel_rect = self.set_barrel_pos()
         gmap.set_invalidate_rect(*prev_barrel_rect.__getitem__(), square=True, grid_size=0)
@@ -312,14 +312,16 @@ class Tank(object.GroundObject):
 
 ##### AI #####
 class Tank_AI(Tank):
+    START_UPDATE_DELAY = 120
     MAX_CHECK_COUNT = 30
     degree_table = {
-        0 : 2,
+        0 : 5,
         1 : 1.5,
-        2 : 0.8,
-        3 : 0.5,
-        4 : 0.3,
-        5 : 0.1,
+        2 : 1.2,
+        3 : 0.8,
+        4 : 0.5,
+        5 : 0.3,
+        6 : 0.1,
     }
     def __init__(self, center=(0, 0)):
         super().__init__(center)
@@ -336,6 +338,7 @@ class Tank_AI(Tank):
         self.last_hit_vector : Vector2 = None
         self.last_hit_distance = float('inf')
 
+        self.power = 0
         self.degree_level = 0
         self.crnt_degree = 0
         self.start_degree = 0
@@ -350,16 +353,33 @@ class Tank_AI(Tank):
     def select(self):
         super().select()
         self.max_movement_fuel = 0
-        self.is_moving = random.randint(0, 1) == 0 # 50% chance to move
-        if self.is_moving:
-            if self.center.x < 100:
-                self.dir = RIGHT
-            elif self.center.x > SCREEN_WIDTH - 100:
-                self.dir = LEFT
-            else:
-                self.dir = random.randrange(-1, 2, 2)
+        self.target_tank = tank_list[0]
+        self.set_movement()
 
-            self.max_movement_fuel = random.randint(10, Tank.MAX_FUEL)
+    def set_movement(self):
+        dx = self.get_dx()
+        distance = math.fabs(dx)
+
+        shell_speed = shell.get_attributes(self.crnt_shell)[0]
+        env.wind.get_wind_vector()
+        evaluation = (distance / shell_speed)
+        print(evaluation)
+
+        if evaluation > 70: # can't reach
+            self.is_moving = True
+            self.dir = get_sign(dx)
+            self.max_movement_fuel = 0
+        else:
+            self.is_moving = random.randint(0, 1) == 0 # 50% chance to move
+            if self.is_moving:
+                if self.center.x < 100:
+                    self.dir = RIGHT
+                elif self.center.x > SCREEN_WIDTH - 100:
+                    self.dir = LEFT
+                else:
+                    self.dir = random.randrange(-1, 2, 2)
+
+            self.max_movement_fuel = random.randint(0, Tank.MAX_FUEL - 20)
 
     def init_values(self):
         self.is_checking = False
@@ -369,6 +389,7 @@ class Tank_AI(Tank):
         self.last_hit_vector = None
         self.last_hit_distance = float('inf')
 
+        self.power = 0
         self.degree_level = 0
         self.count_update = 0
         self.start_degree = 0
@@ -381,8 +402,7 @@ class Tank_AI(Tank):
         self.virtual_shell = None
 
     def set_direction(self):
-        self.target_tank = tank_list[0]
-        self.check_dir = get_sign(self.target_tank.center.x - self.center.x)
+        self.check_dir = get_sign(self.get_dx())
 
         if self.check_dir == RIGHT:
             self.crnt_degree = self.get_rotation_degree() - 10
@@ -391,6 +411,9 @@ class Tank_AI(Tank):
         self.max_degree = self.get_max_degree()
 
         self.precise_dir = 1
+    
+    def set_power(self):
+        distance = math.fabs(self.get_dx())
 
     def get_max_degree(self):
         degree = 90 - math.degrees(Vector2.get_theta(self.get_vec_right(), Vector2.up()))
@@ -398,13 +421,14 @@ class Tank_AI(Tank):
             degree *= -1 
 
         return 90 + Tank.MAX_DEGREE - degree + self.crnt_degree
+    
+    def get_dx(self):
+        return self.target_tank.center.x - self.center.x
 
 
     def update(self):
-        START_UPDATE_DELAY = 60
-
         self.update_delay += 1
-        if self.update_delay >= START_UPDATE_DELAY:
+        if self.update_delay >= Tank_AI.START_UPDATE_DELAY:
             if super().update() == False:
                 return False
 
@@ -435,6 +459,7 @@ class Tank_AI(Tank):
             self.is_checking = True
 
             if self.check_dir == None:
+                self.set_power()
                 self.set_direction()
 
             # create virtual shell
@@ -448,7 +473,7 @@ class Tank_AI(Tank):
         # get impact point
         while self.count_update < Tank_AI.MAX_CHECK_COUNT:
             result = self.virtual_shell.update()
-            # if self.degree_level >= 5:
+            # if self.degree_level <= 3:
             #     self.virtual_shell.draw()
             #     update_canvas()
 
@@ -482,8 +507,10 @@ class Tank_AI(Tank):
                             self.fire()
                             return
                 elif distance < 30:
-                    self.degree_level = 5
+                    self.degree_level = 6
                 elif distance < 60:
+                    self.degree_level = 5
+                elif distance < 90:
                     self.degree_level = 4
                 elif distance < 120:
                     self.degree_level = 3

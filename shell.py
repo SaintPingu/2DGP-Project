@@ -38,6 +38,8 @@ class Shell(object.GameObject):
         self.vector = Vector2.right().get_rotated(theta)
         self.speed, self.damage, self.explosion_radius = get_attributes(shell_name)
         self.speed *= power
+        if self.speed == 0:
+            self.speed = 0.000001
         self.is_destroyed = False
         self.DETECTION_RADIUS = 2
         self.prev_head : Vector2() = None
@@ -53,6 +55,7 @@ class Shell(object.GameObject):
         dest = (self.center + self.vector * self.speed) + gmap.env.wind.get_wind_vector()
         self.vector = self.vector.get_rotated_dest(self.center, dest)
         self.set_center(dest)
+        
 
     def update(self):
         self.invalidate()
@@ -79,12 +82,10 @@ class Shell(object.GameObject):
 
         # apply rotation and gravity
         gravity = 0.006 + 5/(self.speed*1000)
-        # if self.speed < 10:
-        #     gravity *= 5/self.speed
         self.vector = self.vector.lerp(Vector2.down(), gravity)
         self.theta = self.vector.get_theta(Vector2.right())
-        if self.vector.y < 0:
-            self.speed += 0.05
+        if self.vector.y <= 0:
+            self.speed += 0.1
             self.theta *= -1
             
         self.move()
