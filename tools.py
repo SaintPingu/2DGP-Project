@@ -107,14 +107,14 @@ class Vector2:
 
         return result
 
-    def get_rotated_origin(self, origin, theta):
-        if type(origin) != Vector2:
-            origin = Vector2(*origin)
+    def get_rotated_pivot(self, pivot, theta):
+        if type(pivot) != Vector2:
+            pivot = Vector2(*pivot)
 
         result = self
-        result -= origin
+        result -= pivot
         
-        return origin + result.get_rotated(theta)
+        return pivot + result.get_rotated(theta)
     
     def lerp(self, dst, t):
         transform = Vector2()

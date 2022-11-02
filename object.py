@@ -58,7 +58,7 @@ class GameObject:
 
     def rotate_pivot(self, theta, pivot):
         center = self.center
-        self.center = center.get_rotated_origin(pivot, theta)
+        self.center = center.get_rotated_pivot(pivot, theta)
         self.theta = theta
         self.update_object()
 
@@ -150,10 +150,10 @@ class GroundObject(GameObject):
         self.bot_right.x = self.top_right.x = self.center.x + self.width//2
         self.top_left.y = self.top_right.y = self.center.y + self.height//2
         
-        self.bot_left = self.bot_left.get_rotated_origin(self.center, self.theta)
-        self.bot_right = self.bot_right.get_rotated_origin(self.center, self.theta)
-        self.top_left = self.top_left.get_rotated_origin(self.center, self.theta)
-        self.top_right = self.top_right.get_rotated_origin(self.center, self.theta)
+        self.bot_left = self.bot_left.get_rotated_pivot(self.center, self.theta)
+        self.bot_right = self.bot_right.get_rotated_pivot(self.center, self.theta)
+        self.top_left = self.top_left.get_rotated_pivot(self.center, self.theta)
+        self.top_right = self.top_right.get_rotated_pivot(self.center, self.theta)
 
         vec_left_to_center = (self.bot_right - self.bot_left).normalized() * (self.width // 2)
         self.bot_center = self.bot_left + vec_left_to_center

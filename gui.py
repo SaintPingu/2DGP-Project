@@ -2,10 +2,13 @@ from tools import *
 import gmap
 
 _img_hp : Image
+_img_fuel : Image
+
 def enter():
-    global _list_gui, _img_hp
+    global _list_gui, _img_hp, _img_fuel
     _list_gui = []
     _img_hp = load_image_path('hp_bar.png')
+    _img_fuel = load_image_path('fuel_hand.png')
     
 def exit():
     global _list_gui, _img_hp
@@ -23,7 +26,7 @@ def update():
         gui.update()
 
 def draw():
-    for gui in _list_gui:
+    for gui in _list_gui.__reversed__():
         gui.draw()
 
 class GUI:
@@ -112,9 +115,27 @@ class GUI_Select_Tank(GUI):
             self.update()
 
 class GUI_Fuel(GUI):
-    def __init__(self, image: Image):
-        super().__init__(image)
-        self.owner = None
+    PIVOT = Vector2(200, 25)
+    def __init__(self, owner, max_fuel):
+        super().__init__(_img_fuel)
+        self.owner = owner
+        self.max_fuel = max_fuel
+        self.position = GUI_Fuel.PIVOT
+        self.vector : Vector2 = None
+    
+    def update(self):
+        super().update()
+        t = self.owner.fuel / self.max_fuel
+        degree = -100 + (t * 105)
+        self.theta = math.radians(degree)
+        self.vector = Vector2.up().get_rotated(self.theta)
+
+        self.position = GUI_Fuel.PIVOT + (self.vector * 15)
+
+    def draw(self):
+        if self.owner and self.owner.is_turn == True:
+            super().draw()
+    
 
 _list_gui : list[GUI]
 
