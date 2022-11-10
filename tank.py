@@ -18,6 +18,11 @@ gui_launch : gui.GUI_LAUNCH = None
 gui_gauge : gui.GUI_GUAGE = None
 
 
+TANK_SPEED_KMPH = 30
+TANK_SPEED_MPM = (TANK_SPEED_KMPH * 1000.0 / 60.0)
+TANK_SPEED_MPS = (TANK_SPEED_MPM / 60.0)
+TANK_SPEED_PPS = (TANK_SPEED_MPS * PIXEL_PER_METER)
+
 
 def enter():
     global image_tank_green, image_barrel_green, image_tank_blue, image_barrel_blue, image_tank_red, image_barrel_red
@@ -71,7 +76,7 @@ def update():
 
 class Tank(object.GroundObject):
     MAX_DEGREE = 10
-    MAX_FUEL = 100
+    MAX_FUEL = TANK_SPEED_KMPH * 5
     def __init__(self, center=(0,0)):
         self.image = image_tank_green
         self.image_barrel = image_barrel_green
@@ -87,7 +92,7 @@ class Tank(object.GroundObject):
         self.team = "green"
 
         # attributes
-        self.speed = 1
+        self.speed = TANK_SPEED_PPS
         self.hp = 100
         self.fuel = Tank.MAX_FUEL
         self.crnt_shell = "AP"
@@ -370,7 +375,7 @@ class Tank_AI(Tank):
             self.dir = get_sign(dx)
             self.max_movement_fuel = 0
         else:
-            self.is_moving = random.randint(0, 1) == 0 # 50% chance to move
+            self.is_moving = random.randint(0, 5) > 0 # 5/6% chance to move
             if self.is_moving:
                 if self.center.x < 100:
                     self.dir = RIGHT

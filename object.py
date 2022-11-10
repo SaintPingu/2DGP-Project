@@ -1,5 +1,5 @@
 from tools import *
-import inspect
+import framework
 
 def enter():
     global _gameObjects, _groundObjects
@@ -187,7 +187,7 @@ class GroundObject(GameObject):
         else:
             self.vDir = self.get_vec_right()
 
-        vDest = self.center + (self.vDir * self.speed)
+        vDest = self.center + (self.vDir * self.speed * framework.frame_time)
 
         if self.set_pos(vDest) == False:
             self.stop()

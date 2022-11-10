@@ -1,3 +1,5 @@
+import time
+
 class GameState:
     def __init__(self, state):
         self.enter = state.enter
@@ -46,23 +48,21 @@ def quit():
     running = False
 
 
-# current_time = time.time() + 1
+frame_time = 0
 def run(start_state):
-    global running, stack
+    global running, stack, frame_time
     running = True
     stack = [start_state]
     start_state.enter()
 
+    current_time = time.time()
     while (running):
-        # frame_time = time.time() - current_time
-        # frame_rate = 1.0 / frame_time
-        # current_time += frame_time
-        # if frame_rate < 60:
-        #     print("Frame Time: %f sec, Frame Rate: %f fps" %(frame_time,frame_rate))
-
         stack[-1].handle_events()
         stack[-1].update()
         stack[-1].draw()
+
+        frame_time = time.time() - current_time
+        current_time += frame_time
     while (len(stack) > 0):
         stack[-1].exit()
         stack.pop()

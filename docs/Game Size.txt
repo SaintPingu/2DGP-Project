@@ -1,0 +1,6 @@
+1 Pixel : 5m
+
+Tank Length = 150m
+Tank Height = 80m
+Tank Speed = 30km/h
+Missile Speed = 110km/h

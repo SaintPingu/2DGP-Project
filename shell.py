@@ -3,9 +3,17 @@ import object
 import gmap
 import sprite
 import tank
+import framework
 
 
 SHELLS = {}
+
+
+TANK_SPEED_KMPH = 120
+TANK_SPEED_MPM = (TANK_SPEED_KMPH * 1000.0 / 60.0)
+TANK_SPEED_MPS = (TANK_SPEED_MPM / 60.0)
+TANK_SPEED_PPS = (TANK_SPEED_MPS * PIXEL_PER_METER)
+
 
 def enter():
     global SHELLS, fired_shells
@@ -52,7 +60,7 @@ class Shell(object.GameObject):
         self.draw_image(self.img_shell)
     
     def move(self):
-        dest = (self.center + self.vector * self.speed) + gmap.env.wind.get_wind_vector()
+        dest = (self.center + self.vector * self.speed * framework.frame_time) + gmap.env.wind.get_wind_vector()
         self.vector = self.vector.get_rotated_dest(self.center, dest)
         self.set_center(dest)
         
@@ -184,15 +192,15 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
     explosion_radius = 0
 
     if shell_name == "HP":
-        speed = 15
+        speed = 750
         damage = 10
         explosion_radius = 15
     elif shell_name == "AP":
-        speed = 18
+        speed = 900
         damage = 30
         explosion_radius = 8
     elif shell_name == "MUL":
-        speed = 10
+        speed = 600
         damage = 2
         explosion_radius = 4
     else:
