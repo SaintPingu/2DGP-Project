@@ -14,7 +14,7 @@ RIGHT = 1
 
 END_OF_LINE = 'END\n'
 
-GRAVITY = 0.98
+GRAVITY = 9.8
 PIXEL_PER_METER = 5
 
 class Vector2:
@@ -229,3 +229,9 @@ def set_debug_mode(is_debug_mode):
 def toggle_debug_mode():
     global _is_debug_mode
     _is_debug_mode = not _is_debug_mode
+
+def point_in_rect(point, rect : Rect):
+    if (point[0] > rect.left and point[0] < rect.right) and (point[1] < rect.top and point[1] > rect.bottom):
+        return True
+    
+    return False

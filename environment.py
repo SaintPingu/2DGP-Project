@@ -2,7 +2,11 @@ from tools import *
 import object
 import gui
 import gmap
+import framework
 
+_BASE_WIND_SPEED_MPS = 5
+_BASE_WIND_SPEED_PPS = (_BASE_WIND_SPEED_MPS * PIXEL_PER_METER)
+_WIND_AFFECT = 0.1
 
 def enter(cloud_count=10):
     global _images_cloud
@@ -54,7 +58,7 @@ class Wind:
     def randomize(self):
         gmap.set_invalidate_rect(self.gui_wind.position, self.image_wind.w, self.image_wind.h)
         rand_direction = random.randint(-1, 1)
-        rand_speed = 0.001 + random.random() * 0.01
+        rand_speed = _BASE_WIND_SPEED_PPS / (random.random() + 0.1)
         self.direction = rand_direction
         self.speed = rand_speed
 
@@ -70,7 +74,7 @@ class Wind:
             
     
     def get_wind_vector(self) -> Vector2:
-        return Vector2(self.direction * self.speed, 0)
+        return Vector2(self.direction * self.speed * _WIND_AFFECT, 0)
 
 
 _CLOUD_MIN_HEIGHT = 800
@@ -118,8 +122,8 @@ class Cloud(object.GameObject):
         #gmap.set_invalidate_rect(self.center, self.width, self.height, grid_size=0)
         rect_inv = Rect(self.center, self.width, self.height)
         gmap.draw_background(rect_inv, False)
-        speed = wind.speed * 100
-        self.offset(wind.direction * speed, 0)
+        speed = wind.speed
+        self.offset(wind.direction * speed * framework.frame_time, 0)
         self.is_rect_invalid = True
 
         rect = self.get_rect()

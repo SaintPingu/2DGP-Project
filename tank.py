@@ -148,6 +148,7 @@ class Tank(object.GroundObject):
             return False
 
         self.move()
+
         if is_debug_mode():
             gmap.draw_debug_cells(self.get_collision_cells())
 
@@ -157,10 +158,11 @@ class Tank(object.GroundObject):
     ##### Movement #####
     def deselect(self):
         self.is_turn = False
+        self.is_locked = False
+        self.fuel = Tank.MAX_FUEL
         
     def select(self):
         self.is_turn = True
-        self.fuel = Tank.MAX_FUEL
 
     def set_pos(self, center):
         def dont_move(prev_theta, prev_center):
@@ -194,12 +196,13 @@ class Tank(object.GroundObject):
             dont_move(prev_theta, prev_rect.center)
             return False
         
-        self.fuel -= 1
         # invalidate
         prev_barrel_rect = self.set_barrel_pos()
         gmap.set_invalidate_rect(*prev_barrel_rect.__getitem__(), square=True, grid_size=0)
         gmap.set_invalidate_rect(*prev_rect.__getitem__(), square=True)
         self.is_rect_invalid = True
+
+        self.fuel -= 1
 
         return True
     
@@ -323,9 +326,9 @@ class Tank_AI(Tank):
         0 : 5,
         1 : 1.5,
         2 : 1.2,
-        3 : 0.8,
-        4 : 0.5,
-        5 : 0.3,
+        3 : 0.6,
+        4 : 0.3,
+        5 : 0.2,
         6 : 0.1,
     }
     def __init__(self, center=(0, 0)):
@@ -368,7 +371,6 @@ class Tank_AI(Tank):
         shell_speed = shell.get_attributes(self.crnt_shell)[0]
         env.wind.get_wind_vector()
         evaluation = (distance / shell_speed)
-        print(evaluation)
 
         if evaluation > 70: # can't reach
             self.is_moving = True
@@ -440,12 +442,13 @@ class Tank_AI(Tank):
             self.run_ai()
 
     def fire(self):
+        del self.virtual_shell
+        self.virtual_shell = None
+
         self.set_barrel_pos()
         gui_gauge.set_fill(1)
         super().fire()
         self.init_values()
-        del self.virtual_shell
-        self.virtual_shell = None
     
     def stop(self):
         self.dir = 0
@@ -474,11 +477,12 @@ class Tank_AI(Tank):
                 self.vec_dir_barrel = Vector2.left().get_rotated(math.radians(-self.crnt_degree))
                 
             self.virtual_shell = shell.Shell(self.crnt_shell, self.get_barrel_head(), self.get_barrel_theta(), is_simulation=True)
+            self.start_barrel_vec = self.vec_dir_barrel
 
         # get impact point
         while self.count_update < Tank_AI.MAX_CHECK_COUNT:
             result = self.virtual_shell.update()
-            # if self.degree_level <= 3:
+            # if self.degree_level >= 5:
             #     self.virtual_shell.draw()
             #     update_canvas()
 
@@ -488,22 +492,23 @@ class Tank_AI(Tank):
 
                 if type(result) == Tank: # tank on point
                     if distance < self.last_hit_distance:
-                        self.last_hit_vector = self.vec_dir_barrel
+                        self.last_hit_vector = Vector2(*self.vec_dir_barrel)
                         self.last_hit_distance = distance
                 
                 if distance < self.min_distance:
                     self.min_distance = distance
-                    self.result_vector = self.vec_dir_barrel
+                    self.result_vector = Vector2(*self.vec_dir_barrel)
                 
                 self.shell_is_close = False
-                if distance < 5:
-                    # MODIFY : Find nearby hit point from hiding position if under the ground
+                if distance < 8:
+                    # Find nearby hit point from hiding position if under the ground
                     if self.last_hit_vector is None:
                         if math.fabs(self.virtual_shell.vector.y) > math.fabs(self.virtual_shell.vector.x):
                             self.fire()
                             return
                         self.degree_level = 0
                     else:
+                        self.vec_dir_barrel = self.start_barrel_vec
                         self.fire()
                         return
                 elif distance < 20:
@@ -582,6 +587,8 @@ def select_tank(tank):
     gui_selection.set_owner(crnt_tank)
 
 def select_next_tank():
+    gui_launch.set_state('locked')
+
     global tank_list, crnt_index
     crnt_index += 1
     if crnt_index >= len(tank_list):
@@ -628,29 +635,30 @@ def draw_debug():
     if crnt_tank:
         pass
 
-def lock():
+def toggle_lock():
     if crnt_tank:
-        crnt_tank.lock()
+        if crnt_tank.is_locked:
+            if not gui_gauge.is_fill:
+                crnt_tank.unlock()
+        else:
+            crnt_tank.lock()
 
-def unlock():
-    if crnt_tank:
-        crnt_tank.unlock()
 
 def fill_gauge():
     if crnt_tank:
-        gui_gauge.fill(True)
+            gui_gauge.fill(True)
     
 def stop_gauge():
     if crnt_tank:
-        gui_gauge.fill(False)
-        crnt_tank.fire()
+            gui_gauge.fill(False)
+            crnt_tank.fire()
 
 def fire():
     if crnt_tank:
         crnt_tank.fire()
 
 
-def read_data(file):
+def read_data(file, mode):
     file.readline()
 
     while True:
@@ -661,7 +669,8 @@ def read_data(file):
             return
 
         values = data.split()
-        if values[1] == 'ai':
+        if values[1] == 'red' and mode == "PVE":
+            values[1] = 'ai'
             tank = Tank_AI()
         else:
             tank = Tank()

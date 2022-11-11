@@ -3,12 +3,16 @@ import gmap
 
 _img_hp : Image
 _img_fuel : Image
+_is_hide_gui = False
 
 def enter():
     global _list_gui, _img_hp, _img_fuel
     _list_gui = []
     _img_hp = load_image_path('hp_bar.png')
     _img_fuel = load_image_path('fuel_hand.png')
+
+    global _is_hide_gui
+    _is_hide_gui = False
     
 def exit():
     global _list_gui, _img_hp
@@ -26,6 +30,9 @@ def update():
         gui.update()
 
 def draw():
+    if _is_hide_gui:
+        return
+        
     for gui in _list_gui.__reversed__():
         gui.draw()
 
@@ -221,3 +228,7 @@ def del_gui(gui : GUI):
     if _list_gui:
         _list_gui.remove(gui)
         gui.release()
+
+def toggle_gui():
+    global _is_hide_gui
+    _is_hide_gui = not _is_hide_gui

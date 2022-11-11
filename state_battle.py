@@ -12,16 +12,18 @@ import environment as env
 
 
 def enter():
+    from  state_lobby import get_mode
+    mode = get_mode()
     img_gui_control = load_image_path('gui_control.png')
 
     object.enter()
     gui.enter()
     gmap.enter()
     tank.enter()
-    gmap.read_mapfile(1)
     shell.enter()
     sprite.enter()
     env.enter()
+    gmap.read_mapfile(1, mode)
 
     gui.add_gui(gui.GUI(img_gui_control, (SCREEN_WIDTH//2, img_gui_control.h//2), is_fixed=True))
     set_debug_mode(False)
@@ -77,6 +79,8 @@ def handle_events():
                 tank.crnt_tank.crnt_shell = "MUL"
             elif event.key == SDLK_5:
                 tank.crnt_tank.fuel = tank.Tank.MAX_FUEL
+            elif event.key == SDLK_F10:
+                gui.toggle_gui()
             elif event.key == SDLK_SPACE:
                 tank.fill_gauge()
 
@@ -94,4 +98,4 @@ def handle_events():
 
         elif event.type == SDL_MOUSEBUTTONDOWN:
             if event.button == SDL_BUTTON_LEFT:
-                tank.lock()
+                tank.toggle_lock()

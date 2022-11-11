@@ -8,13 +8,6 @@ import framework
 
 SHELLS = {}
 
-
-TANK_SPEED_KMPH = 120
-TANK_SPEED_MPM = (TANK_SPEED_KMPH * 1000.0 / 60.0)
-TANK_SPEED_MPS = (TANK_SPEED_MPM / 60.0)
-TANK_SPEED_PPS = (TANK_SPEED_MPS * PIXEL_PER_METER)
-
-
 def enter():
     global SHELLS, fired_shells
     img_shell_ap = load_image_path('shell_ap.png')
@@ -37,30 +30,54 @@ def exit():
 
 
 class Shell(object.GameObject):
+    MIN_POWER = 0.3
     def __init__(self, shell_name : str, position, theta, power = 1, is_simulation=False):
         assert shell_name in SHELLS.keys()
 
         self.img_shell : Image = SHELLS[shell_name]
+
         super().__init__(position, self.img_shell.w, self.img_shell.h, theta)
+
+        self.origin = position
+        self.start_theta = theta
 
         self.vector = Vector2.right().get_rotated(theta)
         self.speed, self.damage, self.explosion_radius = get_attributes(shell_name)
+        if self.speed <= 0:
+            raise Exception
+
+        if power < Shell.MIN_POWER:
+            power = Shell.MIN_POWER
         self.speed *= power
-        if self.speed == 0:
-            self.speed = 0.000001
+
         self.is_destroyed = False
         self.DETECTION_RADIUS = 2
         self.prev_head : Vector2() = None
+
         self.is_simulation = is_simulation
         if is_simulation:
             self.damage = 0
+
+        self.t = 0
 
     def draw(self):
         self.is_rect_invalid = True
         self.draw_image(self.img_shell)
     
     def move(self):
-        dest = (self.center + self.vector * self.speed * framework.frame_time) + gmap.env.wind.get_wind_vector()
+        dest = Vector2()
+        
+        # Use projectile moition formula
+        if not self.is_simulation:
+            self.t += (self.speed/20 * framework.frame_time)
+            dest.x = self.origin[0] + (self.speed * self.t * math.cos(self.start_theta))
+            dest.y = self.origin[1] + (self.speed * self.t * math.sin(self.start_theta) - (0.5 * GRAVITY * self.t**2))
+        else:
+            self.t += 0.15 # faster search
+            dest.x = self.origin[0] + (self.speed * self.t * math.cos(self.start_theta))
+            dest.y = self.origin[1] + (self.speed * self.t * math.sin(self.start_theta) - (0.5 * GRAVITY * self.t**2))
+
+        dest += gmap.env.wind.get_wind_vector() * self.t
         self.vector = self.vector.get_rotated_dest(self.center, dest)
         self.set_center(dest)
         
@@ -88,12 +105,8 @@ class Shell(object.GameObject):
 
         self.is_rect_invalid = True
 
-        # apply rotation and gravity
-        gravity = 0.006 + 5/(self.speed*1000)
-        self.vector = self.vector.lerp(Vector2.down(), gravity)
         self.theta = self.vector.get_theta(Vector2.right())
         if self.vector.y <= 0:
-            self.speed += 0.1
             self.theta *= -1
             
         self.move()
@@ -192,15 +205,15 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
     explosion_radius = 0
 
     if shell_name == "HP":
-        speed = 750
+        speed = 100
         damage = 10
         explosion_radius = 15
     elif shell_name == "AP":
-        speed = 900
+        speed = 120
         damage = 30
         explosion_radius = 8
     elif shell_name == "MUL":
-        speed = 600
+        speed = 80
         damage = 2
         explosion_radius = 4
     else:

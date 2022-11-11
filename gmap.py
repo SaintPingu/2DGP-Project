@@ -565,7 +565,7 @@ def draw_debug_rect(rect : Rect):
 
 
 ##### FILE I/O #####
-def read_mapfile(index : int):
+def read_mapfile(index : int, mode):
     import tank
     global _img_background, _crnt_map, img_map
 
@@ -586,7 +586,7 @@ def read_mapfile(index : int):
                 break
             _crnt_map[rowIdx][colIdx] = bool(int(ch))
 
-    tank.read_data(file)
+    tank.read_data(file, mode)
     file.close()
 
     img_map = load_image_path('map_' + str(index) + '.png')
