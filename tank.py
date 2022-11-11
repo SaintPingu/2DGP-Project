@@ -117,7 +117,7 @@ class Tank(object.GroundObject):
         elif team == "blue":
             self.image = image_tank_blue
             self.image_barrel = image_barrel_blue
-        elif team == "red" or team == 'ai':
+        elif team == "red":
             self.image = image_tank_red
             self.image_barrel = image_barrel_red
         else:
@@ -169,7 +169,7 @@ class Tank(object.GroundObject):
             self.set_theta(prev_theta)
             self.set_center(prev_center)
 
-        if self.fuel <= 0:
+        if self.is_created and self.fuel <= 0:
             return False
             
         prev_rect = self.get_rect()
@@ -628,7 +628,7 @@ def move_tank(dir):
 
 def send_mouse_pos(x, y):
     if crnt_tank:
-        if crnt_tank.team != 'ai':
+        if type(crnt_tank) != Tank_AI:
             crnt_tank.update_barrel(Vector2(x, y))
 
 def draw_debug():
@@ -669,13 +669,14 @@ def read_data(file, mode):
             return
 
         values = data.split()
-        if values[1] == 'red' and mode == "PVE":
-            values[1] = 'ai'
+        index = int(values[0])
+
+        if mode == "PVE" and index == 1:
             tank = Tank_AI()
         else:
             tank = Tank()
         
-        tank.index = int(values[0])
+        tank.index = index
         tank.set_team(values[1])
         tank.hp = int(values[2])
         tank.center.x = float(values[3])

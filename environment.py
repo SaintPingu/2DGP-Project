@@ -87,7 +87,8 @@ class Cloud(object.GameObject):
         self.randomize(True)
 
     def draw(self):
-        self.draw_image(self.image, self.scale)
+        #self.draw_image(self.image, self.scale)
+        pass
     
     def resize(self):
         self.width = self.image.w * self.scale

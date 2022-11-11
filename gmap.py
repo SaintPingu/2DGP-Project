@@ -31,10 +31,6 @@ _rect_debug_list : list[InvRect] = []
 selected_tank = None
 
 def enter():
-    global _img_background, _img_ground
-    _img_background = load_image_path('background.png')
-    _img_ground = load_image_path('ground.png')
-
     global _rect_inv_list, _rect_debug_list
     _rect_inv_list = []
     _rect_debug_list = []
@@ -567,14 +563,21 @@ def draw_debug_rect(rect : Rect):
 ##### FILE I/O #####
 def read_mapfile(index : int, mode):
     import tank
-    global _img_background, _crnt_map, img_map
+    global _crnt_map, img_map
 
     _crnt_map = [[False]*X_CELL_COUNT for col in range(Y_CELL_COUNT)]
 
+    global _img_background, _img_ground
     # Draw empty background
-    if index == -1:
+    if index < 0:
+        index *= -1
+        _img_background = load_image_path('background_' + str(index) + '.png')
+        _img_ground = load_image_path('ground_' + str(index) + '.png')
         _img_background.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
         return
+    else:
+        _img_background = load_image_path('background_' + str(index) + '.png')
+        _img_ground = load_image_path('ground_' + str(index) + '.png')
 
     fileName = 'map_' + str(index) + '.txt'
     file = open('maps/' + fileName, 'r')

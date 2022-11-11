@@ -23,7 +23,7 @@ def enter():
     shell.enter()
     sprite.enter()
     env.enter()
-    gmap.read_mapfile(1, mode)
+    gmap.read_mapfile(2, mode)
 
     gui.add_gui(gui.GUI(img_gui_control, (SCREEN_WIDTH//2, img_gui_control.h//2), is_fixed=True))
     set_debug_mode(False)
