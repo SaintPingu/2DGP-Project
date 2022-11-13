@@ -5,22 +5,34 @@ from tools import *
 import framework
 import state_lobby
 
-image = None
+image : Image
+font : Font
+font_show_count = 0
 
 def enter():
-    global image
+    global image, font
     image = load_image_path('title.png')
+    font = load_font("Lemon-Regular.ttf", 64)
+
+    global font_show_count
+    font_show_count = 0
 
 def exit():
-    global image
+    global image, font
     del image
+    del font
 
 def update():
-    pass
+    global font_show_count
+    font_show_count = (font_show_count + framework.frame_time) % 2
 
 def draw():
     clear_canvas()
     image.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
+
+    if font_show_count <= 1.5:
+        font.draw(250, 300, "Press Any Key To Start!", (0, 79, 212))
+
     update_canvas()
 
 

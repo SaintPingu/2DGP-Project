@@ -164,7 +164,7 @@ class Tank(object.GroundObject):
 
     def get_damage(self, damage):
         self.hp -= damage
-        if self.hp < 0:
+        if self.hp <= 0:
             object.delete_object(self)
             sprite.add_animation("Tank_Explosion", self.center + (0,self.height//2))
 

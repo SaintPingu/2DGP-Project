@@ -199,14 +199,27 @@ class GUI_GUAGE(GUI):
 
 
 class GUI_Weapon(GUI):
+    name_table = {
+        "AP" : "Armour-Piercing",
+        "HP" : "High-Explosive",
+        "MUL" : "Multiple",
+        "NUCLEAR" : "Nuclear",
+    }
     def __init__(self):
         super().__init__(shell.get_shell_image(shell.DEFAULT_SHELL), (444, 30), math.radians(90), is_fixed=True, scale=1.4)
+        self.is_draw = False
+        self.font = load_font("PermanentMarker.ttf", 20)
+        # self.str = GUI_Weapon.name_table[shell.DEFAULT_SHELL]
 
     def draw(self):
         super().draw()
+        self.font.draw(self.position[0] + 50, self.position[1], self.str, (255,255,255))
 
     def set_image(self, shell_name):
+        self.is_draw = True
         self.image = shell.get_shell_image(shell_name)
+        self.str = GUI_Weapon.name_table[shell_name]
+
     
 
 _list_gui : list[GUI, int]

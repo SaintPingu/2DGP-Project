@@ -231,7 +231,7 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
         explosion_radius = 4
     elif shell_name == "NUCLEAR":
         speed = 110
-        damage = 50
+        damage = 45
         explosion_radius = 30
     else:
         raise Exception
