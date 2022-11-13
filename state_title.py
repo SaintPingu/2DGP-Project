@@ -35,3 +35,8 @@ def handle_events():
                 return
             framework.change_state(state_lobby)
 
+
+def pause():
+    pass
+def resume():
+    pass

@@ -5,6 +5,7 @@ from tools import *
 import framework
 import state_title
 import state_lobby
+import state_inventory
 
 import object
 import gui
@@ -20,23 +21,20 @@ _is_game_over = None
 def enter():
     from  state_lobby import get_mode
     mode = get_mode()
-    img_gui_control = load_image_path('gui_control.png')
 
     object.enter()
-    gui.enter()
     gmap.enter()
-    tank.enter()
     shell.enter()
+    gui.enter()
+    tank.enter()
     sprite.enter()
     env.enter()
     ending.enter()
     gmap.read_mapfile(state_lobby.crnt_map_index + 1, mode)
 
-    gui.add_gui(gui.GUI(img_gui_control, (SCREEN_WIDTH//2, img_gui_control.h//2), is_fixed=True))
-    set_debug_mode(False)
-
     global _is_game_over
     _is_game_over = False
+
 
 def exit():
     env.exit()
@@ -62,7 +60,6 @@ def update():
         ending.update()
 
 def draw():
-    gmap.draw_debug_rect(rect)
 
     gmap.draw()
     gui.draw()
@@ -75,8 +72,9 @@ def draw():
     
     update_canvas()
 
-def handle_events():
-    events = get_events()
+def handle_events(events=None):
+    if events == None:
+        events = get_events()
     event : Event
 
     if gmap.is_draw_mode == True:
@@ -94,12 +92,6 @@ def handle_events():
                 tank.move_tank(RIGHT)
             elif event.key == SDLK_LEFT:
                 tank.move_tank(LEFT)
-            elif event.key == SDLK_1:
-                tank.crnt_tank.crnt_shell = "AP"
-            elif event.key == SDLK_2:
-                tank.crnt_tank.crnt_shell = "HP"
-            elif event.key == SDLK_3:
-                tank.crnt_tank.crnt_shell = "MUL"
             elif event.key == SDLK_5:
                 tank.crnt_tank.fuel = tank.Tank.MAX_FUEL
             elif event.key == SDLK_F10:
@@ -108,17 +100,31 @@ def handle_events():
                 tank.fill_gauge()
 
         elif event.type == SDL_KEYUP:
-            if event.key == SDLK_RIGHT:
-                tank.stop_tank()
-            elif event.key == SDLK_LEFT:
+            if event.key == SDLK_RIGHT or event.key == SDLK_LEFT:
                 tank.stop_tank()
             elif event.key == SDLK_SPACE:
                 tank.stop_gauge()
+                if framework.state_in_stack(state_inventory):
+                    framework.pop_state()
 
         elif event.type == SDL_MOUSEMOTION:
             mouse_pos = convert_pico2d(event.x, event.y)
             tank.send_mouse_pos(*mouse_pos)
 
         elif event.type == SDL_MOUSEBUTTONDOWN:
+            point = convert_pico2d(event.x, event.y)
             if event.button == SDL_BUTTON_LEFT:
-                tank.toggle_lock()
+                if point_in_rect(point, gui.rect_gui):
+                    if tank.crnt_tank != None:
+                        if point_in_rect(point, gui.rect_weapon):
+                            if not framework.state_in_stack(state_inventory):
+                                framework.push_state(state_inventory)
+                            else:
+                                framework.pop_state()
+                else:
+                    tank.toggle_lock()
+
+def pause():
+    pass
+def resume():
+    pass

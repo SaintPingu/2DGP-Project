@@ -10,16 +10,16 @@ import gui
 import framework
 import environment as env
 
-image_tank_green : Image = None
-image_barrel_green : Image = None
-image_tank_blue : Image = None
-image_barrel_blue : Image = None
-image_tank_red : Image = None
-image_barrel_red : Image = None
+image_tank_green : Image
+image_barrel_green : Image
+image_tank_blue : Image
+image_barrel_blue : Image
+image_tank_red : Image
+image_barrel_red : Image
 
-gui_selection : gui.GUI_Select_Tank = None
-gui_launch : gui.GUI_LAUNCH = None
-gui_gauge : gui.GUI_GUAGE = None
+gui_selection : gui.GUI_Select_Tank
+gui_launch : gui.GUI_LAUNCH
+gui_gauge : gui.GUI_GUAGE
 
 
 TANK_SPEED_KMPH = 30
@@ -42,9 +42,9 @@ def enter():
     gui_selection = gui.GUI_Select_Tank(selection_arrow)
     gui_launch = gui.GUI_LAUNCH()
     gui_gauge = gui.GUI_GUAGE()
-    gui.add_gui(gui_selection)
-    gui.add_gui(gui_launch)
-    gui.add_gui(gui_gauge)
+    gui.add_gui(gui_selection, 1)
+    gui.add_gui(gui_launch, 1)
+    gui.add_gui(gui_gauge, 1)
 
     global tank_list, crnt_index
     tank_list = []
@@ -58,12 +58,12 @@ def exit():
     del image_barrel_blue
     del image_tank_red
     del image_barrel_red
-    gui_selection = None
 
     global tank_list, crnt_tank, _wait_count
     tank_list.clear()
     del tank_list
     tank_list = None
+
     crnt_tank = None
     _wait_count = 0
 
@@ -111,13 +111,13 @@ class Tank(object.GroundObject):
         # gui
         self.gui_hp = gui.GUI_HP(self)
         self.gui_fuel = gui.GUI_Fuel(self, Tank.MAX_FUEL)
-        gui.add_gui(self.gui_hp)
-        gui.add_gui(self.gui_fuel)
+        gui.add_gui(self.gui_hp, 1)
+        gui.add_gui(self.gui_fuel, 1)
     
     def release(self):
         if tank_list:
             tank_list.remove(self)
-        gui.del_gui(self.gui_hp)
+        self.gui_hp.release()
 
     def set_team(self, team : str):
         self.team = team
@@ -176,6 +176,7 @@ class Tank(object.GroundObject):
         
     def select(self):
         self.is_turn = True
+        gui.gui_weapon.set_image(self.crnt_shell)
 
     def set_pos(self, center):
         def dont_move(prev_theta, prev_center):
@@ -671,6 +672,10 @@ def stop_gauge():
 def fire():
     if crnt_tank:
         crnt_tank.fire()
+
+def set_shell(shell_name):
+    if crnt_tank:
+        crnt_tank.crnt_shell = shell_name
 
 
 def read_data(file, mode):

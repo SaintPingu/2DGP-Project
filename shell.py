@@ -8,8 +8,9 @@ import sprite
 import tank
 import framework
 
+DEFAULT_SHELL = "AP"
 
-SHELLS = {}
+SHELLS : dict
 
 def enter():
     global SHELLS, fired_shells
@@ -24,6 +25,7 @@ def exit():
     global SHELLS, fired_shells
     for image in SHELLS.values():
         del image
+    del SHELLS
     
     for shell in fired_shells:
         delete_shell(shell)
@@ -33,11 +35,9 @@ def exit():
 
 
 class Shell(object.GameObject):
-    MIN_POWER = 0.3
+    MIN_POWER = 0.1
     def __init__(self, shell_name : str, position, theta, power = 1, is_simulation=False):
-        assert shell_name in SHELLS.keys()
-
-        self.img_shell : Image = SHELLS[shell_name]
+        self.img_shell : Image = get_shell_image(shell_name)
 
         super().__init__(position, self.img_shell.w, self.img_shell.h, theta)
 
@@ -170,7 +170,7 @@ class Shell(object.GameObject):
 
 
 
-fired_shells : list[Shell] = []
+fired_shells : list[Shell]
 
 def add_shell(shell_name, head_position, theta, power = 1):
     shell = Shell(shell_name, head_position, theta, power)
@@ -201,8 +201,6 @@ def delete_shell(shell : Shell):
         object.delete_object(shell)
 
 def get_attributes(shell_name : str) -> tuple[float, float]:
-    assert shell_name in SHELLS.keys()
-
     speed = 0
     damage = 0
     explosion_radius = 0
@@ -223,3 +221,8 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
         raise Exception
 
     return speed, damage, explosion_radius
+
+def get_shell_image(shell_name):
+    assert shell_name in SHELLS.keys()
+
+    return SHELLS[shell_name]

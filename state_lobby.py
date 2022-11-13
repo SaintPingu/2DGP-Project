@@ -139,3 +139,9 @@ def handle_events():
 
 def get_mode():
     return _crnt_mode
+
+
+def pause():
+    pass
+def resume():
+    pass

@@ -69,3 +69,10 @@ def run(start_state):
     while (len(stack) > 0):
         stack[-1].exit()
         stack.pop()
+
+def state_in_stack(state):
+    global stack
+
+    if state in stack:
+        return True
+    return False

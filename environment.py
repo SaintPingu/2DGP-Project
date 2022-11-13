@@ -61,8 +61,8 @@ class Wind:
         self.wind_pos_right = (pos_cloud[0] + self.image_cloud.w, pos_cloud[1])
         gui_cloud = gui.GUI(self.image_cloud, pos_cloud)
         self.gui_wind = gui.GUI(self.image_wind, is_draw=False)
-        gui.add_gui(gui_cloud)
-        gui.add_gui(self.gui_wind)
+        gui.add_gui(gui_cloud, 1)
+        gui.add_gui(self.gui_wind, 1)
         
         self.direction : int = 0
         self.speed : float = 0

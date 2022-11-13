@@ -3,60 +3,26 @@ if __name__ == "__main__":
 
 from tools import *
 import gmap
-
-_img_hp : Image
-_img_fuel : Image
-_is_hide_gui = False
-
-def enter():
-    global _list_gui, _img_hp, _img_fuel
-    _list_gui = []
-    _img_hp = load_image_path('hp_bar.png')
-    _img_fuel = load_image_path('fuel_hand.png')
-
-    global _is_hide_gui
-    _is_hide_gui = False
-    
-def exit():
-    global _list_gui, _img_hp
-
-    for gui in _list_gui:
-        gui.release()
-    _list_gui.clear()
-    del _list_gui
-    _list_gui = None
-
-    del _img_hp
-
-def update():
-    for gui in _list_gui:
-        gui.update()
-
-def draw():
-    if _is_hide_gui:
-        return
-        
-    for gui in _list_gui.__reversed__():
-        gui.draw()
+import shell
 
 class GUI:
-    def __init__(self, image : Image, position=(0,0), theta=0, is_draw=True, flip='', is_fixed=False):
+    def __init__(self, image : Image, position=(0,0), theta=0, is_draw=True, flip='', is_fixed=False, scale=1):
         self.image = image
         self.position = position
-        self.theta = 0
+        self.theta = theta
         self.is_draw = is_draw
         self.is_composite = is_draw
         self.flip = flip
         self.is_fixed = is_fixed
+        self.scale = scale
     
-    def release(self, is_delete_image=True):
-        if is_delete_image and self.image:
-            self.invalidate()
-            del self.image
+    def release(self):
+        self.invalidate()
+        del self.image
 
     def draw(self):
         if self.is_draw:
-            self.image.composite_draw(self.theta, self.flip, *self.position)
+            self.image.composite_draw(self.theta, self.flip, *self.position, self.image.w * self.scale, self.image.h * self.scale)
 
     def invalidate(self):
         gmap.set_invalidate_rect(self.position, self.image.w, self.image.h, grid_size=0)
@@ -66,14 +32,22 @@ class GUI:
             self.invalidate()
 
 class GUI_HP(GUI):
+    image : Image = None
+
     def __init__(self, owner):
-        super().__init__(_img_hp)
+        if GUI_HP.image == None:
+            GUI_HP.image = load_image_path('hp_bar.png')
+
+        super().__init__(GUI_HP.image)
         self.owner = owner
         self.max_hp = owner.hp
-        self.max_width = _img_hp.w
-        self.width = _img_hp.w
-        self.height = _img_hp.h
+        self.max_width = GUI_HP.image.w
+        self.width = GUI_HP.image.w
+        self.height = GUI_HP.image.h
         self.position = self.owner.center[0], self.owner.center[1]
+
+    def release(self):
+        pass
 
     def draw(self):
         if self.is_draw:
@@ -97,6 +71,9 @@ class GUI_Select_Tank(GUI):
         self.is_positive_y = True
         self.y_floating = 0
     
+    def release(self):
+        pass
+
     def draw(self):
         if self.owner:
             super().draw()
@@ -127,9 +104,13 @@ class GUI_Select_Tank(GUI):
             self.update()
 
 class GUI_Fuel(GUI):
+    image : Image = None
     PIVOT = Vector2(200, 25)
+
     def __init__(self, owner, max_fuel):
-        super().__init__(_img_fuel)
+        if GUI_Fuel.image == None:
+            GUI_Fuel.image = load_image_path('fuel_hand.png')
+        super().__init__(GUI_Fuel.image)
         self.owner = owner
         self.max_fuel = max_fuel
         self.position = GUI_Fuel.PIVOT
@@ -181,9 +162,9 @@ class GUI_LAUNCH(GUI):
 
 class GUI_GUAGE(GUI):
     def __init__(self):
-        self.image_guage = load_image_path('gui_gauge.png')
-        image_guage_box = load_image_path('gui_gauge_box.png')
-        super().__init__(image_guage_box)
+        self.image_gauge = load_image_path('gui_gauge.png')
+        image_gauge_box = load_image_path('gui_gauge_box.png')
+        super().__init__(image_gauge_box)
 
         self.position = (1115, 55)
         self.t = 0
@@ -209,30 +190,101 @@ class GUI_GUAGE(GUI):
     def draw(self):
         super().draw()
 
-        width = int(self.image_guage.w * self.t) 
+        width = int(self.image_gauge.w * self.t) 
         gauge_position = Vector2()
-        gauge_position.x = int((self.position[0] - self.image_guage.w/ 2) + width/2)
+        gauge_position.x = int((self.position[0] - self.image_gauge.w/ 2) + width/2)
         gauge_position.y = self.position[1]
 
-        self.image_guage.clip_draw(0, 0, width, self.image_guage.h, *gauge_position)
-
-        
+        self.image_gauge.clip_draw(0, 0, width, self.image_gauge.h, *gauge_position)
 
 
+class GUI_Weapon(GUI):
+    def __init__(self):
+        super().__init__(shell.get_shell_image(shell.DEFAULT_SHELL), (444, 30), math.radians(90), is_fixed=True, scale=1.4)
 
+    def draw(self):
+        super().draw()
+
+    def set_image(self, shell_name):
+        self.image = shell.get_shell_image(shell_name)
     
 
-_list_gui : list[GUI]
+_list_gui : list[GUI, int]
+gui_weapon : GUI
 
-def add_gui(gui : GUI):
-    _list_gui.append(gui)
+rect_gui : Rect
+rect_weapon : Rect
+
+_is_hide_gui : bool
+
+def enter():
+    global _list_gui
+    _list_gui = [[],[]]
+
+    global _is_hide_gui
+    _is_hide_gui = False
+
+    img_gui_control = load_image_path('gui_control.png')
+    main_gui = GUI(img_gui_control, (SCREEN_WIDTH//2, img_gui_control.h//2), is_fixed=True)
+    add_gui(main_gui, 0)
+    set_debug_mode(False)
+
+    global rect_gui, rect_weapon
+    rect_gui = Rect(main_gui.position, img_gui_control.w, img_gui_control.h)
+    rect_weapon = Rect((550, 80), 258, 40)
+
+    global gui_weapon
+    gui_weapon = GUI_Weapon()
+    add_gui(gui_weapon, 1)
+    
+def exit():
+    global _list_gui
+
+    for gui in all_gui():
+        gui.release()
+        del gui
+    for layer in _list_gui:
+        layer.clear()
+    del _list_gui
+
+    del GUI_HP.image
+    del GUI_Fuel.image
+    GUI_HP.image = None
+    GUI_Fuel.image = None
+
+    global rect_gui, rect_weapon
+    del rect_gui
+    del rect_weapon
+
+def update():
+    for gui in all_gui():
+        gui.update()
+
+def draw():
+    if _is_hide_gui:
+        return
+        
+    for gui in all_gui():
+        gui.draw()
+
+def add_gui(gui : GUI, depth):
+    _list_gui[depth].append(gui)
 
 def del_gui(gui : GUI):
     global _list_gui
     if _list_gui:
-        _list_gui.remove(gui)
-        gui.release()
+        for layer in _list_gui:
+            if gui in layer:
+                layer.remove(gui)
+                gui.release()
+                del gui
+                return
 
 def toggle_gui():
     global _is_hide_gui
     _is_hide_gui = not _is_hide_gui
+
+def all_gui():
+    for layer in _list_gui:
+        for gui in layer:
+            yield gui
