@@ -39,6 +39,7 @@ _check_position_pve = (_position_icon_pve[0] - 95, _position_icon_pve[1])
 _image_maps : list = None
 crnt_map_index = 0
 _position_map = (520, 450)
+NUM_OF_MAP = 3
 
 def enter():
     # icon images
@@ -53,8 +54,8 @@ def enter():
     # map images
     global _image_maps
     _image_maps = []
-    _image_maps.append(load_image_path("map_1.png"))
-    _image_maps.append(load_image_path("map_2.png"))
+    for i in range(NUM_OF_MAP):
+        _image_maps.append(load_image_path("map_" + str(i + 1) + ".png"))
 
     # set buttons
     global _button_pvp, _button_pve

@@ -212,7 +212,7 @@ class GUI_Weapon(GUI):
         super().__init__(shell.get_shell_image(shell.DEFAULT_SHELL), (444, 30), math.radians(90), is_fixed=True, scale=1.4)
         self.is_draw = False
         self.font = load_font_path("PermanentMarker", 20)
-        # self.str = GUI_Weapon.name_table[shell.DEFAULT_SHELL]
+        self.str = ''
 
     def draw(self):
         super().draw()

@@ -1,7 +1,6 @@
 from tools import *
 import gmap
 import framework
-import state_lobby
 
 _ending_count = None
 _game_over_font : Font = None
@@ -23,7 +22,8 @@ def update():
     gmap.draw_background(_font_rect, False)
     _ending_count += framework.frame_time
     if _ending_count > 5:
-        framework.change_state(state_lobby)
+        return False
+    return True
 
 def draw(winner):
     if winner == 0: # player win

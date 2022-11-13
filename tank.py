@@ -404,9 +404,13 @@ class Tank_AI(Tank):
         del self.virtual_shell
         self.virtual_shell = None
 
+        self.crnt_degree = self.start_degree
         error = (random.random() * 10) % 2 - 1 # -1 ~ 1
-        self.crnt_degree +=  error
-        self.vec_dir_barrel = Vector2.right().get_rotated(math.radians(self.crnt_degree))
+        self.crnt_degree += error
+        if self.check_dir == RIGHT:
+            self.vec_dir_barrel = Vector2.right().get_rotated(math.radians(self.crnt_degree))
+        else:
+            self.vec_dir_barrel = Vector2.left().get_rotated(math.radians(-self.crnt_degree))
 
         self.set_barrel_pos()
         gui_gauge.set_fill(1)
@@ -440,7 +444,7 @@ class Tank_AI(Tank):
                 self.vec_dir_barrel = Vector2.left().get_rotated(math.radians(-self.crnt_degree))
                 
             self.virtual_shell = shell.Shell(self.crnt_shell, self.get_barrel_head(), self.get_barrel_theta(), is_simulation=True)
-            self.start_barrel_vec = self.vec_dir_barrel
+            self.start_degree = self.crnt_degree
 
         # get impact point
         while self.count_update < Tank_AI.MAX_CHECK_COUNT:
@@ -471,7 +475,6 @@ class Tank_AI(Tank):
                             return
                         self.degree_level = 0
                     else:
-                        self.vec_dir_barrel = self.start_barrel_vec
                         self.fire()
                         return
                 elif distance < 20:
@@ -566,7 +569,8 @@ def update():
     if crnt_tank is None and len(shell.fired_shells) <= 0:
         _wait_count += framework.frame_time
         if _wait_count > 2:
-            if len(tank_list) <= 1:
+            # NEED : draw
+            if len(tank_list) == 1:
                 if type(tank_list[0]) == Tank_AI:
                     return -1
                 return 0

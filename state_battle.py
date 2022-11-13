@@ -33,6 +33,7 @@ def enter():
     env.enter()
     ending.enter()
 
+    #map_index = -3
     map_index = state_lobby.crnt_map_index + 1
     gmap.read_mapfile(map_index, mode)
     sound.play_battle_bgm(map_index)
@@ -63,7 +64,8 @@ def update():
         _is_game_over = True
 
     if _is_game_over:
-        ending.update()
+        if ending.update() == False:
+            framework.change_state(state_title)
 
 def draw():
 
