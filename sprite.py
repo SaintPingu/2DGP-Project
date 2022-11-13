@@ -11,8 +11,14 @@ def enter():
     global SPRITES
     img_sprite_shot = load_image_path('sprite_shot.png')
     img_sprite_explosion = load_image_path('sprite_explosion.png')
+    img_sprite_explosion_nuclear = load_image_path('sprite_explosion_nuclear.png')
     img_sprite_tank_explosion = load_image_path('sprite_tank_explosion.png')
-    SPRITES = { "Shot" : img_sprite_shot, "Explosion" : img_sprite_explosion, "Tank_Explosion" : img_sprite_tank_explosion }
+    SPRITES = {
+        "Shot" : img_sprite_shot,
+        "Explosion" : img_sprite_explosion,
+        "Explosion_Nuclear" : img_sprite_explosion_nuclear,
+        "Tank_Explosion" : img_sprite_tank_explosion 
+    }
 
 def exit():
     global SPRITES, animations
@@ -116,6 +122,8 @@ def add_animation(sprite_name : Sprite, center, theta=0, scale=1.0):
         sprite = Sprite(sprite_name, center, 4, 30, 48, 1.5, theta, scale=scale)
     elif sprite_name == "Explosion":
         sprite = Sprite(sprite_name, center, 14, 75, 75, 1.0, max_frame_col=4, scale=scale)
+    elif sprite_name == "Explosion_Nuclear":
+        sprite = Sprite(sprite_name, center, 10, 58, 54, 0.5, max_frame_col=5, scale=scale)
     elif sprite_name == "Tank_Explosion":
         sprite = Sprite(sprite_name, center, 15, 65, 60, 0.5, max_frame_col=5, scale=scale)
 

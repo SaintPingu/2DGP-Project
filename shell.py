@@ -11,21 +11,32 @@ import framework
 DEFAULT_SHELL = "AP"
 
 SHELLS : dict
+EXPLOSIONS : dict
 
 def enter():
-    global SHELLS, fired_shells
+    global SHELLS, EXPLOSIONS, fired_shells
     img_shell_ap = load_image_path('shell_ap.png')
     img_shell_hp = load_image_path('shell_hp.png')
     img_shell_mul = load_image_path('shell_multiple.png')
-    SHELLS = { "AP" : img_shell_ap, "HP" : img_shell_hp, "MUL" : img_shell_mul }
+    img_shell_nuclear = load_image_path('shell_nuclear.png')
+    SHELLS = { "AP" : img_shell_ap, "HP" : img_shell_hp, "MUL" : img_shell_mul, "NUCLEAR" : img_shell_nuclear }
+    EXPLOSIONS = {
+        "AP" : "Explosion",
+        "HP" : "Explosion",
+        "MUL" : "Explosion",
+        "NUCLEAR" : "Explosion_Nuclear",
+    }
 
     fired_shells = []
 
 def exit():
-    global SHELLS, fired_shells
+    global SHELLS, EXPLOSIONS, fired_shells
     for image in SHELLS.values():
         del image
     del SHELLS
+    
+    EXPLOSIONS.clear()
+    del EXPLOSIONS
     
     for shell in fired_shells:
         delete_shell(shell)
@@ -41,6 +52,7 @@ class Shell(object.GameObject):
 
         super().__init__(position, self.img_shell.w, self.img_shell.h, theta)
 
+        self.shell_name = shell_name
         self.origin = position
         self.start_theta = theta
 
@@ -157,7 +169,7 @@ class Shell(object.GameObject):
         gmap.draw_block(self.explosion_radius, head, False)
         tank.check_explosion(head, self.explosion_radius, self.damage)
         object.check_ground(head, self.explosion_radius)
-        sprite.add_animation("Explosion", head, scale=self.explosion_radius/10)
+        sprite.add_animation(EXPLOSIONS[self.shell_name], head, scale=self.explosion_radius/10)
         self.invalidate()
         delete_shell(self)
 
@@ -217,6 +229,10 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
         speed = 80
         damage = 5
         explosion_radius = 4
+    elif shell_name == "NUCLEAR":
+        speed = 110
+        damage = 50
+        explosion_radius = 30
     else:
         raise Exception
 

@@ -4,7 +4,9 @@ import state_battle
 import tank
 from gui import GUI, add_gui, del_gui
 
-_NUM_OF_SLOT = 3
+_NUM_OF_SLOT = 4
+
+_table_weapon : dict
 
 _gui_inventory : GUI
 _rect_slots = list[Rect]
@@ -25,6 +27,14 @@ def enter():
         rect = Rect((410 + (i * slot_interval), 140), slot_width, slot_height)
         _rect_slots.append(rect)
 
+    global _table_weapon
+    _table_weapon = {
+    0 : "AP",
+    1 : "HP",
+    2 : "MUL",
+    3 : "NUCLEAR",
+}
+
 def exit():
     global _gui_inventory
     del_gui(_gui_inventory)
@@ -33,6 +43,9 @@ def exit():
     for rect in _rect_slots:
         del rect
     del _rect_slots
+
+    global _table_weapon
+    del _table_weapon
 
 def update():
     state_battle.update()
@@ -46,7 +59,7 @@ def draw():
 
 def handle_events():
     from gui import gui_weapon
-    
+
     events = get_events()
     event : Event
 
@@ -56,14 +69,7 @@ def handle_events():
             if event.button == SDL_BUTTON_LEFT:
                 for idx, rect in enumerate(_rect_slots):
                     if point_in_rect(point, rect):
-                        if idx == 0:
-                            shell_name = "AP"
-                        elif idx == 1:
-                            shell_name = "HP"
-                        elif idx == 2:
-                            shell_name = "MUL"
-                        else:
-                            assert(0)
+                        shell_name = _table_weapon[idx]
 
                         tank.set_shell(shell_name)
                         gui_weapon.set_image(shell_name)
