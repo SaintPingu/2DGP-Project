@@ -40,12 +40,17 @@ def del_sounds():
         del sound
     _sounds.clear()
 
-def play_sound(name, volume=128):
+def play_sound(name, volume=128, channel=-1):
     assert(name in _sounds)
 
-    _sounds[name].set_volume(volume)
-    _sounds[name].play()
+    wav = _sounds[name]
+    wav.set_volume(volume)
+    Mix_PlayChannel(channel, wav.wav, 0)
 
+def stop_sound(name):
+    assert(name in _sounds)
+
+    _sounds[name].set_volume(0)
 
 
 def enter(state : str):
@@ -53,5 +58,6 @@ def enter(state : str):
         add_sound('tank_fire')
         add_sound('explosion')
         add_sound('tank_explosion')
+        add_sound('tank_movement')
     else:
         assert(0)

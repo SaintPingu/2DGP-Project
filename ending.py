@@ -57,6 +57,6 @@ def draw(winner):
         if _ending_count > 3:
             _game_over_font.draw(750, TEXT_POS_Y, "...", rgb)
         if _ending_count > 4:
-            _game_over_font.draw(800, TEXT_POS_Y, "...", rgb)
+            _game_over_font.draw(795, TEXT_POS_Y, "...", rgb)
     else:
         assert(0)

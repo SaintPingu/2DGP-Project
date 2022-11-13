@@ -222,7 +222,7 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
 
     if shell_name == "HP":
         speed = 100
-        damage = 10
+        damage = 15
         explosion_radius = 15
     elif shell_name == "AP":
         speed = 120
@@ -230,7 +230,7 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
         explosion_radius = 8
     elif shell_name == "MUL":
         speed = 80
-        damage = 5
+        damage = 8
         explosion_radius = 4
     elif shell_name == "NUCLEAR":
         speed = 110

@@ -52,6 +52,7 @@ class Tank(object.GroundObject):
         self.fuel = Tank.MAX_FUEL
         self.crnt_shell = "AP"
         self.is_locked = False
+        self.is_sound_movement = False
 
         # gui
         self.gui_hp = gui.GUI_HP(self)
@@ -123,6 +124,17 @@ class Tank(object.GroundObject):
     def select(self):
         self.is_turn = True
         gui.gui_weapon.set_image(self.crnt_shell)
+    
+    def move(self):
+        if super().move() == True:
+            if self.is_sound_movement == False:
+                self.is_sound_movement = True
+                sound.play_sound('tank_movement', 48, channel=1)
+    
+    def stop(self):
+        super().stop()
+        sound.stop_sound('tank_movement')
+        self.is_sound_movement = False
 
     def set_pos(self, center):
         def dont_move(prev_theta, prev_center):
@@ -422,7 +434,7 @@ class Tank_AI(Tank):
         self.init_values()
     
     def stop(self):
-        self.dir = 0
+        super().stop()
         self.is_moving = False
 
     def run_ai(self):
