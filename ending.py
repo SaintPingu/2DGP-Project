@@ -1,6 +1,7 @@
 from tools import *
 import gmap
 import framework
+import state_lobby
 
 TIMER_FOR_ENDING = 10
 TEXT_POS_Y = 700
@@ -22,7 +23,7 @@ def exit():
 
 def update():
     global _ending_count, _font_rect
-    gmap.set_invalidate_rect(*_font_rect.__getitem__(), grid_size=0)
+    gmap.draw_background(_font_rect, False)
 
     _ending_count += framework.frame_time
     if _ending_count > TIMER_FOR_ENDING:
@@ -30,23 +31,32 @@ def update():
     return True
 
 def draw(winner):
+    if state_lobby.crnt_map_index == 0:
+        rgb = (255, 255, 255)
+    elif state_lobby.crnt_map_index == 1:
+        rgb = (255, 255, 0)
+    elif state_lobby.crnt_map_index == 2:
+        rgb = (0, 167, 255)
+    else:
+        assert(0)
+
     if winner == 0: # player win
         if _ending_count > 1:
-            _game_over_font.draw(100, TEXT_POS_Y, "Winner!", (255, 0, 0))
+            _game_over_font.draw(100, TEXT_POS_Y, "Winner!", rgb)
         if _ending_count > 2:
-            _game_over_font.draw(400, TEXT_POS_Y, "Winner!", (255, 0, 0))
+            _game_over_font.draw(400, TEXT_POS_Y, "Winner!", rgb)
         if _ending_count > 3:
-            _game_over_font.draw(700, TEXT_POS_Y, "Chicken!", (255, 0, 0))
+            _game_over_font.draw(700, TEXT_POS_Y, "Chicken!", rgb)
         if _ending_count > 4:
-            _game_over_font.draw(1000, TEXT_POS_Y, "Dinner!", (255, 0, 0))
+            _game_over_font.draw(1000, TEXT_POS_Y, "Dinner!", rgb)
     elif winner == -1: # ai win
         if _ending_count > 1:
-            _game_over_font.draw(450, TEXT_POS_Y, "You", (255, 0, 0))
+            _game_over_font.draw(450, TEXT_POS_Y, "You", rgb)
         if _ending_count > 2:
-            _game_over_font.draw(600, TEXT_POS_Y, "Lose", (255, 0, 0))
+            _game_over_font.draw(600, TEXT_POS_Y, "Lose", rgb)
         if _ending_count > 3:
-            _game_over_font.draw(750, TEXT_POS_Y, "...", (255, 0, 0))
+            _game_over_font.draw(750, TEXT_POS_Y, "...", rgb)
         if _ending_count > 4:
-            _game_over_font.draw(800, TEXT_POS_Y, "...", (255, 0, 0))
+            _game_over_font.draw(800, TEXT_POS_Y, "...", rgb)
     else:
         assert(0)

@@ -282,8 +282,8 @@ class Tank(object.GroundObject):
 
 ##### AI #####
 class Tank_AI(Tank):
-    START_UPDATE_DELAY = 120
-    MAX_CHECK_COUNT = 30
+    START_UPDATE_DELAY = 1
+    MAX_RUN_AI_SECOND = 0.3
     degree_table = {
         0 : 5,
         1 : 1.5,
@@ -397,7 +397,7 @@ class Tank_AI(Tank):
 
 
     def update(self):
-        self.update_delay += 1
+        self.update_delay += framework.frame_time
         if self.update_delay >= Tank_AI.START_UPDATE_DELAY:
             if super().update() == False:
                 return False
@@ -451,7 +451,7 @@ class Tank_AI(Tank):
             self.start_degree = self.crnt_degree
 
         # get impact point
-        while self.count_update < Tank_AI.MAX_CHECK_COUNT:
+        while self.count_update < Tank_AI.MAX_RUN_AI_SECOND:
             result = self.virtual_shell.update()
             # if self.degree_level >= 5:
             #     self.virtual_shell.draw()
@@ -515,7 +515,7 @@ class Tank_AI(Tank):
                 del self.virtual_shell
                 self.virtual_shell = None
                 break
-            self.count_update += 1
+            self.count_update += framework.frame_time
 
         self.count_update = 0
         if self.virtual_shell is None:
