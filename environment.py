@@ -6,6 +6,7 @@ import object
 import gui
 import gmap
 import framework
+import state_lobby
 
 _BASE_WIND_SPEED_MPS = 5
 _BASE_WIND_SPEED_PPS = (_BASE_WIND_SPEED_MPS * PIXEL_PER_METER)
@@ -17,8 +18,9 @@ def enter(cloud_count=10):
     global _images_cloud
     _images_cloud = []
 
+    map_index = state_lobby.crnt_map_index + 1
     for i in range(_CLOUD_IMAGE_COUNT):
-        image = load_image_path('cloud_' + str(i) + '.png')
+        image = load_image_path('clouds/map_' + str(map_index) + '/cloud_' + str(i) + '.png')
         image.opacify(0.7)
         _images_cloud.append(image)
 
