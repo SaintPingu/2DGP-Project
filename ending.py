@@ -2,6 +2,8 @@ from tools import *
 import gmap
 import framework
 
+TIMER_FOR_ENDING = 10
+
 _ending_count = None
 _game_over_font : Font = None
 _font_rect : Rect = None
@@ -21,7 +23,7 @@ def update():
     global _ending_count
     gmap.draw_background(_font_rect, False)
     _ending_count += framework.frame_time
-    if _ending_count > 5:
+    if _ending_count > TIMER_FOR_ENDING:
         return False
     return True
 

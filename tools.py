@@ -222,7 +222,7 @@ def load_font_path(font : str, size = 20):
     return result
 
 def load_music_path(music : str):
-    name = 'sounds/bgm_' + music + '.mp3'
+    name = 'sounds/' + music + '.mp3'
     result = load_music(name)
     if _is_debug_mode:
         print('load music : ' + name)

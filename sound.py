@@ -4,6 +4,7 @@ if __name__ == "__main__":
 from tools import *
 
 _crnt_bgm : Music = None
+_sounds : list[Wav] = []
 
 def play_bgm(name):
     global _crnt_bgm
@@ -11,6 +12,7 @@ def play_bgm(name):
     if _crnt_bgm != None:
         stop_bgm()
     
+    name = 'bgm_' + name
     _crnt_bgm = load_music_path(name)
     _crnt_bgm.repeat_play()
 
@@ -24,3 +26,7 @@ def stop_bgm():
     _crnt_bgm.stop()
     del _crnt_bgm
     _crnt_bgm = None
+
+
+def add_sound(name, wav):
+    name = 'sound_' + name

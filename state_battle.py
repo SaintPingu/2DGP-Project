@@ -61,6 +61,14 @@ def update():
     gui.update()
     _winner = tank.update()
     if _winner <= 0:
+        if _is_game_over == False:
+            if _winner == 0:
+                sound.play_bgm('win')
+            elif _winner == -1:
+                sound.play_bgm('lose')
+            else:
+                assert(0)
+
         _is_game_over = True
 
     if _is_game_over:
