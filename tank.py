@@ -74,9 +74,9 @@ def update():
         _wait_count += framework.frame_time
         if _wait_count > 2:
             if len(tank_list) <= 1:
-                if _wait_count > 4:
-                    return False
-                return True
+                if tank_list[0].team == 'ai':
+                    return -1
+                return 0
             select_next_tank()
             gmap.env.wind.randomize()
             _wait_count = 0

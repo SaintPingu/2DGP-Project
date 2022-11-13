@@ -12,8 +12,10 @@ import gmap
 import tank
 import shell
 import sprite
+import ending
 import environment as env
 
+_is_game_over = None
 
 def enter():
     from  state_lobby import get_mode
@@ -27,10 +29,14 @@ def enter():
     shell.enter()
     sprite.enter()
     env.enter()
+    ending.enter()
     gmap.read_mapfile(state_lobby.crnt_map_index + 1, mode)
 
     gui.add_gui(gui.GUI(img_gui_control, (SCREEN_WIDTH//2, img_gui_control.h//2), is_fixed=True))
     set_debug_mode(False)
+
+    global _is_game_over
+    _is_game_over = False
 
 def exit():
     env.exit()
@@ -39,21 +45,33 @@ def exit():
     tank.exit()
     gui.exit()
     object.exit()
+    ending.exit()
     gmap.exit()
 
+
 def update():
+    global _is_game_over
+
     object.update()
     sprite.update()
     gui.update()
     if tank.update() == False:
-        framework.change_state(state_lobby)
+        _is_game_over = True
+
+    if _is_game_over:
+        ending.update()
 
 def draw():
+    gmap.draw_debug_rect(rect)
+
     gmap.draw()
     gui.draw()
     object.draw()
     sprite.draw()
     gmap.draw_debugs()
+
+    if _is_game_over:
+        ending.draw()
     
     update_canvas()
 

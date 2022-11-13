@@ -24,7 +24,7 @@ def enter(cloud_count=10):
 
     global _clouds
     _clouds = []
-        
+
     for _ in range(cloud_count):
         object.add_object(Cloud())
 
@@ -138,8 +138,6 @@ class Cloud(object.GameObject):
         self.resize()
 
     def update(self):
-        gmap.set_invalidate_rect(self.center, self.width, self.height, grid_size=0)
-
         rect_inv = Rect(self.center, self.width, self.height)
         gmap.draw_background(rect_inv, False)
         speed = wind.speed
