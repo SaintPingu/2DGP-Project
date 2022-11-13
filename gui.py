@@ -30,6 +30,9 @@ class GUI:
     def update(self):
         if self.is_fixed == False:
             self.invalidate()
+        
+    def get_rect(self):
+        return Rect(self.position, self.image.w * self.scale, self.image.h * self.scale)
 
 class GUI_HP(GUI):
     image : Image = None

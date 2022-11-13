@@ -138,7 +138,7 @@ class Cloud(object.GameObject):
         self.resize()
 
     def update(self):
-        rect_inv = Rect(self.center, self.width, self.height)
+        rect_inv = Rect(self.center, self.width + 4, self.height + 4)
         gmap.draw_background(rect_inv, False)
         speed = wind.speed
         self.offset(wind.direction * speed * framework.frame_time, 0)

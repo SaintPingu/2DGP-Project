@@ -24,13 +24,13 @@ def exit():
 
 def update():
     global font_show_count
-    font_show_count = (font_show_count + framework.frame_time) % 2
+    font_show_count = (font_show_count + framework.frame_time) % 1
 
 def draw():
     clear_canvas()
     image.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
 
-    if font_show_count <= 1.5:
+    if font_show_count <= 0.5:
         font.draw(250, 300, "Press Any Key To Start!", (0, 79, 212))
 
     update_canvas()

@@ -25,12 +25,24 @@ def update():
     if _ending_count > 5:
         framework.change_state(state_lobby)
 
-def draw():
-    if _ending_count > 1:
-        _game_over_font.draw(100, 800, "Winner!", (255, 0, 0))
-    if _ending_count > 2:
-        _game_over_font.draw(400, 800, "Winner!", (255, 0, 0))
-    if _ending_count > 3:
-        _game_over_font.draw(700, 800, "Chicken!", (255, 0, 0))
-    if _ending_count > 4:
-        _game_over_font.draw(1000, 800, "Dinner!", (255, 0, 0))
+def draw(winner):
+    if winner == 0: # player win
+        if _ending_count > 1:
+            _game_over_font.draw(100, 800, "Winner!", (255, 0, 0))
+        if _ending_count > 2:
+            _game_over_font.draw(400, 800, "Winner!", (255, 0, 0))
+        if _ending_count > 3:
+            _game_over_font.draw(700, 800, "Chicken!", (255, 0, 0))
+        if _ending_count > 4:
+            _game_over_font.draw(1000, 800, "Dinner!", (255, 0, 0))
+    elif winner == -1: # ai win
+        if _ending_count > 1:
+            _game_over_font.draw(450, 800, "You", (255, 0, 0))
+        if _ending_count > 2:
+            _game_over_font.draw(600, 800, "Lose", (255, 0, 0))
+        if _ending_count > 3:
+            _game_over_font.draw(750, 800, "...", (255, 0, 0))
+        if _ending_count > 4:
+            _game_over_font.draw(800, 800, "...", (255, 0, 0))
+    else:
+        assert(0)

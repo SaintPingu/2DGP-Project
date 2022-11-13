@@ -12,14 +12,24 @@ _NUM_OF_SLOT = 4
 _table_weapon : dict
 
 _gui_inventory : GUI
+_rect_inventory : Rect
 _rect_slots = list[Rect]
 
 def enter():
     image_inventory = load_image_path('inventory_weapon.png')
-    global _gui_inventory
+    global _gui_inventory, _rect_inventory
     _gui_inventory = GUI(image_inventory, (555, 140), is_fixed=True)
+    _rect_inventory = _gui_inventory.get_rect()
     
     add_gui(_gui_inventory, 1)
+
+    global _table_weapon
+    _table_weapon = {
+    0 : "AP",
+    1 : "HP",
+    2 : "MUL",
+    3 : "NUCLEAR",
+    }
 
     global _rect_slots
     _rect_slots = []
@@ -30,17 +40,10 @@ def enter():
         rect = Rect((410 + (i * slot_interval), 140), slot_width, slot_height)
         _rect_slots.append(rect)
 
-    global _table_weapon
-    _table_weapon = {
-    0 : "AP",
-    1 : "HP",
-    2 : "MUL",
-    3 : "NUCLEAR",
-}
-
 def exit():
-    global _gui_inventory
+    global _gui_inventory, _rect_inventory
     del_gui(_gui_inventory)
+    del _rect_inventory
 
     global _rect_slots
     for rect in _rect_slots:
@@ -70,14 +73,15 @@ def handle_events():
         if event.type == SDL_MOUSEBUTTONDOWN:
             point = convert_pico2d(event.x, event.y)
             if event.button == SDL_BUTTON_LEFT:
-                for idx, rect in enumerate(_rect_slots):
-                    if point_in_rect(point, rect):
-                        shell_name = _table_weapon[idx]
+                if point_in_rect(point, _rect_inventory):
+                    for idx, rect in enumerate(_rect_slots):
+                        if point_in_rect(point, rect):
+                            shell_name = _table_weapon[idx]
 
-                        tank.set_shell(shell_name)
-                        gui_weapon.set_image(shell_name)
-                        framework.pop_state()
-                        return
+                            tank.set_shell(shell_name)
+                            gui_weapon.set_image(shell_name)
+                            framework.pop_state()
+                    return
 
 
 

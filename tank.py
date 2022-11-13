@@ -26,62 +26,6 @@ TANK_SPEED_KMPH = 30
 TANK_SPEED_MPM = (TANK_SPEED_KMPH * 1000.0 / 60.0)
 TANK_SPEED_MPS = (TANK_SPEED_MPM / 60.0)
 TANK_SPEED_PPS = (TANK_SPEED_MPS * PIXEL_PER_METER)
-
-
-def enter():
-    global image_tank_green, image_barrel_green, image_tank_blue, image_barrel_blue, image_tank_red, image_barrel_red
-    image_tank_green = load_image_path('tank_green.png')
-    image_barrel_green = load_image_path('barrel_green.png')
-    image_tank_blue = load_image_path('tank_blue.png')
-    image_barrel_blue = load_image_path('barrel_blue.png')
-    image_tank_red = load_image_path('tank_red.png')
-    image_barrel_red = load_image_path('barrel_red.png')
-
-    global gui_selection, gui_launch, gui_gauge
-    selection_arrow = load_image_path('selection_arrow.png')
-    gui_selection = gui.GUI_Select_Tank(selection_arrow)
-    gui_launch = gui.GUI_LAUNCH()
-    gui_gauge = gui.GUI_GUAGE()
-    gui.add_gui(gui_selection, 1)
-    gui.add_gui(gui_launch, 1)
-    gui.add_gui(gui_gauge, 1)
-
-    global tank_list, crnt_index
-    tank_list = []
-    crnt_index = 0
-
-def exit():
-    global  image_tank_green, image_barrel_green, image_tank_blue, image_barrel_blue, image_tank_red, image_barrel_red, gui_selection
-    del image_tank_green
-    del image_barrel_green
-    del image_tank_blue
-    del image_barrel_blue
-    del image_tank_red
-    del image_barrel_red
-
-    global tank_list, crnt_tank, _wait_count
-    tank_list.clear()
-    del tank_list
-    tank_list = None
-
-    crnt_tank = None
-    _wait_count = 0
-
-_wait_count = 0
-def update():
-    global _wait_count
-    if crnt_tank is None and len(shell.fired_shells) <= 0:
-        _wait_count += framework.frame_time
-        if _wait_count > 2:
-            if len(tank_list) <= 1:
-                if tank_list[0].team == 'ai':
-                    return -1
-                return 0
-            select_next_tank()
-            gmap.env.wind.randomize()
-            _wait_count = 0
-    
-    return True
         
 
 class Tank(object.GroundObject):
@@ -571,6 +515,70 @@ tank_list : list[Tank]
 crnt_tank : Tank = None
 prev_tank : Tank = None
 crnt_index = 0
+
+def enter():
+    global image_tank_green, image_barrel_green, image_tank_blue, image_barrel_blue, image_tank_red, image_barrel_red
+    image_tank_green = load_image_path('tank_green.png')
+    image_barrel_green = load_image_path('barrel_green.png')
+    image_tank_blue = load_image_path('tank_blue.png')
+    image_barrel_blue = load_image_path('barrel_blue.png')
+    image_tank_red = load_image_path('tank_red.png')
+    image_barrel_red = load_image_path('barrel_red.png')
+
+    global gui_selection, gui_launch, gui_gauge
+    selection_arrow = load_image_path('selection_arrow.png')
+    gui_selection = gui.GUI_Select_Tank(selection_arrow)
+    gui_launch = gui.GUI_LAUNCH()
+    gui_gauge = gui.GUI_GUAGE()
+    gui.add_gui(gui_selection, 1)
+    gui.add_gui(gui_launch, 1)
+    gui.add_gui(gui_gauge, 1)
+
+    global tank_list, crnt_index
+    tank_list = []
+    crnt_index = 0
+
+def exit():
+    global  image_tank_green, image_barrel_green, image_tank_blue, image_barrel_blue, image_tank_red, image_barrel_red, gui_selection
+    del image_tank_green
+    del image_barrel_green
+    del image_tank_blue
+    del image_barrel_blue
+    del image_tank_red
+    del image_barrel_red
+
+    global tank_list, crnt_tank, _wait_count
+    tank_list.clear()
+    del tank_list
+    tank_list = None
+
+    crnt_tank = None
+    _wait_count = 0
+
+_wait_count = 0
+def update():
+    global _wait_count
+    if crnt_tank is None and len(shell.fired_shells) <= 0:
+        _wait_count += framework.frame_time
+        if _wait_count > 2:
+            if len(tank_list) <= 1:
+                if type(tank_list[0]) == Tank_AI:
+                    return -1
+                return 0
+            select_next_tank()
+            gmap.env.wind.randomize()
+            _wait_count = 0
+    
+    return True
+
+
+
+
+
+
+
+
+
 
 def new_tank():
     tank = Tank()

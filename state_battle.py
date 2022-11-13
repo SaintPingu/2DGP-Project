@@ -16,7 +16,8 @@ import sprite
 import ending
 import environment as env
 
-_is_game_over = None
+_is_game_over = False
+_winner = 0
 
 def enter():
     from  state_lobby import get_mode
@@ -48,12 +49,13 @@ def exit():
 
 
 def update():
-    global _is_game_over
+    global _is_game_over, _winner
 
     object.update()
     sprite.update()
     gui.update()
-    if tank.update() == False:
+    _winner = tank.update()
+    if _winner <= 0:
         _is_game_over = True
 
     if _is_game_over:
@@ -68,7 +70,7 @@ def draw():
     gmap.draw_debugs()
 
     if _is_game_over:
-        ending.draw()
+        ending.draw(_winner)
     
     update_canvas()
 
