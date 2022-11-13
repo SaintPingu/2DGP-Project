@@ -229,9 +229,9 @@ def load_music_path(music : str):
 
     return result
 
-def load_wav_path(wav : str, size = 20):
-    name = 'sounds/' + wav + '.mp3'
-    result = load_wav(name, size)
+def load_wav_path(wav : str):
+    name = 'sounds/' + wav + '.wav'
+    result = load_wav(name)
     if _is_debug_mode:
         print('load wav : ' + name)
     

@@ -7,6 +7,7 @@ import gmap
 import shell
 import sprite
 import gui
+import sound
 import framework
 import environment as env
 
@@ -271,6 +272,8 @@ class Tank(object.GroundObject):
         sprite.add_animation("Shot", head, theta=theta)
         self.dir = 0
         select_tank(None)
+
+        sound.play_sound('tank_fire', 64)
     ##########
 
 

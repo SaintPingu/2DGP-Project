@@ -32,6 +32,7 @@ def enter():
     sprite.enter()
     env.enter()
     ending.enter()
+    sound.enter('battle')
 
     map_index = state_lobby.crnt_map_index + 1
     #map_index = -3
@@ -51,6 +52,7 @@ def exit():
     object.exit()
     ending.exit()
     gmap.exit()
+    sound.del_sounds()
 
 
 def update():

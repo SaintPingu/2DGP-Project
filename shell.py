@@ -6,6 +6,7 @@ import object
 import gmap
 import sprite
 import tank
+import sound
 import framework
 
 DEFAULT_SHELL = "AP"
@@ -172,6 +173,8 @@ class Shell(object.GameObject):
         sprite.add_animation(EXPLOSIONS[self.shell_name], head, scale=self.explosion_radius/10)
         self.invalidate()
         delete_shell(self)
+
+        sound.play_sound('explosion', 100)
 
         
 

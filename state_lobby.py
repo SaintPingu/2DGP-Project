@@ -119,6 +119,7 @@ def handle_events():
         if event.type == SDL_QUIT:
             framework.quit()
         elif event.type == SDL_MOUSEBUTTONDOWN:
+            sound._crnt_bgm.resume()
             if event.button == SDL_BUTTON_LEFT:
                 point = convert_pico2d(event.x, event.y)
                 if(point_in_rect(point, _button_pvp)):
