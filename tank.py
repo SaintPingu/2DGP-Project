@@ -378,7 +378,8 @@ class Tank_AI(Tank):
         self.precise_dir = 1
     
     def set_power(self):
-        distance = math.fabs(self.get_dx())
+        #distance = math.fabs(self.get_dx())
+        pass
 
     def get_max_degree(self):
         degree = 90 - math.degrees(Vector2.get_theta(self.get_vec_right(), Vector2.up()))

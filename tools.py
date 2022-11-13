@@ -209,8 +209,32 @@ def load_image_path(image : str):
     name = 'images/' + image
     result = load_image(name)
     if _is_debug_mode:
-        print('load : ' + name)
+        print('load image : ' + name)
 
+    return result
+
+def load_font_path(font : str, size = 20):
+    name = 'fonts/' + font + '.ttf'
+    result = load_font(name, size)
+    if _is_debug_mode:
+        print('load font : ' + name)
+
+    return result
+
+def load_music_path(music : str, size = 20):
+    name = 'sounds/' + music + '.mp3'
+    result = load_music(name)
+    if _is_debug_mode:
+        print('load music : ' + name)
+
+    return result
+
+def load_wav_path(wav : str, size = 20):
+    name = 'sounds/' + wav + '.mp3'
+    result = load_wav(name, size)
+    if _is_debug_mode:
+        print('load wav : ' + name)
+    
     return result
 
 def out_of_range(x, y, max_x, max_y):

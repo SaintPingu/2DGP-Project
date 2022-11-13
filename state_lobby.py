@@ -117,10 +117,6 @@ def handle_events():
     for event in events:
         if event.type == SDL_QUIT:
             framework.quit()
-        elif event.type == SDL_KEYDOWN:
-            if event.key == SDLK_ESCAPE:
-                framework.change_state(state_title)
-                return
         elif event.type == SDL_MOUSEBUTTONDOWN:
             if event.button == SDL_BUTTON_LEFT:
                 point = convert_pico2d(event.x, event.y)
@@ -134,6 +130,7 @@ def handle_events():
                     crnt_map_index += 1
                 elif(point_in_rect(point, _button_start)):
                     framework.change_state(state_battle)
+                    state_title.stop_bgm()
                     return
                 crnt_map_index = clamp(0, crnt_map_index, len(_image_maps) - 1)
 

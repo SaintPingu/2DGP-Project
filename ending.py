@@ -10,7 +10,7 @@ _font_rect : Rect = None
 def enter():
     global _ending_count, _game_over_font, _font_rect
     _ending_count = 0
-    _game_over_font = load_font('CabinSketch-Regular.ttf', 64)
+    _game_over_font = load_font_path('CabinSketch-Regular', 64)
     _font_rect = Rect((SCREEN_WIDTH//2, 800), SCREEN_WIDTH, 100)
 
 def exit():

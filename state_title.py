@@ -8,19 +8,35 @@ import state_lobby
 image : Image
 font : Font
 font_show_count = 0
+title_music : Music = None
 
 def enter():
     global image, font
     image = load_image_path('title.png')
-    font = load_font("Lemon-Regular.ttf", 64)
+    font = load_font_path("Lemon-Regular", 64)
 
     global font_show_count
     font_show_count = 0
+
+    play_bgm()
+
 
 def exit():
     global image, font
     del image
     del font
+
+def play_bgm():
+    global title_music
+    if title_music == None:
+        title_music = load_music_path("bgm_title")
+        title_music.repeat_play()
+
+def stop_bgm():
+    global title_music
+    title_music.stop()
+    del title_music
+    title_music = None
 
 def update():
     global font_show_count
