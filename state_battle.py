@@ -1,6 +1,10 @@
+if __name__ == "__main__":
+    quit()
+
 from tools import *
 import framework
 import state_title
+import state_lobby
 
 import object
 import gui
@@ -23,7 +27,7 @@ def enter():
     shell.enter()
     sprite.enter()
     env.enter()
-    gmap.read_mapfile(2, mode)
+    gmap.read_mapfile(state_lobby.crnt_map_index + 1, mode)
 
     gui.add_gui(gui.GUI(img_gui_control, (SCREEN_WIDTH//2, img_gui_control.h//2), is_fixed=True))
     set_debug_mode(False)
@@ -33,15 +37,16 @@ def exit():
     sprite.exit()
     shell.exit()
     tank.exit()
-    gmap.exit()
     gui.exit()
     object.exit()
+    gmap.exit()
 
 def update():
     object.update()
     sprite.update()
     gui.update()
-    tank.update()
+    if tank.update() == False:
+        framework.change_state(state_lobby)
 
 def draw():
     gmap.draw()
@@ -57,7 +62,7 @@ def handle_events():
     event : Event
 
     if gmap.is_draw_mode == True:
-        gmap.handle_events(events)
+        gmap.handle_draw_mode_events(events)
         return
 
     for event in events:

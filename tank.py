@@ -1,9 +1,13 @@
+if __name__ == "__main__":
+    quit()
+
 from tools import *
 import object
 import gmap
 import shell
 import sprite
 import gui
+import framework
 import environment as env
 
 image_tank_green : Image = None
@@ -67,11 +71,17 @@ _wait_count = 0
 def update():
     global _wait_count
     if crnt_tank is None and len(shell.fired_shells) <= 0:
-        _wait_count += 1
-        if _wait_count > 60:
+        _wait_count += framework.frame_time
+        if _wait_count > 2:
+            if len(tank_list) <= 1:
+                if _wait_count > 4:
+                    return False
+                return True
             select_next_tank()
             gmap.env.wind.randomize()
             _wait_count = 0
+    
+    return True
         
 
 class Tank(object.GroundObject):
@@ -127,7 +137,7 @@ class Tank(object.GroundObject):
     def invalidate(self):
         gmap.set_invalidate_rect(self.barrel_position, self.image_barrel.w, self.image_barrel.h, square=True, grid_size=0)
         gmap.set_invalidate_rect(*self.get_rect().__getitem__(), square=True)
-        self.gui_hp.invalidatae()
+        self.gui_hp.invalidate()
         self.is_rect_invalid = True
 
     def draw(self):
@@ -154,6 +164,9 @@ class Tank(object.GroundObject):
 
     def get_damage(self, damage):
         self.hp -= damage
+        if self.hp < 0:
+            object.delete_object(self)
+            sprite.add_animation("Tank_Explosion", self.center + (0,self.height//2))
 
     ##### Movement #####
     def deselect(self):
@@ -310,7 +323,7 @@ class Tank(object.GroundObject):
         head = self.get_barrel_head()
         theta = self.get_barrel_theta()
         shell.add_shell(self.crnt_shell, head, theta, gui_gauge.get_filled())
-        sprite.add_animation("Shot", head, theta=theta, parent=self)
+        sprite.add_animation("Shot", head, theta=theta)
         self.dir = 0
         select_tank(None)
     ##########
@@ -646,10 +659,12 @@ def toggle_lock():
 
 def fill_gauge():
     if crnt_tank:
+        if crnt_tank.is_locked:
             gui_gauge.fill(True)
     
 def stop_gauge():
     if crnt_tank:
+        if crnt_tank.is_locked:
             gui_gauge.fill(False)
             crnt_tank.fire()
 

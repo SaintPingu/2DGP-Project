@@ -1,13 +1,18 @@
+if __name__ == "__main__":
+    quit()
+
 from tools import *
 import gmap
+import framework
 
 SPRITES : set
 
 def enter():
     global SPRITES
     img_sprite_shot = load_image_path('sprite_shot.png')
-    img_sprite_explosion_hp = load_image_path('sprite_explosion.png')
-    SPRITES = { "Shot" : img_sprite_shot, "Explosion" : img_sprite_explosion_hp }
+    img_sprite_explosion = load_image_path('sprite_explosion.png')
+    img_sprite_tank_explosion = load_image_path('sprite_tank_explosion.png')
+    SPRITES = { "Shot" : img_sprite_shot, "Explosion" : img_sprite_explosion, "Tank_Explosion" : img_sprite_tank_explosion }
 
 def exit():
     global SPRITES, animations
@@ -29,7 +34,7 @@ def draw():
         animation.draw()
 
 class Sprite:
-    def __init__(self, sprite_name:str, position, max_frame:int, frame_width:int, frame_height:int, theta=0, max_frame_col:int =1, delay:int=0, scale=1, is_play_once=True, origin=None):
+    def __init__(self, sprite_name:str, position, max_frame:int, frame_width:int, frame_height:int, action_per_time : float, theta=0, max_frame_col:int = 1, scale=1, repeat_count=1):
         assert sprite_name in SPRITES.keys()
 
         self.sprite : Image = SPRITES[sprite_name]
@@ -38,14 +43,13 @@ class Sprite:
         self.frame_height = frame_height
         self.frame = 0
         self.position = position
-        self.is_play_once = is_play_once
+        self.repeat_count = repeat_count
         self.theta = theta
-        self.delay = delay
         self.scale = scale
         self.max_frame_col = max_frame_col
         self.frame_row = 0
-        self.crnt_delay = 0
-        self.parent_object = None
+
+        self.action_per_time = action_per_time
 
         self.raidus = 0
         if self.frame_width > self.frame_height:
@@ -53,27 +57,29 @@ class Sprite:
         else:
             self.raidus = self.frame_height*self.scale
 
-        if origin is None:
-            origin = (0, self.sprite.h)
-        self.origin = Vector2(*origin)
+        if max_frame_col == 1:
+            self.origin = Vector2(0, self.sprite.h)
+        else:
+            self.origin = Vector2(0, frame_height)
+
         self.origin.y = self.sprite.h - self.origin.y
     
-    def set_parent(self, object):
-        self.parent_object = object
+    def set_action_per_time(value):
+        pass
 
     def draw(self):
         from tank import check_invalidate
+        frame = int(self.frame)
+        
         left = 0
         bottom = 0
-        if self.frame_row != 0:
-            left = self.origin.x + ((self.frame - (self.max_frame_col * self.frame_row)) * self.frame_width) 
-            bottom = self.origin.y - (self.frame_row * self.frame_height)
+        if self.max_frame_col > 1:
+            frame_row = int(self.frame) // self.max_frame_col
+            left = self.origin.x + ((frame - (self.max_frame_col * frame_row)) * self.frame_width) 
+            bottom = self.origin.y - (frame_row * self.frame_height)
         else:
-            left = self.origin.x + (self.frame * self.frame_width) 
+            left = self.origin.x + (frame * self.frame_width) 
             bottom = self.origin.y
-
-        if self.parent_object:
-            self.parent_object.is_rect_invalid = True
 
         if self.theta != 0:
             self.sprite.clip_composite_draw(left, bottom, self.frame_width, self.frame_height, self.theta, '', *self.position, self.frame_width//2 * self.scale, self.frame_height//2 * self.scale)
@@ -86,30 +92,31 @@ class Sprite:
     def update(self):
         is_running = True
 
-        self.crnt_delay += 1
-        if self.crnt_delay >= self.delay:
-            self.crnt_delay = 0
-            self.frame += 1
-            if self.frame >= self.max_frame:
-                if self.is_play_once:
-                    is_running = False
-            elif self.max_frame_col > 1:
-                if self.frame % self.max_frame_col == 0:
-                    self.frame_row += 1
+        self.frame += (self.max_frame * self.action_per_time * framework.frame_time)
+        if self.frame >= self.max_frame:
+            self.repeat_count -= 1
+            if self.repeat_count <= 0:
+                is_running = False
+            else:
+                self.frame -= self.max_frame
 
-            inv_width = self.frame_width*self.scale
-            inv_height = self.frame_height*self.scale
-            gmap.set_invalidate_rect(self.position, inv_width, inv_height, square=True)
+        inv_width = self.frame_width*self.scale
+        inv_height = self.frame_height*self.scale
+        gmap.set_invalidate_rect(self.position, inv_width, inv_height, square=True)
+        
         return is_running
     
 animations : list[Sprite] = []
 
-def add_animation(sprite_name : Sprite, center, theta=0, scale=1.0, parent=None):
+def add_animation(sprite_name : Sprite, center, theta=0, scale=1.0):
+    assert sprite_name in SPRITES.keys()
 
     sprite = None
     if sprite_name == "Shot":
-        sprite = Sprite("Shot", center, 4, 30, 48, theta, scale=scale, delay=5)
+        sprite = Sprite(sprite_name, center, 4, 30, 48, 1.5, theta, scale=scale)
     elif sprite_name == "Explosion":
-        sprite = Sprite(sprite_name, center, 14, 75, 75, max_frame_col=4, delay=5, scale=scale, origin=(0, 75))
+        sprite = Sprite(sprite_name, center, 14, 75, 75, 1.0, max_frame_col=4, scale=scale)
+    elif sprite_name == "Tank_Explosion":
+        sprite = Sprite(sprite_name, center, 15, 65, 60, 0.5, max_frame_col=5, scale=scale)
 
     animations.append(sprite)

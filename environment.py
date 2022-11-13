@@ -1,3 +1,6 @@
+if __name__ == "__main__":
+    quit()
+
 from tools import *
 import object
 import gui
@@ -8,6 +11,8 @@ _BASE_WIND_SPEED_MPS = 5
 _BASE_WIND_SPEED_PPS = (_BASE_WIND_SPEED_MPS * PIXEL_PER_METER)
 _WIND_AFFECT = 0.1
 
+_clouds : list[object.GameObject] = None
+
 def enter(cloud_count=10):
     global _images_cloud
     _images_cloud = []
@@ -16,7 +21,10 @@ def enter(cloud_count=10):
         image = load_image_path('cloud_' + str(i) + '.png')
         image.opacify(0.7)
         _images_cloud.append(image)
-    
+
+    global _clouds
+    _clouds = []
+        
     for _ in range(cloud_count):
         object.add_object(Cloud())
 
@@ -35,6 +43,14 @@ def exit():
     global wind
     wind.release()
     del wind
+
+    global _clouds
+    _clouds.clear()
+    _clouds = None
+
+def toggle_show_clouds():
+    for cloud in _clouds:
+        cloud.toggle_show()
 
 class Wind:
     def __init__(self):
@@ -86,9 +102,11 @@ class Cloud(object.GameObject):
         self.scale = 0
         self.randomize(True)
 
+        global _clouds
+        _clouds.append(self)
+
     def draw(self):
-        #self.draw_image(self.image, self.scale)
-        pass
+        self.draw_image(self.image, self.scale)
     
     def resize(self):
         self.width = self.image.w * self.scale
@@ -120,7 +138,8 @@ class Cloud(object.GameObject):
         self.resize()
 
     def update(self):
-        #gmap.set_invalidate_rect(self.center, self.width, self.height, grid_size=0)
+        gmap.set_invalidate_rect(self.center, self.width, self.height, grid_size=0)
+
         rect_inv = Rect(self.center, self.width, self.height)
         gmap.draw_background(rect_inv, False)
         speed = wind.speed

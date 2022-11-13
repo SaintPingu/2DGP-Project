@@ -1,3 +1,6 @@
+if __name__ == "__main__":
+    quit()
+
 from tools import *
 import framework
 import state_title
@@ -34,7 +37,7 @@ _check_position_pve = (_position_icon_pve[0] - 95, _position_icon_pve[1])
 
 # global
 _image_maps : list = None
-_crnt_map_index = 0
+crnt_map_index = 0
 _position_map = (520, 450)
 
 def enter():
@@ -66,8 +69,9 @@ def enter():
     _button_start = Rect(_position_icon_start, _image_start.w, _image_start.h)
 
     # set globals
-    global _crnt_mode
+    global _crnt_mode, crnt_map_index
     _crnt_mode = "PVP"
+    crnt_map_index = 0
 
 def exit():
     global _image, _image_pvp, _image_pve, _image_check, _image_arrow
@@ -88,7 +92,7 @@ def update():
 def draw():
     clear_canvas()
     _image.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
-    _image_maps[_crnt_map_index].draw(*_position_map, 520, 500)
+    _image_maps[crnt_map_index].draw(*_position_map, 520, 500)
 
     _image_pvp.draw(*_position_icon_pvp)
     _image_pve.draw(*_position_icon_pve)
@@ -107,7 +111,7 @@ def draw():
 
 
 def handle_events():
-    global _crnt_mode, _crnt_map_index
+    global _crnt_mode, crnt_map_index
 
     events = get_events()
     for event in events:
@@ -125,13 +129,13 @@ def handle_events():
                 elif(point_in_rect(point, _button_pve)):
                     _crnt_mode = "PVE"
                 elif(point_in_rect(point, _button_arrow_left)):
-                    _crnt_map_index -= 1
+                    crnt_map_index -= 1
                 elif(point_in_rect(point, _button_arrow_right)):
-                    _crnt_map_index += 1
+                    crnt_map_index += 1
                 elif(point_in_rect(point, _button_start)):
                     framework.change_state(state_battle)
                     return
-                _crnt_map_index = clamp(0, _crnt_map_index, len(_image_maps) - 1)
+                crnt_map_index = clamp(0, crnt_map_index, len(_image_maps) - 1)
 
 def get_mode():
     return _crnt_mode

@@ -1,3 +1,6 @@
+if __name__ == "__main__":
+    quit()
+
 from pico2d import *
 import math
 import random
@@ -40,7 +43,7 @@ class Vector2:
         return "(" + str(self.x) + ", " + str(self.y) + ")"
 
     def __add__(self, other):
-        return Vector2(self.x + other.x, self.y + other.y)
+        return Vector2(self.x + other[0], self.y + other[1])
 
     def __sub__(self, other):
         return Vector2(self.x - other.x, self.y - other.y)

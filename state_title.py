@@ -1,3 +1,6 @@
+if __name__ == "__main__":
+    quit()
+
 from tools import *
 import framework
 import state_lobby

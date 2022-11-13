@@ -109,15 +109,12 @@ def draw(is_draw_full=False):
     _rect_inv_list.clear()
 
 
-def handle_events(events : list):
+def handle_draw_mode_events(events : list):
     import tank
     global is_draw_mode
     global _is_create_block, _is_delete_block, _is_print_mouse_pos
     global _radius_draw
     global selected_tank
-
-    if is_draw_mode == False:
-        return
     
     event : Event
     for event in events:
@@ -143,6 +140,8 @@ def handle_events(events : list):
             elif event.key == SDLK_F2:
                 toggle_debug_mode()
                 continue
+            elif event.key == SDLK_F3:
+                env.toggle_show_clouds()
             elif event.key == SDLK_F5:
                 save_mapfile()
             elif event.key == SDLK_F6:
@@ -176,12 +175,12 @@ def handle_events(events : list):
             _is_delete_block = False
             continue
 
-        mouse_pos = (-1, -1)
+        mouse_pos = ()
         if event.x != None:
             mouse_pos = convert_pico2d(event.x, event.y)
-
-        if mouse_pos[0] < 0:
+        else:
             continue
+        
         if selected_tank and selected_tank.is_created == False:
             selected_tank.invalidate()
             selected_tank.set_pos(mouse_pos)
@@ -575,9 +574,9 @@ def read_mapfile(index : int, mode):
         _img_ground = load_image_path('ground_' + str(index) + '.png')
         _img_background.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
         return
-    else:
-        _img_background = load_image_path('background_' + str(index) + '.png')
-        _img_ground = load_image_path('ground_' + str(index) + '.png')
+
+    _img_background = load_image_path('background_' + str(index) + '.png')
+    _img_ground = load_image_path('ground_' + str(index) + '.png')
 
     fileName = 'map_' + str(index) + '.txt'
     file = open('maps/' + fileName, 'r')

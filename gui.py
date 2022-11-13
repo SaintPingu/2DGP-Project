@@ -1,3 +1,6 @@
+if __name__ == "__main__":
+    quit()
+
 from tools import *
 import gmap
 
@@ -48,18 +51,19 @@ class GUI:
     
     def release(self, is_delete_image=True):
         if is_delete_image and self.image:
+            self.invalidate()
             del self.image
 
     def draw(self):
         if self.is_draw:
             self.image.composite_draw(self.theta, self.flip, *self.position)
 
-    def invalidatae(self):
+    def invalidate(self):
         gmap.set_invalidate_rect(self.position, self.image.w, self.image.h, grid_size=0)
 
     def update(self):
         if self.is_fixed == False:
-            self.invalidatae()
+            self.invalidate()
 
 class GUI_HP(GUI):
     def __init__(self, owner):
@@ -76,7 +80,7 @@ class GUI_HP(GUI):
             self.image.draw(*self.position, self.width, self.height)
     
     def update(self):
-        self.invalidatae()
+        self.invalidate()
         self.position = (self.owner.center.x, self.owner.get_rect().top + 20)
         self.update_gauge()
     
@@ -116,7 +120,7 @@ class GUI_Select_Tank(GUI):
     def set_owner(self, owner):
         self.owner = owner
         if self.owner is None:
-            self.invalidatae()
+            self.invalidate()
             self.y_floating = 0
             self.is_positive_y = True
         else:
@@ -151,7 +155,7 @@ class GUI_LAUNCH(GUI):
         super().__init__(self.image_locked)
 
         self.state_list = ['locked', 'fire']
-        self.position = (815, 55)
+        self.position = (815, 52)
 
         self.state_table = {
             'locked' : self.image_locked,

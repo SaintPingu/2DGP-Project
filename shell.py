@@ -1,3 +1,6 @@
+if __name__ == "__main__":
+    quit()
+
 from tools import *
 import object
 import gmap
@@ -214,7 +217,7 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
         explosion_radius = 8
     elif shell_name == "MUL":
         speed = 80
-        damage = 2
+        damage = 5
         explosion_radius = 4
     else:
         raise Exception

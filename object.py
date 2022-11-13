@@ -1,3 +1,6 @@
+if __name__ == "__main__":
+    quit()
+
 from tools import *
 import framework
 
@@ -21,7 +24,8 @@ def update():
 
 def draw():
     for object in reversed(_gameObjects):
-        object.draw()
+        if object.is_draw:
+            object.draw()
 
 class GameObject:
     def __init__(self, center=(0,0), width=0, height=0, theta=0):
@@ -35,6 +39,8 @@ class GameObject:
 
         self.dir : int = 0
         self.speed : float = 1
+
+        self.is_draw = True
 
         detect_square = self.get_squre()
         self.detect_radius = (Vector2(*detect_square.center) - Vector2(detect_square.left, detect_square.top)).get_norm()
@@ -119,6 +125,9 @@ class GameObject:
         self.center.x = rect.origin[0] + self.width//2
         self.center.y = rect.origin[1] + self.height//2
         self.update_object()
+
+    def toggle_show(self):
+        self.is_draw = not self.is_draw
 
     def draw(self):
         pass
@@ -373,7 +382,7 @@ def add_object(object : GameObject):
 
 def delete_object(object : GameObject):
     if object not in _gameObjects:
-        return
+        assert(0)
         
     _gameObjects.remove(object)
     if object.__class__.__base__ == GroundObject:
