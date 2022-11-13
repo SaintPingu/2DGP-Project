@@ -35,7 +35,7 @@ def draw():
     image.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
 
     if font_show_count <= 0.5:
-        font.draw(250, 300, "Press Any Key To Start!", (0, 79, 212))
+        font.draw(250, 100, "Press Any Key To Start!", (0, 167, 255))
 
     update_canvas()
 

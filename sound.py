@@ -52,5 +52,6 @@ def enter(state : str):
     if state == 'battle':
         add_sound('tank_fire')
         add_sound('explosion')
+        add_sound('tank_explosion')
     else:
         assert(0)

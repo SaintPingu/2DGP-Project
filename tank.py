@@ -112,6 +112,7 @@ class Tank(object.GroundObject):
         if self.hp <= 0:
             object.delete_object(self)
             sprite.add_animation("Tank_Explosion", self.center + (0,self.height//2))
+            sound.play_sound('tank_explosion')
 
     ##### Movement #####
     def deselect(self):
