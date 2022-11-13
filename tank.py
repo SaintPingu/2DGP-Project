@@ -403,6 +403,10 @@ class Tank_AI(Tank):
         del self.virtual_shell
         self.virtual_shell = None
 
+        error = (random.random() * 10) % 2 - 1 # -1 ~ 1
+        self.crnt_degree +=  error
+        self.vec_dir_barrel = Vector2.right().get_rotated(math.radians(self.crnt_degree))
+
         self.set_barrel_pos()
         gui_gauge.set_fill(1)
         super().fire()
