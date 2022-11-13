@@ -33,8 +33,8 @@ def enter():
     env.enter()
     ending.enter()
 
-    #map_index = -3
     map_index = state_lobby.crnt_map_index + 1
+    #map_index = -3
     gmap.read_mapfile(map_index, mode)
     sound.play_battle_bgm(map_index)
 
