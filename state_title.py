@@ -4,6 +4,7 @@ if __name__ == "__main__":
 from tools import *
 import framework
 import state_lobby
+import sound
 
 image : Image
 font : Font
@@ -18,25 +19,12 @@ def enter():
     global font_show_count
     font_show_count = 0
 
-    play_bgm()
-
+    sound.play_bgm('title')
 
 def exit():
     global image, font
     del image
     del font
-
-def play_bgm():
-    global title_music
-    if title_music == None:
-        title_music = load_music_path("bgm_title")
-        title_music.repeat_play()
-
-def stop_bgm():
-    global title_music
-    title_music.stop()
-    del title_music
-    title_music = None
 
 def update():
     global font_show_count

@@ -6,6 +6,7 @@ import framework
 import state_title
 import state_lobby
 import state_inventory
+import sound
 
 import object
 import gui
@@ -31,7 +32,10 @@ def enter():
     sprite.enter()
     env.enter()
     ending.enter()
-    gmap.read_mapfile(state_lobby.crnt_map_index + 1, mode)
+
+    map_index = state_lobby.crnt_map_index + 1
+    gmap.read_mapfile(map_index, mode)
+    sound.play_battle_bgm(map_index)
 
     global _is_game_over
     _is_game_over = False

@@ -3,8 +3,8 @@ if __name__ == "__main__":
 
 from tools import *
 import framework
-import state_title
 import state_battle
+import sound
 
 # images
 _image = None
@@ -129,9 +129,10 @@ def handle_events():
                 elif(point_in_rect(point, _button_arrow_right)):
                     crnt_map_index += 1
                 elif(point_in_rect(point, _button_start)):
+                    sound.stop_bgm()
                     framework.change_state(state_battle)
-                    state_title.stop_bgm()
                     return
+
                 crnt_map_index = clamp(0, crnt_map_index, len(_image_maps) - 1)
 
 def get_mode():
