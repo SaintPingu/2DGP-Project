@@ -137,8 +137,10 @@ def handle_events(events=None):
                         if point_in_rect(point, gui.rect_weapon):
                             if not framework.state_in_stack(state_inventory):
                                 framework.push_state(state_inventory)
+                                sound.play_sound('click')
                             else:
                                 framework.pop_state()
+                                sound.play_sound('click')
                 else:
                     tank.toggle_lock()
 

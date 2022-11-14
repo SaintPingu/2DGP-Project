@@ -29,10 +29,14 @@ def stop_bgm():
 
 
 def add_sound(name):
+    global _sounds
+    
+    if name in _sounds.keys():
+        return
+
     file_name = 'sound_' + name
     wav = load_wav_path(file_name)
 
-    global _sounds
     _sounds[name] = wav
 
 def del_sounds():

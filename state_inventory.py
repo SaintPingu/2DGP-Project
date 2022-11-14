@@ -5,6 +5,7 @@ from tools import *
 import framework
 import state_battle
 import tank
+import sound
 from gui import GUI, add_gui, del_gui
 
 _NUM_OF_SLOT = 4
@@ -76,6 +77,7 @@ def handle_events():
                 if point_in_rect(point, _rect_inventory):
                     for idx, rect in enumerate(_rect_slots):
                         if point_in_rect(point, rect):
+                            sound.play_sound('click')
                             shell_name = _table_weapon[idx]
 
                             tank.set_shell(shell_name)

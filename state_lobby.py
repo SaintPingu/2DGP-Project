@@ -74,6 +74,8 @@ def enter():
     _crnt_mode = "PVP"
     crnt_map_index = 0
 
+    sound.add_sound('click')
+
 def exit():
     global _image, _image_pvp, _image_pve, _image_check, _image_arrow
     del _image
@@ -124,13 +126,18 @@ def handle_events():
                 point = convert_pico2d(event.x, event.y)
                 if(point_in_rect(point, _button_pvp)):
                     _crnt_mode = "PVP"
+                    sound.play_sound('click')
                 elif(point_in_rect(point, _button_pve)):
                     _crnt_mode = "PVE"
+                    sound.play_sound('click')
                 elif(point_in_rect(point, _button_arrow_left)):
                     crnt_map_index -= 1
+                    sound.play_sound('click')
                 elif(point_in_rect(point, _button_arrow_right)):
                     crnt_map_index += 1
+                    sound.play_sound('click')
                 elif(point_in_rect(point, _button_start)):
+                    sound.play_sound('click')
                     sound.stop_bgm()
                     framework.change_state(state_battle)
                     return
