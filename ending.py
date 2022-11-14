@@ -51,7 +51,7 @@ def draw(winner):
             _game_over_font.draw(1000, TEXT_POS_Y, "Dinner!", rgb)
     elif winner == -1: # ai win
         if _ending_count > 1:
-            _game_over_font.draw(450, TEXT_POS_Y, "You", rgb)
+            _game_over_font.draw(470, TEXT_POS_Y, "You", rgb)
         if _ending_count > 2:
             _game_over_font.draw(600, TEXT_POS_Y, "Lose", rgb)
         if _ending_count > 3:

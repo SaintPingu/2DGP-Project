@@ -421,7 +421,7 @@ class Tank_AI(Tank):
         self.virtual_shell = None
 
         self.crnt_degree = self.start_degree
-        error = (random.random() * 10) % 2 - 1 # -1 ~ 1
+        error = (random.random() * 10) % 4 - 2 # -2 ~ 2
         self.crnt_degree += error
         if self.check_dir == RIGHT:
             self.vec_dir_barrel = Vector2.right().get_rotated(math.radians(self.crnt_degree))
@@ -472,6 +472,7 @@ class Tank_AI(Tank):
             if result is not True:
                 self.set_barrel_pos()
                 distance = math.fabs(self.virtual_shell.center.x - self.target_tank.center.x)
+                distance_y = math.fabs(self.virtual_shell.center.y - self.target_tank.center.y)
 
                 if type(result) == Tank: # tank on point
                     if distance < self.last_hit_distance:
@@ -493,6 +494,8 @@ class Tank_AI(Tank):
                     else:
                         self.fire()
                         return
+                elif distance_y > 150:
+                    self.degree_level = 2
                 elif distance < 20:
                     if math.fabs(self.virtual_shell.vector.x) > math.fabs(self.virtual_shell.center.y):
                         if self.last_hit_vector:
@@ -752,4 +755,3 @@ def write_data(file):
         file.write(str(tank.center.y) + ' ')
         file.write(str(tank.theta) + ' ')
         file.write('\n')
-    file.write(END_OF_LINE)

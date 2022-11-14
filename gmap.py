@@ -608,4 +608,5 @@ def save_mapfile():
 
     tank.write_data(file)
     
+    file.write(END_OF_LINE)
     file.close()

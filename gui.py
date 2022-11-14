@@ -4,6 +4,7 @@ if __name__ == "__main__":
 from tools import *
 import gmap
 import shell
+import framework
 
 class GUI:
     def __init__(self, image : Image, position=(0,0), theta=0, is_draw=True, flip='', is_fixed=False, scale=1):
@@ -57,9 +58,10 @@ class GUI_HP(GUI):
             self.image.draw(*self.position, self.width, self.height)
     
     def update(self):
-        self.invalidate()
-        self.position = (self.owner.center.x, self.owner.get_rect().top + 20)
-        self.update_gauge()
+        if self.is_draw:
+            self.invalidate()
+            self.position = (self.owner.center.x, self.owner.get_rect().top + 20)
+            self.update_gauge()
     
     def update_gauge(self):
         self.width = self.max_width * (self.owner.hp / self.max_hp)
@@ -176,7 +178,7 @@ class GUI_GUAGE(GUI):
     def update(self):
         super().update()
         if self.is_fill and self.t < 1:
-            self.t += 0.01
+            self.t += 0.5 * framework.frame_time
 
     def reset(self):
         self.t = 0
