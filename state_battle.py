@@ -102,47 +102,13 @@ def handle_events(events=None):
     for event in events:
         if event.type == SDL_QUIT:
             framework.change_state(state_title)
-            
-        elif event.type == SDL_KEYDOWN:
+            return
+
+        tank.handle_event(event)
+
+        if event.type == SDL_KEYDOWN:
             if event.key == SDLK_F1:
                 gmap.start_draw_mode()
-            elif event.key == SDLK_RIGHT:
-                tank.move_tank(RIGHT)
-            elif event.key == SDLK_LEFT:
-                tank.move_tank(LEFT)
-            elif event.key == SDLK_5:
-                tank.crnt_tank.fuel = tank.Tank.MAX_FUEL
-            elif event.key == SDLK_F10:
-                gui.toggle_gui()
-            elif event.key == SDLK_SPACE:
-                tank.fill_gauge()
-
-        elif event.type == SDL_KEYUP:
-            if event.key == SDLK_RIGHT or event.key == SDLK_LEFT:
-                tank.stop_tank()
-            elif event.key == SDLK_SPACE:
-                tank.stop_gauge()
-                if framework.state_in_stack(state_inventory):
-                    framework.pop_state()
-
-        elif event.type == SDL_MOUSEMOTION:
-            mouse_pos = convert_pico2d(event.x, event.y)
-            tank.send_mouse_pos(*mouse_pos)
-
-        elif event.type == SDL_MOUSEBUTTONDOWN:
-            point = convert_pico2d(event.x, event.y)
-            if event.button == SDL_BUTTON_LEFT:
-                if point_in_rect(point, gui.rect_gui):
-                    if tank.crnt_tank != None:
-                        if point_in_rect(point, gui.rect_weapon):
-                            if not framework.state_in_stack(state_inventory):
-                                framework.push_state(state_inventory)
-                                sound.play_sound('click')
-                            else:
-                                framework.pop_state()
-                                sound.play_sound('click')
-                else:
-                    tank.toggle_lock()
 
 def pause():
     pass

@@ -6,7 +6,7 @@ import math
 import random
 import time
 
-_is_debug_mode = False
+_is_debug_mode = True
 
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 1000

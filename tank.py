@@ -9,6 +9,7 @@ import sprite
 import gui
 import sound
 import framework
+import state_inventory
 import environment as env
 
 image_tank_green : Image
@@ -277,6 +278,13 @@ class Tank(object.GroundObject):
     def unlock(self):
         self.is_locked = False
         gui_launch.set_state('locked')
+    
+    def toggle_lock(self):
+        if self.is_locked:
+            if not gui_gauge.is_fill:
+                crnt_tank.unlock()
+        else:
+            crnt_tank.lock()
 
     def fire(self):
         head = self.get_barrel_head()
@@ -530,6 +538,8 @@ class Tank_AI(Tank):
                 del self.virtual_shell
                 self.virtual_shell = None
                 break
+            
+            # NEED : not framework.frame_time
             self.count_update += framework.frame_time
 
         self.count_update = 0
@@ -668,46 +678,56 @@ def check_explosion(position : Vector2, radius, damage):
         if tank.is_in_radius(position, radius):
             tank.get_damage(damage)
 
-def stop_tank():
-    if crnt_tank:
-        crnt_tank.stop()
-
-def move_tank(dir):
-    if crnt_tank:
-        crnt_tank.start_move(dir)
-
-def send_mouse_pos(x, y):
-    if crnt_tank:
-        if type(crnt_tank) != Tank_AI:
-            crnt_tank.update_barrel(Vector2(x, y))
-
-def draw_debug():
-    if crnt_tank:
-        pass
-
-def toggle_lock():
-    if crnt_tank:
-        if crnt_tank.is_locked:
-            if not gui_gauge.is_fill:
-                crnt_tank.unlock()
-        else:
-            crnt_tank.lock()
 
 
-def fill_gauge():
-    if crnt_tank:
-        if crnt_tank.is_locked:
+def handle_event(event):
+    if not crnt_tank:
+        return
+    if type(crnt_tank) == Tank_AI:
+        return
+
+    if event.type == SDL_KEYDOWN:
+        if event.key == SDLK_F1:
+            gmap.start_draw_mode()
+        elif event.key == SDLK_RIGHT:
+            crnt_tank.start_move(RIGHT)
+        elif event.key == SDLK_LEFT:
+            crnt_tank.start_move(LEFT)
+        elif event.key == SDLK_5: # for test
+            crnt_tank.fuel = Tank.MAX_FUEL
+        elif event.key == SDLK_F10:
+            gui.toggle_gui()
+        elif event.key == SDLK_SPACE:
             gui_gauge.fill(True)
     
-def stop_gauge():
-    if crnt_tank:
-        if crnt_tank.is_locked:
+    elif event.type == SDL_KEYUP:
+        if event.key == SDLK_RIGHT or event.key == SDLK_LEFT:
+            crnt_tank.stop()
+        elif event.key == SDLK_SPACE:
             gui_gauge.fill(False)
             crnt_tank.fire()
+            if framework.state_in_stack(state_inventory):
+                framework.pop_state()
+            
+    elif event.type == SDL_MOUSEMOTION:
+        mouse_pos = convert_pico2d(event.x, event.y)
+        crnt_tank.update_barrel(Vector2(*mouse_pos))
 
-def fire():
-    if crnt_tank:
-        crnt_tank.fire()
+    elif event.type == SDL_MOUSEBUTTONDOWN:
+        mouse_pos = convert_pico2d(event.x, event.y)
+        if event.button == SDL_BUTTON_LEFT:
+            if point_in_rect(mouse_pos, gui.rect_gui):
+                if point_in_rect(mouse_pos, gui.rect_weapon):
+                    if not framework.state_in_stack(state_inventory):
+                        framework.push_state(state_inventory)
+                        sound.play_sound('click')
+                    else:
+                        framework.pop_state()
+                        sound.play_sound('click')
+            else:
+                crnt_tank.toggle_lock()
+
+
 
 def set_shell(shell_name):
     if crnt_tank:

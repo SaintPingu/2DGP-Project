@@ -58,7 +58,7 @@ class Shell(object.GameObject):
         self.start_theta = theta
 
         self.vector = Vector2.right().get_rotated(theta)
-        self.speed, self.damage, self.explosion_radius = get_attributes(shell_name)
+        self.speed, self.shell_damage, self.explosion_damage, self.explosion_radius = get_attributes(shell_name)
         if self.speed <= 0:
             raise Exception
 
@@ -72,7 +72,8 @@ class Shell(object.GameObject):
 
         self.is_simulation = is_simulation
         if is_simulation:
-            self.damage = 0
+            self.shell_damage = 0
+            self.explosion_damage = 0
 
         self.t = 0
 
@@ -133,7 +134,7 @@ class Shell(object.GameObject):
     # Check collision by tanks
     def check_tanks(self, head, collision_vectors):
         head = self.get_head()
-        target_tank = tank.check_hit(head, collision_vectors, self.DETECTION_RADIUS, self.damage)
+        target_tank = tank.check_hit(head, collision_vectors, self.DETECTION_RADIUS, self.shell_damage)
         if target_tank is False:
             return False
 
@@ -168,7 +169,7 @@ class Shell(object.GameObject):
             return
 
         gmap.draw_block(self.explosion_radius, head, False)
-        tank.check_explosion(head, self.explosion_radius, self.damage)
+        tank.check_explosion(head, self.explosion_radius, self.explosion_damage)
         object.check_ground(head, self.explosion_radius)
         sprite.add_animation(EXPLOSIONS[self.shell_name], head, scale=self.explosion_radius/10)
         self.invalidate()
@@ -217,29 +218,34 @@ def delete_shell(shell : Shell):
 
 def get_attributes(shell_name : str) -> tuple[float, float]:
     speed = 0
-    damage = 0
+    shell_damage = 0
+    explosion_damage = 0
     explosion_radius = 0
 
     if shell_name == "HP":
         speed = 100
-        damage = 15
+        shell_damage = 10
+        explosion_damage = 20 
         explosion_radius = 15
     elif shell_name == "AP":
         speed = 120
-        damage = 300
+        shell_damage = 30
+        explosion_damage = 5
         explosion_radius = 8
     elif shell_name == "MUL":
         speed = 80
-        damage = 8
+        shell_damage = 5
+        explosion_damage = 10
         explosion_radius = 4
     elif shell_name == "NUCLEAR":
         speed = 110
-        damage = 45
+        shell_damage = 5
+        explosion_damage = 40
         explosion_radius = 30
     else:
         raise Exception
 
-    return speed, damage, explosion_radius
+    return speed, shell_damage, explosion_damage, explosion_radius
 
 def get_shell_image(shell_name):
     assert shell_name in SHELLS.keys()
