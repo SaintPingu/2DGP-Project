@@ -131,7 +131,6 @@ class Tank(object.GroundObject):
             gui.gui_weapon.set_image(self.crnt_shell)
         elif item_name == "TP":
             gui.gui_weapon.set_item(None)
-            return
         self.item = item_name
 
     ##### Movement #####
