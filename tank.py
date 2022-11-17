@@ -328,6 +328,7 @@ class Tank_AI(Tank):
         self.last_hit_vector : Vector2 = None
         self.last_hit_distance = float('inf')
 
+        self.shell_selected = False
         self.power = 0
         self.degree_level = 0
         self.crnt_degree = 0
@@ -341,34 +342,45 @@ class Tank_AI(Tank):
         self.init_values()
     
     def select(self):
+        self.init_values()
         super().select()
         self.max_movement_fuel = 0
         self.target_tank = tank_list[0]
         self.set_movement()
 
     def set_movement(self):
-        dx = self.get_dx()
-        distance = math.fabs(dx)
-
-        shell_speed = shell.get_attributes(self.crnt_shell)[0]
-        env.wind.get_wind_vector()
-        evaluation = (distance / shell_speed)
-
-        if evaluation > 70: # can't reach
-            self.is_moving = True
-            self.dir = get_sign(dx)
-            self.max_movement_fuel = 0
-        else:
-            self.is_moving = random.randint(0, 5) > 0 # 5/6% chance to move
-            if self.is_moving:
-                if self.center.x < 100:
-                    self.dir = RIGHT
-                elif self.center.x > SCREEN_WIDTH - 100:
-                    self.dir = LEFT
-                else:
-                    self.dir = random.randrange(-1, 2, 2)
+        self.is_moving = random.randint(0, 5) > 0 # 5/6% chance to move
+        if self.is_moving:
+            if self.center.x < 100:
+                self.dir = RIGHT
+            elif self.center.x > SCREEN_WIDTH - 100:
+                self.dir = LEFT
+            else:
+                self.dir = random.randrange(-1, 2, 2)
 
             self.max_movement_fuel = random.randint(0, Tank.MAX_FUEL - 20)
+
+    def set_shell(self):
+        REACHABLE_EVALUATION = 7
+        distance = math.fabs(self.get_dx())
+
+        avaliable_shells = ["AP"]
+        shells = ["HP", "MUL", "NUCLEAR"]
+
+        for s in shells:
+            evaluation = (distance / shell.get_attributes(s)[0])
+            print(evaluation)
+            if evaluation < REACHABLE_EVALUATION: # reachable
+                avaliable_shells.append(s)
+        
+        if (distance / shell.get_attributes("MUL")[0]) < REACHABLE_EVALUATION / 3:
+            avaliable_shells.append("MUL")
+
+        
+        shell_index = random.randint(0, len(shells) - 1)
+        self.crnt_shell = avaliable_shells[shell_index]
+        self.shell_selected = True
+        gui.gui_weapon.set_image(self.crnt_shell)
 
     def init_values(self):
         self.is_checking = False
@@ -378,6 +390,7 @@ class Tank_AI(Tank):
         self.last_hit_vector = None
         self.last_hit_distance = float('inf')
 
+        self.shell_selected = False
         self.power = 0
         self.degree_level = 0
         self.count_update = 0
@@ -439,7 +452,6 @@ class Tank_AI(Tank):
         self.set_barrel_pos()
         gui_gauge.set_fill(1)
         super().fire()
-        self.init_values()
     
     def stop(self):
         super().stop()
@@ -453,6 +465,10 @@ class Tank_AI(Tank):
             else:
                 self.stop()
             return
+        
+        if self.shell_selected == False:
+            self.set_shell()
+
 
         if self.is_checking == False:
             self.is_checking = True
