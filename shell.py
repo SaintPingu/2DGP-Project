@@ -77,6 +77,7 @@ class Shell(object.GameObject):
 
         self.t = 0
         self.delay = delay
+        self.sub = False
 
     def draw(self):
         if self.delay > 0:
@@ -106,7 +107,7 @@ class Shell(object.GameObject):
     def update(self):
         if self.delay > 0:
             self.delay -= framework.frame_time
-            if self.delay <= 0:
+            if self.delay <= 0 and not self.sub:
                 sprite.add_animation("Shot", self.origin, self.start_theta)
                 sound.play_sound('tank_fire', 64)
             return
@@ -188,10 +189,11 @@ class Shell(object.GameObject):
 
         sound.play_sound('explosion', 100)
 
-        
-
     def get_head(self) -> Vector2:
         return self.center + (self.vector.normalized() * self.img_shell.w/gmap.CELL_SIZE)
+
+    def set_sub(self):
+        self.sub = True
 
 
 
@@ -199,23 +201,42 @@ class Shell(object.GameObject):
 
 fired_shells : list[Shell]
 
-def add_shell(shell_name, head_position, theta, power = 1, delay = 0):
-    shell = Shell(shell_name, head_position, theta, power, delay=delay)
-    shell_head = shell.get_head()
-    position = head_position + (head_position - shell_head)
-    shell.set_pos(position)
-    fired_shells.append(shell)
-    object.add_object(shell)
+def add_shell(shell_name, head_position, theta, power = 1, item = None):
+    delay = 0
+    count_shot = 1
+    extension = False
+    if item != None:
+        if item == "double":
+            count_shot = 2
+        elif item == "extension":
+            extension = True
 
-    if shell_name == "MUL":
-        for n in range(3):
-            t = 0.05 * (n+1)
-            shell_1 = Shell(shell_name, position, theta + t, power, delay=delay)
-            shell_2 = Shell(shell_name, position, theta - t, power, delay=delay)
-            fired_shells.append(shell_1)
-            fired_shells.append(shell_2)
-            object.add_object(shell_1)
-            object.add_object(shell_2)
+    for i in range(count_shot):
+        if i > 0:
+            delay += 2
+            
+        shell = Shell(shell_name, head_position, theta, power, delay=delay)
+        shell_head = shell.get_head()
+        position = head_position + (head_position - shell_head)
+        shell.set_pos(position)
+        fired_shells.append(shell)
+        object.add_object(shell)
+
+        if shell_name == "MUL":
+            for n in range(3):
+                t = 0.05 * (n+1)
+                shell_1 = Shell(shell_name, position, theta + t, power, delay=delay)
+                shell_2 = Shell(shell_name, position, theta - t, power, delay=delay)
+                shell_1.set_sub()
+                shell_2.set_sub()
+                fired_shells.append(shell_1)
+                fired_shells.append(shell_2)
+                object.add_object(shell_1)
+                object.add_object(shell_2)
+    
+    if extension:
+        for shell in fired_shells:
+            shell.explosion_radius *= 2
             
 
 

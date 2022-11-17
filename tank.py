@@ -304,13 +304,10 @@ class Tank(object.GroundObject):
     def fire(self):
         head = self.get_barrel_head()
         theta = self.get_barrel_theta()
-        shell.add_shell(self.crnt_shell, head, theta, gui_gauge.get_filled())
+        shell.add_shell(self.crnt_shell, head, theta, gui_gauge.get_filled(), self.item)
         self.dir = 0
         select_tank(None)
         sound.play_sound('tank_fire', 64)
-
-        if self.item == "double":
-            shell.add_shell(self.crnt_shell, head, theta, gui_gauge.get_filled(), delay=2)
     ##########
 
 
@@ -783,9 +780,13 @@ def set_shell(shell_name):
     if crnt_tank:
         crnt_tank.crnt_shell = shell_name
     
-def set_item(item_name):
+def set_item(item):
     if crnt_tank:
-        crnt_tank.use_item(item_name)
+        if crnt_tank.item_used == False:
+            crnt_tank.use_item(item[0])
+            if item[0] == "heal":
+                return
+            gui.gui_weapon.set_item(item[1])
 
 
 def read_data(file, mode):

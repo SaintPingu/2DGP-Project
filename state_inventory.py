@@ -78,8 +78,7 @@ class Inven_Item(Inventory):
     def select(self, index):
         import tank
         from gui import gui_weapon
-        tank.set_item(self.table[index][0])
-        gui_weapon.set_item(self.table[index][1])
+        tank.set_item(self.table[index])
 
 _inventory_name : str
 _inventory : Inventory
