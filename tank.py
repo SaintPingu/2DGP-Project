@@ -126,6 +126,11 @@ class Tank(object.GroundObject):
             self.item_used = True
             self.hp += 15
             self.hp = clamp(0, self.hp, Tank.MAX_HP)
+            self.item = None
+            gui.gui_weapon.set_item(None)
+            gui.gui_weapon.set_image(self.crnt_shell)
+        elif item_name == "TP":
+            gui.gui_weapon.set_item(None)
             return
         self.item = item_name
 
@@ -787,7 +792,18 @@ def set_item(item):
             crnt_tank.use_item(item[0])
             if item[0] == "heal":
                 return
+            if item[0] == "TP":
+                gui.gui_weapon.set_image(item[0])
+                return
+            gui.gui_weapon.set_image(crnt_tank.crnt_shell)
             gui.gui_weapon.set_item(item[1])
+
+def teleport(position):
+    if prev_tank:
+        gui.invalidate_degree()
+        prev_tank.is_created = False
+        prev_tank.set_pos(position)
+        prev_tank.is_created = True
 
 
 def read_data(file, mode):

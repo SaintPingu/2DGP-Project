@@ -20,7 +20,8 @@ def enter():
     img_shell_hp = load_image_path('shell_hp.png')
     img_shell_mul = load_image_path('shell_multiple.png')
     img_shell_nuclear = load_image_path('shell_nuclear.png')
-    SHELLS = { "AP" : img_shell_ap, "HP" : img_shell_hp, "MUL" : img_shell_mul, "NUCLEAR" : img_shell_nuclear }
+    img_shell_teleport = load_image_path('shell_teleport.png')
+    SHELLS = { "AP" : img_shell_ap, "HP" : img_shell_hp, "MUL" : img_shell_mul, "NUCLEAR" : img_shell_nuclear, "TP" : img_shell_teleport}
     EXPLOSIONS = {
         "AP" : "Explosion",
         "HP" : "Explosion",
@@ -78,6 +79,7 @@ class Shell(object.GameObject):
         self.t = 0
         self.delay = delay
         self.sub = False
+        self.is_teleport = False
 
     def draw(self):
         if self.delay > 0:
@@ -180,14 +182,17 @@ class Shell(object.GameObject):
         if self.is_simulation:
             return
 
-        gmap.draw_block(self.explosion_radius, head, False)
-        tank.check_explosion(head, self.explosion_radius, self.explosion_damage)
-        object.check_ground(head, self.explosion_radius)
-        sprite.add_animation(EXPLOSIONS[self.shell_name], head, scale=self.explosion_radius/10)
-        self.invalidate()
-        delete_shell(self)
+        if self.is_teleport:
+            tank.teleport(head)
+        else:
+            gmap.draw_block(self.explosion_radius, head, False)
+            tank.check_explosion(head, self.explosion_radius, self.explosion_damage)
+            object.check_ground(head, self.explosion_radius)
+            sprite.add_animation(EXPLOSIONS[self.shell_name], head, scale=self.explosion_radius/10)
+            self.invalidate()
+            sound.play_sound('explosion', 100)
 
-        sound.play_sound('explosion', 100)
+        delete_shell(self)
 
     def get_head(self) -> Vector2:
         return self.center + (self.vector.normalized() * self.img_shell.w/gmap.CELL_SIZE)
@@ -204,16 +209,10 @@ fired_shells : list[Shell]
 def add_shell(shell_name, head_position, theta, power = 1, item = None):
     delay = 0
     count_shot = 1
-    extension = False
-    if item != None:
-        if item == "double":
-            count_shot = 2
-        elif item == "extension":
-            extension = True
+    if item == "double":
+        count_shot = 2
 
     for i in range(count_shot):
-        if i > 0:
-            delay += 2
             
         shell = Shell(shell_name, head_position, theta, power, delay=delay)
         shell_head = shell.get_head()
@@ -222,7 +221,7 @@ def add_shell(shell_name, head_position, theta, power = 1, item = None):
         fired_shells.append(shell)
         object.add_object(shell)
 
-        if shell_name == "MUL":
+        if shell_name == "MUL" and item != "TP":
             for n in range(3):
                 t = 0.05 * (n+1)
                 shell_1 = Shell(shell_name, position, theta + t, power, delay=delay)
@@ -233,10 +232,17 @@ def add_shell(shell_name, head_position, theta, power = 1, item = None):
                 fired_shells.append(shell_2)
                 object.add_object(shell_1)
                 object.add_object(shell_2)
+
+        delay += 2
+
     
-    if extension:
+    if item == "extension":
         for shell in fired_shells:
             shell.explosion_radius *= 2
+    elif item == "TP":
+        shell.is_teleport = True
+        shell.shell_damage = 0
+        shell.img_shell = get_shell_image("TP")
             
 
 

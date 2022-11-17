@@ -208,6 +208,7 @@ class GUI_Weapon(GUI):
         "HP" : "High-Explosive",
         "MUL" : "Multiple",
         "NUCLEAR" : "Nuclear",
+        "TP" : "Teleport"
     }
     def __init__(self):
         import shell
@@ -300,17 +301,14 @@ def exit():
     del degree_font
     del rect_font
 
+    global deg_pos
+    deg_pos = (0,0)
+
 def update():
     for gui in all_gui():
         gui.update()
 
-    global deg_pos
-    
-    rect_font.set_pos((deg_pos[0] + 5, deg_pos[1] - 30))
-    rect_inv = Rect(rect_font.center, rect_font.width, rect_font.height)
-    gmap.resize_rect_inv(rect_inv)
-    gmap.set_invalidate_rect(*rect_inv.__getitem__())
-    del rect_inv
+    invalidate_degree()
 
 def draw():
     if _is_hide_gui:
@@ -357,3 +355,10 @@ def set_degree(pos : tuple, degree : float):
     global deg_pos, deg
     deg_pos = pos
     deg = degree
+
+def invalidate_degree():
+    rect_font.set_pos((deg_pos[0] + 5, deg_pos[1] - 30))
+    rect_inv = Rect(rect_font.center, rect_font.width, rect_font.height)
+    gmap.resize_rect_inv(rect_inv)
+    gmap.set_invalidate_rect(*rect_inv.__getitem__())
+    del rect_inv
