@@ -33,6 +33,7 @@ TANK_SPEED_PPS = (TANK_SPEED_MPS * PIXEL_PER_METER)
 class Tank(object.GroundObject):
     MAX_DEGREE = 10
     MAX_FUEL = TANK_SPEED_KMPH * 5
+    MAX_HP = 100
     def __init__(self, center=(0,0)):
         self.image = image_tank_green
         self.image_barrel = image_barrel_green
@@ -49,11 +50,13 @@ class Tank(object.GroundObject):
 
         # attributes
         self.speed = TANK_SPEED_PPS
-        self.hp = 100
+        self.hp = Tank.MAX_HP
         self.fuel = Tank.MAX_FUEL
         self.crnt_shell = "AP"
         self.is_locked = False
         self.is_sound_movement = False
+        self.item_used = False
+        self.item = None
 
         # gui
         self.gui_hp = gui.GUI_HP(self)
@@ -65,21 +68,6 @@ class Tank(object.GroundObject):
         if tank_list:
             tank_list.remove(self)
         self.gui_hp.release()
-
-    def set_team(self, team : str):
-        self.team = team
-        if team == "green":
-            self.image = image_tank_green
-            self.image_barrel = image_barrel_green
-        elif team == "blue":
-            self.image = image_tank_blue
-            self.image_barrel = image_barrel_blue
-        elif team == "red":
-            self.image = image_tank_red
-            self.image_barrel = image_barrel_red
-        else:
-            assert False
-
 
     def invalidate(self):
         gmap.set_invalidate_rect(self.barrel_position, self.image_barrel.w, self.image_barrel.h, square=True, grid_size=0)
@@ -109,12 +97,37 @@ class Tank(object.GroundObject):
         if is_debug_mode():
             gmap.draw_debug_cells(self.get_collision_cells())
 
+    ##### Interactive #####
+    def set_team(self, team : str):
+        self.team = team
+        if team == "green":
+            self.image = image_tank_green
+            self.image_barrel = image_barrel_green
+        elif team == "blue":
+            self.image = image_tank_blue
+            self.image_barrel = image_barrel_blue
+        elif team == "red":
+            self.image = image_tank_red
+            self.image_barrel = image_barrel_red
+        else:
+            assert False
+
     def get_damage(self, damage):
         self.hp -= damage
         if self.hp <= 0:
             object.delete_object(self)
             sprite.add_animation("Tank_Explosion", self.center + (0,self.height//2))
             sound.play_sound('tank_explosion')
+    
+    def use_item(self, item_name):
+        if self.item_used == True:
+            return
+        if item_name == "heal":
+            self.item_used = True
+            self.hp += 15
+            self.hp = clamp(0, self.hp, Tank.MAX_HP)
+            return
+        self.item = item_name
 
     ##### Movement #####
     def deselect(self):
@@ -124,6 +137,8 @@ class Tank(object.GroundObject):
         
     def select(self):
         self.is_turn = True
+        self.item = None
+        self.item_used = False
         gui.gui_weapon.set_image(self.crnt_shell)
     
     def move(self):
@@ -290,11 +305,12 @@ class Tank(object.GroundObject):
         head = self.get_barrel_head()
         theta = self.get_barrel_theta()
         shell.add_shell(self.crnt_shell, head, theta, gui_gauge.get_filled())
-        sprite.add_animation("Shot", head, theta=theta)
         self.dir = 0
         select_tank(None)
-
         sound.play_sound('tank_fire', 64)
+
+        if self.item == "double":
+            shell.add_shell(self.crnt_shell, head, theta, gui_gauge.get_filled(), delay=2)
     ##########
 
 
@@ -369,7 +385,7 @@ class Tank_AI(Tank):
 
         for s in shells:
             evaluation = (distance / shell.get_attributes(s)[0])
-            print(evaluation)
+            # print(evaluation)
             if evaluation < REACHABLE_EVALUATION: # reachable
                 avaliable_shells.append(s)
         
@@ -659,6 +675,9 @@ def select_tank(tank):
             prev_tank.deselect()
         crnt_tank.select()
         gui_gauge.reset()
+        
+        from gui import gui_weapon
+        gui_weapon.disable_item()
 
     gui_selection.set_owner(crnt_tank)
 
@@ -763,6 +782,10 @@ def handle_event(event):
 def set_shell(shell_name):
     if crnt_tank:
         crnt_tank.crnt_shell = shell_name
+    
+def set_item(item_name):
+    if crnt_tank:
+        crnt_tank.use_item(item_name)
 
 
 def read_data(file, mode):

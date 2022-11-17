@@ -48,7 +48,7 @@ def exit():
 
 class Shell(object.GameObject):
     MIN_POWER = 0.1
-    def __init__(self, shell_name : str, position, theta, power = 1, is_simulation=False):
+    def __init__(self, shell_name : str, position, theta, power = 1, is_simulation=False, delay = 0):
         self.img_shell : Image = get_shell_image(shell_name)
 
         super().__init__(position, self.img_shell.w, self.img_shell.h, theta)
@@ -76,8 +76,12 @@ class Shell(object.GameObject):
             self.explosion_damage = 0
 
         self.t = 0
+        self.delay = delay
 
     def draw(self):
+        if self.delay > 0:
+            return
+
         self.is_rect_invalid = True
         self.draw_image(self.img_shell)
     
@@ -100,6 +104,13 @@ class Shell(object.GameObject):
         
 
     def update(self):
+        if self.delay > 0:
+            self.delay -= framework.frame_time
+            if self.delay <= 0:
+                sprite.add_animation("Shot", self.origin, self.start_theta)
+                sound.play_sound('tank_fire', 64)
+            return
+
         self.invalidate()
         rect = self.get_squre()
 
@@ -188,8 +199,8 @@ class Shell(object.GameObject):
 
 fired_shells : list[Shell]
 
-def add_shell(shell_name, head_position, theta, power = 1):
-    shell = Shell(shell_name, head_position, theta, power)
+def add_shell(shell_name, head_position, theta, power = 1, delay = 0):
+    shell = Shell(shell_name, head_position, theta, power, delay=delay)
     shell_head = shell.get_head()
     position = head_position + (head_position - shell_head)
     shell.set_pos(position)
@@ -199,8 +210,8 @@ def add_shell(shell_name, head_position, theta, power = 1):
     if shell_name == "MUL":
         for n in range(3):
             t = 0.05 * (n+1)
-            shell_1 = Shell(shell_name, position, theta + t, power)
-            shell_2 = Shell(shell_name, position, theta - t, power)
+            shell_1 = Shell(shell_name, position, theta + t, power, delay=delay)
+            shell_2 = Shell(shell_name, position, theta - t, power, delay=delay)
             fired_shells.append(shell_1)
             fired_shells.append(shell_2)
             object.add_object(shell_1)

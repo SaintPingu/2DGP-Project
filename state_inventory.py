@@ -59,15 +59,27 @@ class Inven_Item(Inventory):
     def __init__(self):
         image = load_image_path('inventory_items.png')
         position = (345, 140)
+        self.image_double = load_image_path('item_double.png')
+        self.image_extension = load_image_path('item_extension.png')
+        self.image_heal = load_image_path('item_heal.png')
         table = {
-            0 : "double",
-            1 : "extension",
-            2 : "heal",
+            0 : ( "double", self.image_double ),
+            1 : ( "extension", self.image_extension ),
+            2 : ( "heal", self.image_heal ),
         }
         super().__init__(image, position, table, (345 - 145, 140))
 
+    def exit(self):
+        del self.image_double
+        del self.image_extension
+        del self.image_heal
+        super().exit()
+
     def select(self, index):
-        pass
+        import tank
+        from gui import gui_weapon
+        tank.set_item(self.table[index][0])
+        gui_weapon.set_item(self.table[index][1])
 
 _inventory_name : str
 _inventory : Inventory

@@ -215,10 +215,13 @@ class GUI_Weapon(GUI):
         self.is_draw = False
         self.font = load_font_path("PermanentMarker", 20)
         self.str = ''
+        self.image_item : Image = None
 
     def draw(self):
         super().draw()
         self.font.draw(self.position[0] + 50, self.position[1], self.str, (255,255,255))
+        if self.image_item != None:
+            self.image_item.draw(self.position[0] + 15, self.position[1]-10)
 
     def set_image(self, shell_name):
         import shell
@@ -226,10 +229,15 @@ class GUI_Weapon(GUI):
         self.image = shell.get_shell_image(shell_name)
         self.str = GUI_Weapon.name_table[shell_name]
 
-    
+    def set_item(self, image):
+        self.image_item = image
+
+    def disable_item(self):
+        self.image_item = None
+
 
 _list_gui : list[GUI, int]
-gui_weapon : GUI
+gui_weapon : GUI_Weapon
 
 rect_gui : Rect
 rect_weapon : Rect
