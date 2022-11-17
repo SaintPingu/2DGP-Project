@@ -374,7 +374,7 @@ class Tank_AI(Tank):
             self.max_movement_fuel = random.randint(0, Tank.MAX_FUEL - 20)
 
     def set_shell(self):
-        REACHABLE_EVALUATION = 7
+        REACHABLE_EVALUATION = 6
         distance = math.fabs(self.get_dx())
 
         avaliable_shells = ["AP"]
@@ -390,7 +390,7 @@ class Tank_AI(Tank):
             avaliable_shells.append("MUL")
 
         
-        shell_index = random.randint(0, len(shells) - 1)
+        shell_index = random.randint(0, len(avaliable_shells) - 1)
         self.crnt_shell = avaliable_shells[shell_index]
         self.shell_selected = True
         gui.gui_weapon.set_image(self.crnt_shell)
@@ -646,7 +646,6 @@ def update():
 
 
 
-
 def new_tank():
     tank = Tank()
     tank.index = len(tank_list)
@@ -744,6 +743,8 @@ def handle_event(event):
     elif event.type == SDL_MOUSEMOTION:
         mouse_pos = convert_pico2d(event.x, event.y)
         crnt_tank.update_barrel(Vector2(*mouse_pos))
+        gui.set_degree(crnt_tank.center, math.degrees(crnt_tank.get_barrel_theta()))
+
 
     elif event.type == SDL_MOUSEBUTTONDOWN:
         mouse_pos = convert_pico2d(event.x, event.y)

@@ -236,6 +236,7 @@ class GUI_Weapon(GUI):
         self.image_item = None
 
 
+
 _list_gui : list[GUI, int]
 gui_weapon : GUI_Weapon
 
@@ -243,7 +244,13 @@ rect_gui : Rect
 rect_weapon : Rect
 rect_item : Rect
 
+degree_font : Font
+rect_font : Rect
+
 _is_hide_gui : bool
+
+deg_pos : list = (0, 0)
+deg : float = 0
 
 def enter():
     global _list_gui
@@ -265,6 +272,10 @@ def enter():
     global gui_weapon
     gui_weapon = GUI_Weapon()
     add_gui(gui_weapon, 1)
+
+    global degree_font, rect_font
+    degree_font = load_font_path("DS-DIGIB", 38)
+    rect_font = Rect((0,0), 60, 35)
     
 def exit():
     global _list_gui
@@ -285,9 +296,21 @@ def exit():
     del rect_gui
     del rect_weapon
 
+    global degree_font, rect_font
+    del degree_font
+    del rect_font
+
 def update():
     for gui in all_gui():
         gui.update()
+
+    global deg_pos
+    
+    rect_font.set_pos((deg_pos[0] + 5, deg_pos[1] - 30))
+    rect_inv = Rect(rect_font.center, rect_font.width, rect_font.height)
+    gmap.resize_rect_inv(rect_inv)
+    gmap.set_invalidate_rect(*rect_inv.__getitem__())
+    del rect_inv
 
 def draw():
     if _is_hide_gui:
@@ -295,6 +318,18 @@ def draw():
         
     for gui in all_gui():
         gui.draw()
+
+    global deg_pos, deg
+    
+    degree = int(deg)
+    degree_fabs = int(math.fabs(degree))
+    font_color = (0, 204, 204)
+    if degree_fabs == 90:
+        font_color = (255, 0, 0)
+    elif degree_fabs > 90:
+        degree = int((180 - degree_fabs) * get_sign(degree))
+        font_color = (204, 204, 0)
+    degree_font.draw(deg_pos[0] - 20, deg_pos[1] -30, str(degree), font_color)
 
 def add_gui(gui : GUI, depth):
     _list_gui[depth].append(gui)
@@ -317,3 +352,8 @@ def all_gui():
     for layer in _list_gui:
         for gui in layer:
             yield gui
+
+def set_degree(pos : tuple, degree : float):
+    global deg_pos, deg
+    deg_pos = pos
+    deg = degree

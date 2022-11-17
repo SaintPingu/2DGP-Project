@@ -92,7 +92,6 @@ class Sprite:
         else:
             self.sprite.clip_draw(left, bottom, self.frame_width, self.frame_height, *self.position, self.frame_width*self.scale, self.frame_height*self.scale)
 
-        
         check_invalidate(self.position, self.raidus)
 
     def update(self):

@@ -70,8 +70,8 @@ def draw(is_draw_full=False):
 
     # draw background
     for rect_inv in list(_rect_inv_list):
-        # if is_debug_mode():
-        #     draw_debug_rect(rect_inv)
+        if is_debug_mode():
+            draw_debug_rect(rect_inv)
 
         if rect_inv.is_grid == False:
             block_set = get_block_set(rect_inv)
