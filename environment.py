@@ -3,7 +3,6 @@ if __name__ == "__main__":
 
 from tools import *
 import object
-import gui
 import gmap
 import framework
 import state_lobby
@@ -56,6 +55,7 @@ def toggle_show_clouds():
 
 class Wind:
     def __init__(self):
+        import gui
         self.image_cloud = load_image_path('gui_cloud.png')
         self.image_wind = load_image_path('gui_wind_lines.png')
         pos_cloud = (SCREEN_WIDTH//2, SCREEN_HEIGHT - self.image_cloud.h)

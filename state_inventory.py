@@ -4,68 +4,103 @@ if __name__ == "__main__":
 from tools import *
 import framework
 import state_battle
-import tank
-import sound
-from gui import GUI, add_gui, del_gui
 
-_NUM_OF_SLOT = 4
 
-_table_weapon : dict
+class Inventory:
+    def __init__(self, image : Image, position : tuple, table : dict[int, str], slot_position : tuple):
+        from gui import GUI, add_gui
+        self.gui = GUI(image, position, is_fixed=True)
+        self.rect = self.gui.get_rect()
+        self.table = table
+        add_gui(self.gui, 1)
 
-_gui_inventory : GUI
-_rect_inventory : Rect
-_rect_slots = list[Rect]
+        self.slots = []
+        slot_width = 34
+        slot_height = 34
+        slot_interval = slot_width + 2
+        for i in range(len(table)):
+            rect = Rect((slot_position[0] + (i * slot_interval), slot_position[1]), slot_width, slot_height)
+            self.slots.append(rect)
+    
+    def exit(self):
+        from gui import del_gui
+        del_gui(self.gui)
+        del self.rect
+
+        for rect in self.slots:
+            del rect
+        del self.slots
+
+    def select(self, index):
+        pass
+
+
+class Inven_Weapon(Inventory):
+    def __init__(self):
+        image = load_image_path('inventory_weapon.png')
+        position = (555, 140)
+        table = {
+            0 : "AP",
+            1 : "HP",
+            2 : "MUL",
+            3 : "NUCLEAR",
+        }
+        super().__init__(image, position, table, (555 - 145, 140))
+
+    def select(self, index):
+        import tank
+        from gui import gui_weapon
+        shell_name = self.table[index]
+
+        tank.set_shell(shell_name)
+        gui_weapon.set_image(shell_name)
+
+class Inven_Item(Inventory):
+    def __init__(self):
+        image = load_image_path('inventory_items.png')
+        position = (345, 140)
+        table = {
+            0 : "double",
+            1 : "extension",
+            2 : "heal",
+        }
+        super().__init__(image, position, table, (345 - 145, 140))
+
+    def select(self, index):
+        pass
+
+_inventory_name : str
+_inventory : Inventory
+_table_inventory : dict[str, Inventory]= {
+    "weapon" : Inven_Weapon,
+    "item" : Inven_Item,
+}
+
+def set_window(name : str):
+    global _inventory_name
+    _inventory_name = name
+
+def get_window():
+    return _inventory_name
 
 def enter():
-    image_inventory = load_image_path('inventory_weapon.png')
-    global _gui_inventory, _rect_inventory
-    _gui_inventory = GUI(image_inventory, (555, 140), is_fixed=True)
-    _rect_inventory = _gui_inventory.get_rect()
-    
-    add_gui(_gui_inventory, 1)
+    assert(_inventory_name in _table_inventory.keys())
 
-    global _table_weapon
-    _table_weapon = {
-    0 : "AP",
-    1 : "HP",
-    2 : "MUL",
-    3 : "NUCLEAR",
-    }
-
-    global _rect_slots
-    _rect_slots = []
-    slot_width = 34
-    slot_height = 34
-    slot_interval = slot_width + 2
-    for i in range(_NUM_OF_SLOT):
-        rect = Rect((410 + (i * slot_interval), 140), slot_width, slot_height)
-        _rect_slots.append(rect)
+    global _inventory
+    _inventory = _table_inventory[_inventory_name]()
 
 def exit():
-    global _gui_inventory, _rect_inventory
-    del_gui(_gui_inventory)
-    del _rect_inventory
-
-    global _rect_slots
-    for rect in _rect_slots:
-        del rect
-    del _rect_slots
-
-    global _table_weapon
-    del _table_weapon
+    global _inventory
+    _inventory.exit()
 
 def update():
     state_battle.update()
-
-    import gmap
-    for rect in _rect_slots:
-        gmap.draw_debug_rect(rect)
 
 def draw():
     state_battle.draw()
 
 def handle_events():
-    from gui import gui_weapon
+    global _inventory
 
     events = get_events()
     event : Event
@@ -74,14 +109,12 @@ def handle_events():
         if event.type == SDL_MOUSEBUTTONDOWN:
             point = convert_pico2d(event.x, event.y)
             if event.button == SDL_BUTTON_LEFT:
-                if point_in_rect(point, _rect_inventory):
-                    for idx, rect in enumerate(_rect_slots):
+                if point_in_rect(point, _inventory.rect):
+                    for idx, rect in enumerate(_inventory.slots):
                         if point_in_rect(point, rect):
-                            sound.play_sound('click')
-                            shell_name = _table_weapon[idx]
-
-                            tank.set_shell(shell_name)
-                            gui_weapon.set_image(shell_name)
+                            from sound import play_sound
+                            play_sound('click')
+                            _inventory.select(idx)
                             framework.pop_state()
                     return
 

@@ -735,11 +735,26 @@ def handle_event(event):
             if point_in_rect(mouse_pos, gui.rect_gui):
                 if point_in_rect(mouse_pos, gui.rect_weapon):
                     if not framework.state_in_stack(state_inventory):
+                        state_inventory.set_window("weapon")
                         framework.push_state(state_inventory)
                         sound.play_sound('click')
                     else:
                         framework.pop_state()
                         sound.play_sound('click')
+                        if state_inventory.get_window() == "item":
+                            state_inventory.set_window("weapon")
+                            framework.push_state(state_inventory)
+                elif point_in_rect(mouse_pos, gui.rect_item):
+                    if not framework.state_in_stack(state_inventory):
+                        state_inventory.set_window("item")
+                        framework.push_state(state_inventory)
+                        sound.play_sound('click')
+                    else:
+                        framework.pop_state()
+                        sound.play_sound('click')
+                        if state_inventory.get_window() == "weapon":
+                            state_inventory.set_window("item")
+                            framework.push_state(state_inventory)
             else:
                 crnt_tank.toggle_lock()
 

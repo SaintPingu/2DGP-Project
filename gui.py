@@ -3,7 +3,6 @@ if __name__ == "__main__":
 
 from tools import *
 import gmap
-import shell
 import framework
 
 class GUI:
@@ -211,6 +210,7 @@ class GUI_Weapon(GUI):
         "NUCLEAR" : "Nuclear",
     }
     def __init__(self):
+        import shell
         super().__init__(shell.get_shell_image(shell.DEFAULT_SHELL), (444, 30), math.radians(90), is_fixed=True, scale=1.4)
         self.is_draw = False
         self.font = load_font_path("PermanentMarker", 20)
@@ -221,6 +221,7 @@ class GUI_Weapon(GUI):
         self.font.draw(self.position[0] + 50, self.position[1], self.str, (255,255,255))
 
     def set_image(self, shell_name):
+        import shell
         self.is_draw = True
         self.image = shell.get_shell_image(shell_name)
         self.str = GUI_Weapon.name_table[shell_name]
@@ -232,6 +233,7 @@ gui_weapon : GUI
 
 rect_gui : Rect
 rect_weapon : Rect
+rect_item : Rect
 
 _is_hide_gui : bool
 
@@ -247,9 +249,10 @@ def enter():
     add_gui(main_gui, 0)
     set_debug_mode(False)
 
-    global rect_gui, rect_weapon
+    global rect_gui, rect_weapon, rect_item
     rect_gui = Rect(main_gui.position, img_gui_control.w, img_gui_control.h)
     rect_weapon = Rect((550, 80), 258, 40)
+    rect_item = Rect((345, 52), 137, 96)
 
     global gui_weapon
     gui_weapon = GUI_Weapon()

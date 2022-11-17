@@ -5,7 +5,6 @@ from tools import *
 import framework
 import state_title
 import state_lobby
-import state_inventory
 import sound
 
 import object
