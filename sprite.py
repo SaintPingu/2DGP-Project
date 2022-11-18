@@ -36,7 +36,7 @@ def update():
             animations.remove(animation)
 
 def draw():
-    for animation in animations:
+    for animation in animations.__reversed__():
         animation.draw()
 
 class Sprite:

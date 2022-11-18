@@ -317,6 +317,9 @@ def draw():
     for gui in all_gui():
         gui.draw()
 
+    draw_degree()
+
+def draw_degree():
     global deg_pos, deg
     
     degree = int(deg)
@@ -350,6 +353,10 @@ def all_gui():
     for layer in _list_gui:
         for gui in layer:
             yield gui
+
+def reset_degree():
+    global deg_pos
+    deg_pos = (0,0)
 
 def set_degree(pos : tuple, degree : float):
     global deg_pos, deg

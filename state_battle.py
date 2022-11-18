@@ -20,7 +20,7 @@ _is_game_over = False
 _winner = 0
 
 def enter():
-    from  state_lobby import get_mode
+    from  state_lobby import get_mode, get_difficulty
     mode = get_mode()
 
     object.enter()
@@ -36,10 +36,12 @@ def enter():
     map_index = state_lobby.crnt_map_index + 1
     #map_index = -3
     gmap.read_mapfile(map_index, mode)
-    sound.play_battle_bgm(map_index)
+    tank.apply_difficulty(get_difficulty())
 
     global _is_game_over
     _is_game_over = False
+    
+    sound.play_battle_bgm(map_index)
 
 
 def exit():

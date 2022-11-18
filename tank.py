@@ -115,6 +115,7 @@ class Tank(object.GroundObject):
     def get_damage(self, damage):
         self.hp -= damage
         if self.hp <= 0:
+            gui.reset_degree()
             object.delete_object(self)
             sprite.add_animation("Tank_Explosion", self.center + (0,self.height//2))
             sound.play_sound('tank_explosion')
@@ -138,6 +139,7 @@ class Tank(object.GroundObject):
         self.is_turn = False
         self.is_locked = False
         self.fuel = Tank.MAX_FUEL
+        gui.reset_degree()
         
     def select(self):
         self.is_turn = True
@@ -330,6 +332,13 @@ class Tank_AI(Tank):
         5 : 0.2,
         6 : 0.1,
     }
+    error_table = {
+        "easy" : 4,
+        "normal" : 3,
+        "hard" : 2,
+        "god" : 1
+    }
+    error_range = 0
     def __init__(self, center=(0, 0)):
         super().__init__(center)
         self.init_values()
@@ -459,7 +468,7 @@ class Tank_AI(Tank):
         self.virtual_shell = None
 
         self.crnt_degree = self.start_degree
-        error = (random.random() * 10) % 4 - 2 # -2 ~ 2
+        error = (random.random() * 10) % Tank_AI.error_range - (Tank_AI.error_range/2)
         self.crnt_degree += error
         if self.check_dir == RIGHT:
             self.vec_dir_barrel = Vector2.right().get_rotated(math.radians(self.crnt_degree))
@@ -810,6 +819,10 @@ def teleport(position):
         prev_tank.is_created = False
         prev_tank.set_pos(position)
         prev_tank.is_created = True
+
+def apply_difficulty(difficulty):
+    Tank_AI.error_range = Tank_AI.error_table[difficulty]
+    
 
 
 def read_data(file, mode):

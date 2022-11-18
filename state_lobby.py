@@ -6,50 +6,131 @@ import framework
 import state_battle
 import sound
 
+# global
+NUM_OF_MAP = 3
+_crnt_mode : str
+_crnt_difficulty : str
+crnt_map_index = 0
+_image_maps : list
+_position_map = (520, 450)
+_font : Font
+
 # images
-_image = None
-_image_pvp = None
-_image_pve = None
-_image_check = None
-_image_arrow = None
-_image_start = None
+_background : Image
+_image_check : Image
+_check_pos_mode : tuple
+_check_pos_diff : tuple
 
 # buttons
-_position_icon_pvp = (980, 750)
-_position_icon_pve = (980, 620)
-_button_pvp = None
-_button_pve = None
+_buttons : dict
 
-_position_icon_arrow_left = (200, 450)
-_position_icon_arrow_right = (200 + 630, 450)
-_button_arrow_left = None
-_button_arrow_right = None
+class Button:
+    def __init__(self, name : str, image : Image, position, composite = ''):
+        self.name = name
+        self.image : Image = image
+        self.position = position
+        self.rect = Rect(position, image.w, image.h)
+        self.composite = composite
+    
+    def release(self):
+        if self.image:
+            del self.image
+        del self.rect
 
-_position_icon_start = (515, 125)
-_button_start = None
+    def draw(self):
+        self.image.composite_draw(0, self.composite, *self.position)
+
+        global _font
+        if self.name == "easy":
+            _font.draw(self.position[0] - 30, self.position[1], "EASY", (0, 204, 102))
+        elif self.name == "normal":
+            _font.draw(self.position[0] - 40, self.position[1], "NORMAL", (255, 128, 0))
+        elif self.name == "hard":
+            _font.draw(self.position[0] - 30, self.position[1], "HARD", (204, 0, 0))
+        elif self.name == "god":
+            _font.draw(self.position[0] - 30, self.position[1], "GOD", (0, 204, 204))
+
+    
+    def check_select(self, point):
+        if not point_in_rect(point, self.rect):
+            return False
+
+        global _crnt_mode, crnt_map_index, _crnt_difficulty, _image_maps
+
+        if self.name == "PVP":
+            _crnt_mode = "PVP"
+            set_check_pos()
+        elif self.name == "PVE":
+            _crnt_mode = "PVE"
+            set_check_pos()
+        elif self.name == "left":
+            crnt_map_index -= 1
+        elif self.name == "right":
+            crnt_map_index += 1
+        elif self.name == "start":
+            sound.stop_bgm()
+            framework.change_state(state_battle)
+            sound.play_sound('click')
+            return True
+        elif self.name == "easy" or self.name == "normal" or self.name == "hard" or self.name == "god":
+            if _crnt_mode == "PVE":
+                _crnt_difficulty = self.name
+                set_check_pos()
+        else:
+            assert(0)
+
+        crnt_map_index = clamp(0, crnt_map_index, len(_image_maps) - 1)
+
+        sound.play_sound('click')
+        return True
+    
+def set_check_pos():
+    global _crnt_mode, _check_pos_mode, _check_pos_diff
+    if _crnt_mode == "PVP" or _crnt_mode == "PVE":
+        _check_pos_mode = (_buttons[_crnt_mode].position[0] - 95, _buttons[_crnt_mode].position[1])
+        if _crnt_mode == "PVE":
+            _check_pos_diff = (_buttons[_crnt_difficulty].position[0] - 75,  _buttons[_crnt_difficulty].position[1] + 10)
+    else:
+        assert(0)
 
 
-# other icons
-_crnt_mode = "PVP"
-_check_position_pvp = (_position_icon_pvp[0] - 95, _position_icon_pvp[1])
-_check_position_pve = (_position_icon_pve[0] - 95, _position_icon_pve[1])
 
 
-# global
-_image_maps : list = None
-crnt_map_index = 0
-_position_map = (520, 450)
-NUM_OF_MAP = 3
 
 def enter():
-    # icon images
-    global _image, _image_pvp, _image_pve, _image_check, _image_arrow, _image_start
-    _image = load_image_path('lobby.png')
-    _image_pvp = load_image_path('lobby_icon_pvp.png')
-    _image_pve = load_image_path('lobby_icon_pve.png')
+    # images
+    global _background, _image_check
+    _background = load_image_path('lobby.png')
     _image_check = load_image_path('lobby_icon_check.png')
-    _image_arrow = load_image_path('lobby_icon_arrow.png')
-    _image_start = load_image_path('lobby_icon_start.png')
+
+    # button images
+    image_pvp = load_image_path('lobby_button_pvp.png')
+    image_pve = load_image_path('lobby_button_pve.png')
+    image_arrow = load_image_path('lobby_button_arrow.png')
+    image_start = load_image_path('lobby_button_start.png')
+    image_selection = load_image_path('lobby_button_selection.png')
+    
+    button_pvp = Button("PVP", image_pvp, (980, 750))
+    button_pve = Button("PVE", image_pve, (980, 620))
+    button_left = Button("left", image_arrow, (200, 450), 'h')
+    button_right = Button("right", image_arrow, (200 + 630, 450))
+    button_start = Button("start", image_start, (515, 125))
+    button_easy = Button("easy", image_selection, (1010, 450))
+    button_normal = Button("normal", image_selection, (1010, 450 - 100))
+    button_hard = Button("hard", image_selection, (1010, 450 - 200))
+    button_god = Button("god", image_selection, (1010, 450 - 300))
+
+    global _buttons
+    _buttons = dict()
+    _buttons[button_pvp.name] = button_pvp
+    _buttons[button_pve.name] = button_pve
+    _buttons[button_left.name] = button_left
+    _buttons[button_right.name] = button_right
+    _buttons[button_start.name] = button_start
+    _buttons[button_easy.name] = button_easy
+    _buttons[button_normal.name] = button_normal
+    _buttons[button_hard.name] = button_hard
+    _buttons[button_god.name] = button_god
 
     # map images
     global _image_maps
@@ -57,64 +138,57 @@ def enter():
     for i in range(NUM_OF_MAP):
         _image_maps.append(load_image_path("map_" + str(i + 1) + ".png"))
 
-    # set buttons
-    global _button_pvp, _button_pve
-    _button_pvp = Rect(_position_icon_pvp, _image_pvp.w,  _image_pvp.h)
-    _button_pve = Rect(_position_icon_pve, _image_pve.w,  _image_pve.h)
-
-    global _button_arrow_left, _button_arrow_right
-    _button_arrow_left = Rect(_position_icon_arrow_left, _image_arrow.w,  _image_arrow.h)
-    _button_arrow_right = Rect(_position_icon_arrow_right, _image_arrow.w,  _image_arrow.h)
-
-    global _button_start
-    _button_start = Rect(_position_icon_start, _image_start.w, _image_start.h)
-
     # set globals
-    global _crnt_mode, crnt_map_index
+    global _crnt_mode, crnt_map_index, _crnt_difficulty
     _crnt_mode = "PVP"
+    _crnt_difficulty = "easy"
     crnt_map_index = 0
+    set_check_pos()
+
+    global _font
+    _font = load_font_path("DS-DIGIB", 38)
 
     sound.add_sound('click')
 
 def exit():
-    global _image, _image_pvp, _image_pve, _image_check, _image_arrow
-    del _image
-    del _image_pvp
-    del _image_pve
+    global _buttons
+    for button in _buttons.values():
+        button.release()
+        del button
+    _buttons.clear()
+    del _buttons
+
+    global _image_maps
+    _image_maps.clear()
+    del _image_maps
+
+    global _image_check
     del _image_check
 
-    global _button_pvp, _button_pve, _button_arrow_left,_button_arrow_right
-    del _button_pvp
-    del _button_pve
-    del _button_arrow_left
-    del _button_arrow_right
+    global _font
+    del _font
 
 def update():
     pass
 
 def draw():
     clear_canvas()
-    _image.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
+    _background.draw(SCREEN_WIDTH//2, SCREEN_HEIGHT//2)
     _image_maps[crnt_map_index].draw(*_position_map, 520, 500)
 
-    _image_pvp.draw(*_position_icon_pvp)
-    _image_pve.draw(*_position_icon_pve)
+    global _buttons
+    for button in _buttons.values():
+        button.draw()
 
-    _image_arrow.composite_draw(0, 'h', *_position_icon_arrow_left)
-    _image_arrow.draw(*_position_icon_arrow_right)
-
-    _image_start.draw(*_position_icon_start)
-
-    if _crnt_mode == "PVP":
-        _image_check.draw(*_check_position_pvp)
-    else:
-        _image_check.draw(*_check_position_pve)
+    _image_check.draw(*_check_pos_mode)
+    if _crnt_mode == "PVE":
+        _image_check.draw(*_check_pos_diff)
     
     update_canvas()
 
 
 def handle_events():
-    global _crnt_mode, crnt_map_index
+    global _crnt_mode, crnt_map_index, _buttons
 
     events = get_events()
     for event in events:
@@ -124,29 +198,16 @@ def handle_events():
             sound._crnt_bgm.resume()
             if event.button == SDL_BUTTON_LEFT:
                 point = convert_pico2d(event.x, event.y)
-                if(point_in_rect(point, _button_pvp)):
-                    _crnt_mode = "PVP"
-                    sound.play_sound('click')
-                elif(point_in_rect(point, _button_pve)):
-                    _crnt_mode = "PVE"
-                    sound.play_sound('click')
-                elif(point_in_rect(point, _button_arrow_left)):
-                    crnt_map_index -= 1
-                    sound.play_sound('click')
-                elif(point_in_rect(point, _button_arrow_right)):
-                    crnt_map_index += 1
-                    sound.play_sound('click')
-                elif(point_in_rect(point, _button_start)):
-                    sound.play_sound('click')
-                    sound.stop_bgm()
-                    framework.change_state(state_battle)
-                    return
+                for button in _buttons.values():
+                    if button.check_select(point) == True:
+                        break
 
-                crnt_map_index = clamp(0, crnt_map_index, len(_image_maps) - 1)
 
 def get_mode():
     return _crnt_mode
 
+def get_difficulty():
+    return _crnt_difficulty
 
 def pause():
     pass
