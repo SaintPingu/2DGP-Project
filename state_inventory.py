@@ -82,7 +82,7 @@ class Inven_Item(Inventory):
         tank.set_item(self.table[index])
 
 _inventory_name : str
-_inventory : Inventory
+inventory : Inventory
 _table_inventory : dict[str, Inventory]= {
     "weapon" : Inven_Weapon,
     "item" : Inven_Item,
@@ -98,12 +98,12 @@ def get_window():
 def enter():
     assert(_inventory_name in _table_inventory.keys())
 
-    global _inventory
-    _inventory = _table_inventory[_inventory_name]()
+    global inventory
+    inventory = _table_inventory[_inventory_name]()
 
 def exit():
-    global _inventory
-    _inventory.exit()
+    global inventory
+    inventory.exit()
 
 def update():
     state_battle.update()
@@ -112,7 +112,7 @@ def draw():
     state_battle.draw()
 
 def handle_events():
-    global _inventory
+    global inventory
 
     events = get_events()
     event : Event
@@ -121,12 +121,12 @@ def handle_events():
         if event.type == SDL_MOUSEBUTTONDOWN:
             point = convert_pico2d(event.x, event.y)
             if event.button == SDL_BUTTON_LEFT:
-                if point_in_rect(point, _inventory.rect):
-                    for idx, rect in enumerate(_inventory.slots):
+                if point_in_rect(point, inventory.rect):
+                    for idx, rect in enumerate(inventory.slots):
                         if point_in_rect(point, rect):
                             from sound import play_sound
                             play_sound('click')
-                            _inventory.select(idx)
+                            inventory.select(idx)
                             framework.pop_state()
                     return
 

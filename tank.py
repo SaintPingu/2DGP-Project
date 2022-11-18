@@ -468,6 +468,13 @@ class Tank_AI(Tank):
 
         self.set_barrel_pos()
         gui_gauge.set_fill(1)
+        
+        item = random.randint(0, 1)
+        state_inventory.set_window("item")
+        framework.push_state(state_inventory)
+        state_inventory.inventory.select(item)
+        framework.pop_state()
+
         super().fire()
     
     def stop(self):
