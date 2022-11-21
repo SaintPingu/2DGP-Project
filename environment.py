@@ -20,7 +20,7 @@ def enter(cloud_count=10):
     map_index = state_lobby.crnt_map_index + 1
     for i in range(_CLOUD_IMAGE_COUNT):
         image = load_image_path('clouds/map_' + str(map_index) + '/cloud_' + str(i) + '.png')
-        image.opacify(0.7)
+        image.opacify(0.3)
         _images_cloud.append(image)
 
     global _clouds

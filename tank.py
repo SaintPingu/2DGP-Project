@@ -10,7 +10,6 @@ import gui
 import sound
 import framework
 import state_inventory
-import environment as env
 
 image_tank_green : Image
 image_barrel_green : Image
@@ -65,8 +64,11 @@ class Tank(object.GroundObject):
         gui.add_gui(self.gui_fuel, 1)
     
     def release(self):
-        if tank_list:
+        if tank_list: # death
             tank_list.remove(self)
+            gui.reset_degree()
+            self.hp = 0
+            self.gui_hp.invalidate()
         self.gui_hp.release()
 
     def invalidate(self):
@@ -115,7 +117,6 @@ class Tank(object.GroundObject):
     def get_damage(self, damage):
         self.hp -= damage
         if self.hp <= 0:
-            gui.reset_degree()
             object.delete_object(self)
             sprite.add_animation("Tank_Explosion", self.center + (0,self.height//2))
             sound.play_sound('tank_explosion')
@@ -151,7 +152,7 @@ class Tank(object.GroundObject):
         if super().move() == True:
             if self.is_sound_movement == False:
                 self.is_sound_movement = True
-                sound.play_sound('tank_movement', 48, channel=1)
+                sound.play_sound('tank_movement', 64, channel=1, is_repeat=True)
     
     def stop(self):
         super().stop()
@@ -325,18 +326,19 @@ class Tank_AI(Tank):
     MAX_RUN_AI_SECOND = 0.3
     degree_table = {
         0 : 5,
-        1 : 1.5,
-        2 : 1.2,
-        3 : 0.6,
+        1 : 1.25,
+        2 : 1.0,
+        3 : 0.45,
         4 : 0.3,
         5 : 0.2,
         6 : 0.1,
+        7 : 0.05,
     }
     error_table = {
         "easy" : 4,
         "normal" : 3,
         "hard" : 2,
-        "god" : 1
+        "god" : 0
     }
     error_range = 0
     def __init__(self, center=(0, 0)):
@@ -346,13 +348,12 @@ class Tank_AI(Tank):
         self.is_moving = False
         self.shell_is_close = False
         self.count_update = 0
-        self.min_distance = float('inf')
-        self.result_vector : Vector2 = None
 
         self.max_movement_fuel = 0
         
-        self.last_hit_vector : Vector2 = None
-        self.last_hit_distance = float('inf')
+        self.min_distance = float('inf')
+        self.last_hit_degree = None
+        self.result_degree = 0
 
         self.shell_selected = False
         self.power = 0
@@ -364,8 +365,30 @@ class Tank_AI(Tank):
         self.check_dir = None
         self.target_tank : Tank = None
         self.virtual_shell : shell.Shell = None
+        self.item = None
 
         self.init_values()
+    
+    def init_values(self):
+        self.is_checking = False
+
+        self.min_distance = float('inf')
+        self.last_hit_degree = None
+        self.result_degree = 0
+
+        self.shell_selected = False
+        self.power = 0
+        self.degree_level = 0
+        self.count_update = 0
+        self.start_degree = 0
+        self.crnt_degree = 0
+        self.max_degree = 0
+        self.update_delay = 0
+        self.check_dir = None
+        self.precise_dir = None
+        self.target_tank = None
+        self.virtual_shell = None
+        self.item = None
     
     def select(self):
         self.init_values()
@@ -408,27 +431,6 @@ class Tank_AI(Tank):
         self.shell_selected = True
         gui.gui_weapon.set_image(self.crnt_shell)
 
-    def init_values(self):
-        self.is_checking = False
-        self.min_distance = float('inf')
-        self.result_vector = None
-
-        self.last_hit_vector = None
-        self.last_hit_distance = float('inf')
-
-        self.shell_selected = False
-        self.power = 0
-        self.degree_level = 0
-        self.count_update = 0
-        self.start_degree = 0
-        self.crnt_degree = 0
-        self.max_degree = 0
-        self.update_delay = 0
-        self.check_dir = None
-        self.precise_dir = None
-        self.target_tank = None
-        self.virtual_shell = None
-
     def set_direction(self):
         self.check_dir = get_sign(self.get_dx())
 
@@ -467,9 +469,12 @@ class Tank_AI(Tank):
         del self.virtual_shell
         self.virtual_shell = None
 
-        self.crnt_degree = self.start_degree
-        error = (random.random() * 10) % Tank_AI.error_range - (Tank_AI.error_range/2)
-        self.crnt_degree += error
+        self.crnt_degree = self.result_degree
+
+        if Tank_AI.error_range != 0:
+            error = (random.random() * 10) % Tank_AI.error_range - (Tank_AI.error_range/2)
+            self.crnt_degree += error
+
         if self.check_dir == RIGHT:
             self.vec_dir_barrel = Vector2.right().get_rotated(math.radians(self.crnt_degree))
         else:
@@ -478,10 +483,11 @@ class Tank_AI(Tank):
         self.set_barrel_pos()
         gui_gauge.set_fill(1)
         
-        item = random.randint(0, 1)
+        if self.item == None:
+            self.item = random.randint(0, 1)
         state_inventory.set_window("item")
         framework.push_state(state_inventory)
-        state_inventory.inventory.select(item)
+        state_inventory.inventory.select(self.item)
         framework.pop_state()
 
         super().fire()
@@ -528,59 +534,51 @@ class Tank_AI(Tank):
 
             if result is not True:
                 self.set_barrel_pos()
-                distance = math.fabs(self.virtual_shell.center.x - self.target_tank.center.x)
-                distance_y = math.fabs(self.virtual_shell.center.y - self.target_tank.center.y)
+                vec_distance = self.virtual_shell.center - self.target_tank.center
+                vec_distance.x = math.fabs(vec_distance.x)
+                vec_distance.y = math.fabs(vec_distance.y)
+                distance = vec_distance.get_norm()
 
                 if type(result) == Tank: # tank on point
-                    if distance < self.last_hit_distance:
-                        self.last_hit_vector = Vector2(*self.vec_dir_barrel)
-                        self.last_hit_distance = distance
-                
-                if distance < self.min_distance:
-                    self.min_distance = distance
-                    self.result_vector = Vector2(*self.vec_dir_barrel)
-                
-                self.shell_is_close = False
-                if distance < 8:
-                    # Find nearby hit point from hiding position if under the ground
-                    if self.last_hit_vector is None:
-                        if math.fabs(self.virtual_shell.vector.y) > math.fabs(self.virtual_shell.vector.x):
-                            self.fire()
-                            return
-                        self.degree_level = 0
-                    else:
+                    if distance < (self.detect_radius - 5): # n(==5) is correction value
+                        self.result_degree = self.start_degree
                         self.fire()
                         return
-                elif distance_y > 150:
+
+                if distance < self.min_distance:
+                    if (self.virtual_shell.center.x > 0 and self.virtual_shell.center.x < SCREEN_WIDTH): # in of screen
+                        self.min_distance = distance
+                        self.last_hit_degree = self.start_degree
+                
+                if vec_distance.y > 50 and (self.virtual_shell.center.x < 0 or self.virtual_shell.center.x > SCREEN_WIDTH): # out of screen
                     self.degree_level = 2
-                elif distance < 20:
-                    if math.fabs(self.virtual_shell.vector.x) > math.fabs(self.virtual_shell.center.y):
-                        if self.last_hit_vector:
-                            self.fire()
-                            return
-                elif distance < 30:
+                elif vec_distance.x < 5:
+                    # Find nearby hit point from hiding position if under the ground
+                    if math.fabs(self.virtual_shell.vector.y) > math.fabs(self.virtual_shell.vector.x):
+                        self.result_degree = self.start_degree
+                        self.fire()
+                        return
+                elif vec_distance.x < 20:##
+                   self.degree_level = 7
+                elif vec_distance.x < 30:
                     self.degree_level = 6
-                elif distance < 60:
+                elif vec_distance.x < 60:
                     self.degree_level = 5
-                elif distance < 90:
+                elif vec_distance.x < 90:
                     self.degree_level = 4
-                elif distance < 120:
+                elif vec_distance.x < 120:
                     self.degree_level = 3
-                elif distance < 200:
+                elif vec_distance.x < 200:
                     self.degree_level = 2
-                elif distance < 300:
+                elif vec_distance.x < 300:
                     self.degree_level = 1
                 else:
                     self.degree_level = 0
                 
                 self.crnt_degree += Tank_AI.degree_table[self.degree_level]
 
-                if self.crnt_degree >= 90: # tank is hided under ground
-                    if self.last_hit_vector:
-                        self.vec_dir_barrel = self.last_hit_vector
-                    else:
-                        self.vec_dir_barrel = self.result_vector
-                    self.update_barrel()
+                if self.crnt_degree >= 90: # didn't find target tank
+                    self.result_degree = self.last_hit_degree
                     self.fire()
                     return
 
@@ -748,6 +746,12 @@ def handle_event(event):
             crnt_tank.fuel = Tank.MAX_FUEL
         elif event.key == SDLK_F10:
             gui.toggle_gui()
+        elif event.key == SDLK_F5:
+            tank_list[0].get_damage(100)
+            select_tank(None)
+        elif event.key == SDLK_F6:
+            tank_list[1].get_damage(100)
+            select_tank(None)
         elif event.key == SDLK_SPACE:
             gui_gauge.fill(True)
     

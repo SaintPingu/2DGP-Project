@@ -11,7 +11,6 @@ class GUI:
         self.position = position
         self.theta = theta
         self.is_draw = is_draw
-        self.is_composite = is_draw
         self.flip = flip
         self.is_fixed = is_fixed
         self.scale = scale
@@ -50,7 +49,7 @@ class GUI_HP(GUI):
         self.position = self.owner.center[0], self.owner.center[1]
 
     def release(self):
-        pass
+        self.invalidate()
 
     def draw(self):
         if self.is_draw:
@@ -65,18 +64,12 @@ class GUI_HP(GUI):
     def update_gauge(self):
         self.width = self.max_width * (self.owner.hp / self.max_hp)
 
-    def resize(self, hp):
-        pass
-
 class GUI_Select_Tank(GUI):
     def __init__(self, image: Image):
         super().__init__(image)
         self.owner = None
         self.is_positive_y = True
         self.y_floating = 0
-    
-    def release(self):
-        pass
 
     def draw(self):
         if self.owner:
@@ -121,7 +114,6 @@ class GUI_Fuel(GUI):
         self.vector : Vector2 = None
     
     def update(self):
-        super().update()
         t = self.owner.fuel / self.max_fuel
         degree = -100 + (t * 105)
         self.theta = math.radians(degree)
@@ -319,19 +311,6 @@ def draw():
 
     draw_degree()
 
-def draw_degree():
-    global deg_pos, deg
-    
-    degree = int(deg)
-    degree_fabs = int(math.fabs(degree))
-    font_color = (0, 204, 204)
-    if degree_fabs == 90:
-        font_color = (255, 0, 0)
-    elif degree_fabs > 90:
-        degree = int((180 - degree_fabs) * get_sign(degree))
-        font_color = (204, 204, 0)
-    degree_font.draw(deg_pos[0] - 20, deg_pos[1] -30, str(degree), font_color)
-
 def add_gui(gui : GUI, depth):
     _list_gui[depth].append(gui)
 
@@ -354,7 +333,10 @@ def all_gui():
         for gui in layer:
             yield gui
 
+
+# degree display
 def reset_degree():
+    invalidate_degree()
     global deg_pos
     deg_pos = (0,0)
 
@@ -362,6 +344,19 @@ def set_degree(pos : tuple, degree : float):
     global deg_pos, deg
     deg_pos = pos
     deg = degree
+
+def draw_degree():
+    global deg_pos, deg
+    
+    degree = int(deg)
+    degree_fabs = int(math.fabs(degree))
+    font_color = (0, 204, 204)
+    if degree_fabs == 90:
+        font_color = (255, 0, 0)
+    elif degree_fabs > 90:
+        degree = int((180 - degree_fabs) * get_sign(degree))
+        font_color = (204, 204, 0)
+    degree_font.draw(deg_pos[0] - 20, deg_pos[1] -30, str(degree), font_color)
 
 def invalidate_degree():
     rect_font.set_pos((deg_pos[0] + 5, deg_pos[1] - 30))

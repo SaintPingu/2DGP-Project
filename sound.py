@@ -44,12 +44,16 @@ def del_sounds():
         del sound
     _sounds.clear()
 
-def play_sound(name, volume=128, channel=-1):
+def play_sound(name, volume=128, channel=-1, is_repeat=False):
     assert(name in _sounds)
 
     wav = _sounds[name]
     wav.set_volume(volume)
-    Mix_PlayChannel(channel, wav.wav, 0)
+
+    if is_repeat == False:
+        Mix_PlayChannel(channel, wav.wav, 0)
+    else:
+        Mix_PlayChannel(channel, wav.wav, -1)
 
 def stop_sound(name):
     assert(name in _sounds)

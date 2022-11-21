@@ -243,7 +243,7 @@ def add_shell(shell_name, head_position, theta, power = 1, item = None):
         shell.is_teleport = True
         shell.shell_damage = 0
         shell.img_shell = get_shell_image("TP")
-        shell.speed = get_attributes("TP")[0]
+        shell.speed = get_attributes("TP")[0] * power
             
 
 
@@ -284,7 +284,7 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
     elif shell_name == "TP":
         speed = 80
     else:
-        raise Exception
+        assert(0)
 
     return speed, shell_damage, explosion_damage, explosion_radius
 
