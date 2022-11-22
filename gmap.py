@@ -458,9 +458,11 @@ def get_start_end_cells(rect : Rect):
     return cell_start_x, cell_start_y, cell_end_x, cell_end_y
 
 def get_block(col : int, row : int):
+    if out_of_range_cell(col, row):
+        return False
     return _crnt_map[row][col]
 def get_block_cell(cell : tuple):
-    return _crnt_map[cell[1]][cell[0]]
+    return get_block(cell[0], cell[1])
 def set_block(col : int, row : int, is_block : bool):
     if type(is_block) is not bool:
         pass

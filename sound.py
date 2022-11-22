@@ -56,10 +56,14 @@ def play_sound(name, volume=128, channel=-1, is_repeat=False):
         Mix_PlayChannel(channel, wav.wav, -1)
 
 def stop_sound(name):
-    assert(name in _sounds)
+    if name not in _sounds:
+        return
 
-    _sounds[name].set_volume(0)
+    sound = _sounds.pop(name)
+    sound.set_volume(0)
 
+def stop_channel(channel):
+    Mix_HaltChannel(channel)
 
 def enter(state : str):
     if state == 'battle':
@@ -67,5 +71,6 @@ def enter(state : str):
         add_sound('explosion')
         add_sound('tank_explosion')
         add_sound('tank_movement')
+        add_sound('lock_on')
     else:
         assert(0)

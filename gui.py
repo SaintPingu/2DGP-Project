@@ -195,13 +195,6 @@ class GUI_GUAGE(GUI):
 
 
 class GUI_Weapon(GUI):
-    name_table = {
-        "AP" : "Armour-Piercing",
-        "HP" : "High-Explosive",
-        "MUL" : "Multiple",
-        "NUCLEAR" : "Nuclear",
-        "TP" : "Teleport"
-    }
     def __init__(self):
         import shell
         super().__init__(shell.get_shell_image(shell.DEFAULT_SHELL), (444, 30), math.radians(90), is_fixed=True, scale=1.4)
@@ -220,7 +213,7 @@ class GUI_Weapon(GUI):
         import shell
         self.is_draw = True
         self.image = shell.get_shell_image(shell_name)
-        self.str = GUI_Weapon.name_table[shell_name]
+        self.str = shell.Shell.name_table[shell_name]
 
     def set_item(self, image):
         self.image_item = image

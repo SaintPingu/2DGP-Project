@@ -83,8 +83,8 @@ class Vector2:
     def dot(self, other):
         return (self.x * other.x) + (self.y * other.y)
     
-    def cross(self):
-        return Vector2(-self.y, self.x)
+    def cross(self, other):
+        return self.x * other.y - self.y * other.x
     
     def get_theta(self, other):
         dot = self.dot(other)
@@ -103,7 +103,7 @@ class Vector2:
         vec_to_target = (vec_dest - vec_src).normalized()
         a = math.atan2(self.x, self.y)
         b = math.atan2(vec_to_target.x, vec_to_target.y)
-        theta = a - b
+        theta = (a - b) * t
 
         return self.get_rotated(theta * t)
     def get_rotated(self, theta):

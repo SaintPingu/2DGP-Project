@@ -44,6 +44,7 @@ class Inven_Weapon(Inventory):
             1 : "HP",
             2 : "MUL",
             3 : "NUCLEAR",
+            4 : "HOMING"
         }
         super().__init__(image, position, table, (555 - 145, 140))
 

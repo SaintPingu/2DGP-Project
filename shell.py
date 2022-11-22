@@ -14,6 +14,8 @@ DEFAULT_SHELL = "AP"
 SHELLS : dict
 EXPLOSIONS : dict
 
+SOUND_CHANNEL_HOMING = 2
+
 def enter():
     global SHELLS, EXPLOSIONS, fired_shells
     img_shell_ap = load_image_path('shell_ap.png')
@@ -21,12 +23,14 @@ def enter():
     img_shell_mul = load_image_path('shell_multiple.png')
     img_shell_nuclear = load_image_path('shell_nuclear.png')
     img_shell_teleport = load_image_path('shell_teleport.png')
-    SHELLS = { "AP" : img_shell_ap, "HP" : img_shell_hp, "MUL" : img_shell_mul, "NUCLEAR" : img_shell_nuclear, "TP" : img_shell_teleport}
+    img_shell_homing = load_image_path('shell_homing.png')
+    SHELLS = { "AP" : img_shell_ap, "HP" : img_shell_hp, "MUL" : img_shell_mul, "NUCLEAR" : img_shell_nuclear, "TP" : img_shell_teleport, "HOMING" : img_shell_homing}
     EXPLOSIONS = {
         "AP" : "Explosion",
         "HP" : "Explosion",
         "MUL" : "Explosion",
         "NUCLEAR" : "Explosion_Nuclear",
+        "HOMING" : "Explosion",
     }
 
     fired_shells = []
@@ -48,7 +52,16 @@ def exit():
 
 
 class Shell(object.GameObject):
+    name_table = {
+        "AP" : "Armour-Piercing",
+        "HP" : "High-Explosive",
+        "MUL" : "Multiple",
+        "NUCLEAR" : "Nuclear",
+        "TP" : "Teleport",
+        "HOMING" : "Homing",
+    }
     MIN_POWER = 0.1
+    SIMULATION_t = 0.15
     def __init__(self, shell_name : str, position, theta, power = 1, is_simulation=False, delay = 0):
         self.img_shell : Image = get_shell_image(shell_name)
 
@@ -88,20 +101,20 @@ class Shell(object.GameObject):
         self.is_rect_invalid = True
         self.draw_image(self.img_shell)
     
-    def move(self):
+    def move(self, is_affected_wind=True):
         dest = Vector2()
         
         # Use projectile moition formula
         if not self.is_simulation:
             self.t += (self.speed/20 * framework.frame_time)
-            dest.x = self.origin[0] + (self.speed * self.t * math.cos(self.start_theta))
-            dest.y = self.origin[1] + (self.speed * self.t * math.sin(self.start_theta) - (0.5 * GRAVITY * self.t**2))
         else:
-            self.t += 0.15 # faster search
-            dest.x = self.origin[0] + (self.speed * self.t * math.cos(self.start_theta))
-            dest.y = self.origin[1] + (self.speed * self.t * math.sin(self.start_theta) - (0.5 * GRAVITY * self.t**2))
+            self.t += Shell.SIMULATION_t # faster search
+            
+        dest.x = self.origin[0] + (self.speed * self.t * math.cos(self.start_theta))
+        dest.y = self.origin[1] + (self.speed * self.t * math.sin(self.start_theta) - (0.5 * GRAVITY * self.t**2))
 
-        dest += gmap.env.wind.get_wind_vector() * self.t
+        if is_affected_wind:
+            dest += gmap.env.wind.get_wind_vector() * self.t
         self.vector = self.vector.get_rotated_dest(self.center, dest)
         self.set_center(dest)
         
@@ -200,21 +213,65 @@ class Shell(object.GameObject):
     def set_sub(self):
         self.sub = True
 
+class Shell_Homing(Shell):
+    SPEED_LOCK_ON = 1.3
+    def __init__(self, shell_name: str, position, theta, target_pos : Vector2, power=1, is_simulation=False, delay=0):
+        assert(target_pos is not None)
 
+        super().__init__(shell_name, position, theta, power, is_simulation, delay)
+        self.target_pos = target_pos
+        self.guide_t = 0
+        self.is_locked = False
+    
+    def release(self):
+        super().release()
+        sound.stop_channel(SOUND_CHANNEL_HOMING)
+    
+    def move(self):
+        if not self.is_locked:
+            if self.is_blocked():   # blocked by block
+                super().move()
+                return
+            sound.play_sound('lock_on', channel=SOUND_CHANNEL_HOMING)
+            self.is_locked = True   # can hit
+            self.speed = get_attributes("HOMING")[0] * 3
+        
+        self.vec_dest = self.vector.get_rotated_dest(self.center, self.target_pos)
+        dir = get_sign(Vector2.cross(self.vector, self.vec_dest))
 
+        self.vector = self.vector.get_rotated(framework.frame_time * dir * Shell_Homing.SPEED_LOCK_ON)
+        dest = self.center + (self.vector * self.speed * framework.frame_time)
+        self.set_center(dest)
+    
+    # search blocks between self.center and target_pos
+    def is_blocked(self):
+        toTargetVectors = gmap.get_vectors(self.center, self.target_pos)
 
+        for vector in toTargetVectors:
+            cell = gmap.get_cell(vector)
+            #gmap.draw_debug_cell(cell)
+
+            if gmap.get_block(*cell) == True:   
+                return True
+
+        return False
+    
 
 fired_shells : list[Shell]
 
-def add_shell(shell_name, head_position, theta, power = 1, item = None):
+def add_shell(shell_name, head_position, theta, power = 1, item = None, target_pos=None):
     delay = 0
     count_shot = 1
     if item == "double":
         count_shot = 2
 
     for i in range(count_shot):
-            
-        shell = Shell(shell_name, head_position, theta, power, delay=delay)
+
+        if shell_name == "HOMING":
+            shell = Shell_Homing(shell_name, head_position, theta, target_pos, power, delay=delay)
+        else:
+            shell = Shell(shell_name, head_position, theta, power, delay=delay)
+
         shell_head = shell.get_head()
         position = head_position + (head_position - shell_head)
         shell.set_pos(position)
@@ -283,6 +340,11 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
         explosion_radius = 22
     elif shell_name == "TP":
         speed = 80
+    elif shell_name == "HOMING":
+        speed = 120
+        shell_damage = 15
+        explosion_damage = 2
+        explosion_radius = 5
     else:
         assert(0)
 

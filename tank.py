@@ -28,6 +28,7 @@ TANK_SPEED_MPM = (TANK_SPEED_KMPH * 1000.0 / 60.0)
 TANK_SPEED_MPS = (TANK_SPEED_MPM / 60.0)
 TANK_SPEED_PPS = (TANK_SPEED_MPS * PIXEL_PER_METER)
         
+SOUND_CHANNEL_MOVEMENT = 1
 
 class Tank(object.GroundObject):
     MAX_DEGREE = 10
@@ -152,11 +153,11 @@ class Tank(object.GroundObject):
         if super().move() == True:
             if self.is_sound_movement == False:
                 self.is_sound_movement = True
-                sound.play_sound('tank_movement', 64, channel=1, is_repeat=True)
+                sound.play_sound('tank_movement', 64, channel=SOUND_CHANNEL_MOVEMENT, is_repeat=True)
     
     def stop(self):
         super().stop()
-        sound.stop_sound('tank_movement')
+        sound.stop_channel(SOUND_CHANNEL_MOVEMENT)
         self.is_sound_movement = False
 
     def set_pos(self, center):
@@ -311,7 +312,14 @@ class Tank(object.GroundObject):
     def fire(self):
         head = self.get_barrel_head()
         theta = self.get_barrel_theta()
-        shell.add_shell(self.crnt_shell, head, theta, gui_gauge.get_filled(), self.item)
+
+        target_pos = None
+        if self.crnt_shell == "HOMING":
+            for tank in tank_list:
+                if tank.team != self.team:
+                    target_pos = tank.center
+
+        shell.add_shell(self.crnt_shell, head, theta, gui_gauge.get_filled(), self.item, target_pos)
         self.dir = 0
         select_tank(None)
         sound.play_sound('tank_fire', 64)
@@ -714,7 +722,11 @@ def check_invalidate(position, radius):
             tank.is_rect_invalid = True
 
 def check_hit(position : Vector2, collision_vectors, radius, damage):
+    MIN_DISTANCE = 5
     for tank in tank_list:
+        if (position - tank.center).get_norm() < MIN_DISTANCE:
+            return tank
+
         if tank.is_in_radius(position, radius):
             if tank.check_collision(collision_vectors):
                 tank.get_damage(damage)
@@ -753,16 +765,18 @@ def handle_event(event):
             tank_list[1].get_damage(100)
             select_tank(None)
         elif event.key == SDLK_SPACE:
-            gui_gauge.fill(True)
+            if crnt_tank.is_locked:
+                gui_gauge.fill(True)
     
     elif event.type == SDL_KEYUP:
         if event.key == SDLK_RIGHT or event.key == SDLK_LEFT:
             crnt_tank.stop()
         elif event.key == SDLK_SPACE:
-            gui_gauge.fill(False)
-            crnt_tank.fire()
-            if framework.state_in_stack(state_inventory):
-                framework.pop_state()
+            if crnt_tank.is_locked:
+                gui_gauge.fill(False)
+                crnt_tank.fire()
+                if framework.state_in_stack(state_inventory):
+                    framework.pop_state()
             
     elif event.type == SDL_MOUSEMOTION:
         mouse_pos = convert_pico2d(event.x, event.y)
@@ -804,6 +818,8 @@ def handle_event(event):
 def set_shell(shell_name):
     if crnt_tank:
         crnt_tank.crnt_shell = shell_name
+        if crnt_tank.item == "TP":
+            crnt_tank.item = None
     
 def set_item(item):
     if crnt_tank:
