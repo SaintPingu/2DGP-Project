@@ -214,7 +214,8 @@ class Shell(object.GameObject):
         self.sub = True
 
 class Shell_Homing(Shell):
-    SPEED_LOCK_ON = 1.3
+    SPEED_LOCK_ON = 1.5
+    MAX_DISTANCE = 500
     def __init__(self, shell_name: str, position, theta, target_pos : Vector2, power=1, is_simulation=False, delay=0):
         assert(target_pos is not None)
 
@@ -222,19 +223,22 @@ class Shell_Homing(Shell):
         self.target_pos = target_pos
         self.guide_t = 0
         self.is_locked = False
+        self.gui_lock = None
     
     def release(self):
         super().release()
         sound.stop_channel(SOUND_CHANNEL_HOMING)
+        if self.gui_lock != None:
+            import gui
+            gui.del_gui(self.gui_lock)
+            self.gui_lock = None
     
     def move(self):
         if not self.is_locked:
             if self.is_blocked():   # blocked by block
                 super().move()
                 return
-            sound.play_sound('lock_on', channel=SOUND_CHANNEL_HOMING)
-            self.is_locked = True   # can hit
-            self.speed = get_attributes("HOMING")[0] * 3
+            self.target_lock()
         
         self.vec_dest = self.vector.get_rotated_dest(self.center, self.target_pos)
         dir = get_sign(Vector2.cross(self.vector, self.vec_dest))
@@ -245,16 +249,28 @@ class Shell_Homing(Shell):
     
     # search blocks between self.center and target_pos
     def is_blocked(self):
+        if (self.center - self.target_pos).get_norm() >= Shell_Homing.MAX_DISTANCE:
+            return True
+
         toTargetVectors = gmap.get_vectors(self.center, self.target_pos)
 
         for vector in toTargetVectors:
             cell = gmap.get_cell(vector)
-            #gmap.draw_debug_cell(cell)
+            gmap.draw_debug_cell(cell)
 
             if gmap.get_block(*cell) == True:   
                 return True
 
         return False
+
+    def target_lock(self):
+        import gui
+        sound.play_sound('lock_on', channel=SOUND_CHANNEL_HOMING)
+        self.is_locked = True   # can hit
+        self.speed = get_attributes("HOMING")[0] * 4
+        lock_image = load_image_path('target_lock.png')
+        self.gui_lock = gui.GUI(lock_image, self.target_pos, is_fixed=True)
+        gui.add_gui(self.gui_lock, 0)
     
 
 fired_shells : list[Shell]
