@@ -235,7 +235,8 @@ rect_font : Rect
 
 _is_hide_gui : bool
 
-deg_pos : list = (0, 0)
+deg_pos : Vector2
+deg_prev_pos : tuple
 deg : float = 0
 
 def enter():
@@ -261,7 +262,11 @@ def enter():
 
     global degree_font, rect_font
     degree_font = load_font_path("DS-DIGIB", 38)
-    rect_font = Rect((0,0), 60, 35)
+    rect_font = Rect((0,0), 52, 28)
+
+    global deg_pos, deg_prev_pos
+    deg_pos = Vector2()
+    deg_prev_pos = (0, 0)
     
 def exit():
     global _list_gui
@@ -287,7 +292,7 @@ def exit():
     del rect_font
 
     global deg_pos
-    deg_pos = (0,0)
+    del deg_pos
 
 def update():
     for gui in all_gui():
@@ -331,9 +336,10 @@ def all_gui():
 def reset_degree():
     invalidate_degree()
     global deg_pos
-    deg_pos = (0,0)
+    del deg_pos
+    deg_pos = Vector2(0, 0)
 
-def set_degree(pos : tuple, degree : float):
+def set_degree(pos : Vector2, degree : float):
     global deg_pos, deg
     deg_pos = pos
     deg = degree
@@ -349,11 +355,14 @@ def draw_degree():
     elif degree_fabs > 90:
         degree = int((180 - degree_fabs) * get_sign(degree))
         font_color = (204, 204, 0)
-    degree_font.draw(deg_pos[0] - 20, deg_pos[1] -30, str(degree), font_color)
+    degree_font.draw(deg_pos[0] - 20, deg_pos[1] - 30, str(degree), font_color)
 
 def invalidate_degree():
-    rect_font.set_pos((deg_pos[0] + 5, deg_pos[1] - 30))
+    global deg_prev_pos
+
+    rect_font.set_pos((deg_prev_pos[0] + 8, deg_prev_pos[1] - 30))
     rect_inv = Rect(rect_font.center, rect_font.width, rect_font.height)
     gmap.resize_rect_inv(rect_inv)
-    gmap.set_invalidate_rect(*rect_inv.__getitem__(), grid_size=60)
+    gmap.set_invalidate_rect(*rect_inv.__getitem__())
     del rect_inv
+    deg_prev_pos = tuple((deg_pos.x, deg_pos.y))

@@ -346,17 +346,18 @@ def add_invalidate(center, width, height, grid_size=_DEFAULT_DIVIDE_GRID_SIZE):
             elif True not in block_set:
                 if filled_count > 0:
                     _rect_inv_list.append(rect_before)
-
                 filled_count = 0
+                
                 if empty_count > 0:
                     rect = merge_rects(rect_before, rect)
                 empty_count += 1
                 rect.is_empty = True
             else:
-                if grid_size > _MIN_DIVIDE_GRID_SIZE:
+                if grid_size > _MIN_DIVIDE_GRID_SIZE:   # partition
                     add_invalidate(*rect.__getitem__(), _MIN_DIVIDE_GRID_SIZE)
                 else:
                     _rect_inv_list.append(rect)
+                    
                 if filled_count > 0 or empty_count > 0:
                     _rect_inv_list.append(rect_before)
                 empty_count = 0
@@ -367,7 +368,7 @@ def add_invalidate(center, width, height, grid_size=_DEFAULT_DIVIDE_GRID_SIZE):
         # merge rect by row #
         if filled_count > 0 or empty_count > 0:
             # row is filled
-            if filled_count >= max_col:
+            if filled_count > max_col:
                 if is_before_line_empty:
                     _rect_inv_list.append(line_before)
                     line_before = None
@@ -403,6 +404,7 @@ def add_invalidate(center, width, height, grid_size=_DEFAULT_DIVIDE_GRID_SIZE):
                 line_before = None
             is_before_line_empty = False
             is_before_line_filled = False
+            
     if line_before is not None:
         _rect_inv_list.append(line_before)
 
