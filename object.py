@@ -112,10 +112,10 @@ class GameObject:
     def update(self):
         pass
     
-    def invalidate(self, is_invalidate_square=False):
-        if self.is_rect_invalid == False:
+    def invalidate(self, is_invalidate_square=False, is_force=False):
+        if is_force or self.is_rect_invalid == False:
             import gmap
-            
+
             if is_invalidate_square:
                 inv_rect = self.get_squre()
             else:
@@ -128,7 +128,7 @@ class GameObject:
 
 import gmap
 class GroundObject(GameObject):
-    def __init__(self, image : Image, center=(0, 0), width=0, height=0, theta=0):
+    def __init__(self, image : Image, center=(0, 0), width=0, height=0, theta=0, image_flip=''):
         self.image = image
 
         super().__init__(center, width, height, theta)
@@ -138,8 +138,12 @@ class GroundObject(GameObject):
         self.top_right = Vector2()
         self.bot_center = Vector2()
         self.speed = 1
+        self.image_flip = image_flip
 
         self.update_object()
+    
+    def draw(self):
+        self.draw_image(self.image, flip=self.image_flip)
 
     def update_object(self):
         self.bot_left.x = self.top_left.x = self.center.x - self.width//2
@@ -246,7 +250,7 @@ class GroundObject(GameObject):
 
         return vec_pivot, idx_pivot
 
-    def rotate_ground(self, ignore_height=False):
+    def rotate_ground(self, ignore_height=False, ignore_size=False):
         vec_pivot, idx_pivot = self.attach_ground(ignore_height)
         if vec_pivot is False:
             if self.is_created: # delete : fall
@@ -287,7 +291,7 @@ class GroundObject(GameObject):
                 continue
                 
             vec_ground = Vector2(*gmap.get_pos_from_cell(*ground_cell))
-            if vec_ground.y > max_y or vec_ground.y < min_y:
+            if ignore_size == False and (vec_ground.y > max_y or vec_ground.y < min_y):
                 continue
             
             theta = vec_ground.get_theta_axis(axis, vec_pivot)
@@ -311,11 +315,10 @@ class GroundObject(GameObject):
             idx_pivot = len(vectors_bot) - 1
 
         vector_correction = (vec_pivot - vectors_bot[idx_pivot])
-        if vector_correction.x != 0 and vector_correction.y != 0:
-            pass
+
         prev_center = self.center
         self.set_center((self.center[0] + vector_correction[0], self.center[1] + vector_correction[1]))
-        if self.is_on_edge():
+        if ignore_height == False and self.is_on_edge():
             self.set_center(prev_center)
 
         if self.is_floating():

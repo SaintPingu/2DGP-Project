@@ -253,8 +253,8 @@ def draw_block(radius, position, is_block):
 ##### Invalidate #####
 def resize_rect_inv(rect : Rect):
     # for invalidate correction
-    rect.width += 2
-    rect.height += 2
+    rect.width += 4
+    rect.height += 4
     rect.update()
 
     if rect.left < 0:
