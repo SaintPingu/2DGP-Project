@@ -4,31 +4,8 @@ if __name__ == "__main__":
 from tools import *
 import framework
 
-def enter():
-    global _gameObjects, _groundObjects
-    _gameObjects = []
-    _groundObjects = []
-    
-def exit():
-    global _gameObjects, _groundObjects
-    for object in _gameObjects:
-        delete_object(object)
-    _gameObjects.clear()
-    _groundObjects.clear()
-    del _gameObjects
-    del _groundObjects
-    
-def update():
-    for object in _gameObjects:
-        object.update()
-
-def draw():
-    for object in reversed(_gameObjects):
-        if object.is_draw:
-            object.draw()
-
 class GameObject:
-    def __init__(self, center=(0,0), width=0, height=0, theta=0):
+    def __init__(self, center=(0,0), width=0, height=0, theta=0, dir=0):
         self.center : Vector2 = Vector2(*center)
         self.width : float = width
         self.height : float = height
@@ -37,7 +14,7 @@ class GameObject:
         self.is_rect_invalid : bool = True
         self.is_created : bool = False
 
-        self.dir : int = 0
+        self.dir : int = dir
         self.speed : float = 1
 
         self.is_draw = True
@@ -50,7 +27,7 @@ class GameObject:
 
     # update based on center, width, height, theta
     def update_object(self):
-        self.is_rect_invalid = True
+        self.is_rect_invalid = False
 
     def rotate(self, theta):
         self.theta += theta
@@ -78,11 +55,11 @@ class GameObject:
         self.center.y = center[1]
         self.update_object()
 
-    def draw_image(self, image : Image, scale = 1):
+    def draw_image(self, image : Image, scale = 1, flip=''):
         if self.is_rect_invalid == False:
             return
         self.is_rect_invalid = False
-        image.rotate_draw(self.theta, *self.center, image.w*scale, image.h*scale)
+        image.composite_draw(self.theta, flip, *self.center, image.w*scale, image.h*scale)
 
     def get_rect(self):
         return Rect(tuple(self.center), self.width, self.height)
@@ -135,14 +112,25 @@ class GameObject:
     def update(self):
         pass
     
-    def invalidate(self):
-        pass
+    def invalidate(self, is_invalidate_square=False):
+        if self.is_rect_invalid == False:
+            import gmap
+            
+            if is_invalidate_square:
+                inv_rect = self.get_squre()
+            else:
+                inv_rect = self.get_rect()
+            gmap.resize_rect_inv(inv_rect)
+            gmap.set_invalidate_rect(*inv_rect.__getitem__())
+            self.is_rect_invalid = True
 
 
 
 import gmap
 class GroundObject(GameObject):
-    def __init__(self, center=(0, 0), width=0, height=0, theta=0):
+    def __init__(self, image : Image, center=(0, 0), width=0, height=0, theta=0):
+        self.image = image
+
         super().__init__(center, width, height, theta)
         self.bot_left = Vector2()
         self.bot_right = Vector2()
@@ -191,14 +179,16 @@ class GroundObject(GameObject):
     def move(self):
         if self.dir == 0:
             return False
-        elif self.dir == LEFT:
-            self.vDir = self.get_vec_left()
+        
+        vec_dir = None
+        if self.dir == LEFT:
+            vec_dir = self.get_vec_left()
         else:
-            self.vDir = self.get_vec_right()
+            vec_dir = self.get_vec_right()
 
-        vDest = self.center + (self.vDir * self.speed * framework.frame_time)
+        dest = self.center + (vec_dir * self.speed * framework.frame_time)
 
-        if self.set_pos(vDest) == False:
+        if self.set_pos(dest) == False:
             self.stop()
             return False
         
@@ -368,27 +358,80 @@ class GroundObject(GameObject):
             
         return True
 
-_gameObjects : list[GameObject]
-_groundObjects : list[GroundObject]
+
+
+class FlyObject(GameObject):
+    def __init__(self, image : Image, center=(0, 0), width=0, height=0, theta=0, dir=0, image_flip=''):
+        self.image = image
+        self.image_flip = image_flip
+        super().__init__(center, width, height, theta, dir)
+
+    def move(self):
+        self.center.x += (self.dir * self.speed * framework.frame_time)
+        self.update_object()
+        
+        return True
+
+    def draw(self):
+        self.draw_image(self.image, flip=self.image_flip)
+
+
+
+_gameObjects : list[GameObject] = []
+_groundObjects : list[GroundObject] = []
+_flyObjects : list[FlyObject] = []
+
+_list_map : dict = {
+    GroundObject : _groundObjects,
+    FlyObject : _flyObjects,
+}
+
+
+def enter():
+    pass
+    
+def exit():
+    global _gameObjects, _groundObjects, _flyObjects
+    for object in _gameObjects:
+        delete_object(object)
+    _gameObjects.clear()
+    _groundObjects.clear()
+    _flyObjects.clear()
+    
+def update():
+    for object in _gameObjects:
+        object.update()
+
+def draw():
+    for object in reversed(_gameObjects):
+        if object.is_draw:
+            object.draw()
 
 def add_object(object : GameObject):
     _gameObjects.append(object)
 
-    parent = object.__class__
+    parent = object.__class__.__base__
     while parent != GameObject:
+        if parent in _list_map:
+            object_list = _list_map[parent]
+            object_list.append(object)
         parent = parent.__base__
-        if parent == GroundObject:
-            _groundObjects.append(object)
 
 def delete_object(object : GameObject):
     if object not in _gameObjects:
         assert(0)
         
     _gameObjects.remove(object)
-    if object.__class__.__base__ == GroundObject:
-        _groundObjects.remove(object)
+
+    parent = object.__class__.__base__
+    while parent != GameObject:
+        if parent in _list_map:
+            object_list = _list_map[parent]
+            object_list.remove(object)
+        parent = parent.__base__
+
     object.release()
-    del object
+    #del object
 
 def get_gameObjects():
     return _gameObjects

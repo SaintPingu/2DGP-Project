@@ -10,6 +10,7 @@ import gui
 import sound
 import framework
 import state_inventory
+import supply
 
 image_tank_green : Image
 image_barrel_green : Image
@@ -35,9 +36,8 @@ class Tank(object.GroundObject):
     MAX_FUEL = TANK_SPEED_KMPH * 5
     MAX_HP = 100
     def __init__(self, center=(0,0)):
-        self.image = image_tank_green
-        self.image_barrel = image_barrel_green
-        super().__init__(center, self.image.w, self.image.h)
+        self.image_barrel = None
+        super().__init__(None, center, image_tank_green.w, image_tank_green.h)
 
         self.barrel_position = Vector2()
         self.barrel_pivot = Vector2()
@@ -73,10 +73,9 @@ class Tank(object.GroundObject):
         self.gui_hp.release()
 
     def invalidate(self):
+        super().invalidate()
         gmap.set_invalidate_rect(self.barrel_position, self.image_barrel.w, self.image_barrel.h, square=True, grid_size=0)
-        gmap.set_invalidate_rect(*self.get_rect().__getitem__(), square=True)
         self.gui_hp.invalidate()
-        self.is_rect_invalid = True
 
     def draw(self):
         if self.is_rect_invalid == False:
@@ -125,6 +124,7 @@ class Tank(object.GroundObject):
     def use_item(self, item_name):
         if self.item_used == True:
             return
+            
         if item_name == "heal":
             self.item_used = True
             self.hp += 15
@@ -322,7 +322,7 @@ class Tank(object.GroundObject):
         shell.add_shell(self.crnt_shell, head, theta, gui_gauge.get_filled(), self.item, target_pos)
         self.dir = 0
         select_tank(None)
-        sound.play_sound('tank_fire', 64)
+        shell.play_fire_sound(self.crnt_shell)
     ##########
 
 
@@ -361,7 +361,6 @@ class Tank_AI(Tank):
         
         self.min_distance = float('inf')
         self.last_hit_degree = None
-        self.result_degree = 0
 
         self.shell_selected = False
         self.power = 0
@@ -382,7 +381,6 @@ class Tank_AI(Tank):
 
         self.min_distance = float('inf')
         self.last_hit_degree = None
-        self.result_degree = 0
 
         self.shell_selected = False
         self.power = 0
@@ -432,7 +430,9 @@ class Tank_AI(Tank):
         
         if (distance / shell.get_attributes("MUL")[0]) < REACHABLE_EVALUATION / 3:
             avaliable_shells.append("MUL")
-
+        
+        if random.randint(0, 1) == 0: # 50% chance to get homing
+            avaliable_shells.append("HOMING")
         
         shell_index = random.randint(0, len(avaliable_shells) - 1)
         self.crnt_shell = avaliable_shells[shell_index]
@@ -473,11 +473,11 @@ class Tank_AI(Tank):
 
             self.run_ai()
 
-    def fire(self):
+    def fire(self, result_degree):
         del self.virtual_shell
         self.virtual_shell = None
 
-        self.crnt_degree = self.result_degree
+        self.crnt_degree = result_degree
 
         if Tank_AI.error_range != 0:
             error = (random.random() * 10) % Tank_AI.error_range - (Tank_AI.error_range/2)
@@ -549,8 +549,7 @@ class Tank_AI(Tank):
 
                 if type(result) == Tank: # tank on point
                     if distance < (self.detect_radius - 5): # n(==5) is correction value
-                        self.result_degree = self.start_degree
-                        self.fire()
+                        self.fire(self.start_degree)
                         return
 
                 if distance < self.min_distance:
@@ -563,8 +562,7 @@ class Tank_AI(Tank):
                 elif vec_distance.x < 5:
                     # Find nearby hit point from hiding position if under the ground
                     if math.fabs(self.virtual_shell.vector.y) > math.fabs(self.virtual_shell.vector.x):
-                        self.result_degree = self.start_degree
-                        self.fire()
+                        self.fire(self.start_degree)
                         return
                 elif vec_distance.x < 20:##
                    self.degree_level = 7
@@ -586,8 +584,7 @@ class Tank_AI(Tank):
                 self.crnt_degree += Tank_AI.degree_table[self.degree_level]
 
                 if self.crnt_degree >= 90: # didn't find target tank
-                    self.result_degree = self.last_hit_degree
-                    self.fire()
+                    self.fire(self.last_hit_degree)
                     return
 
                 del self.virtual_shell
@@ -653,18 +650,94 @@ def update():
     if crnt_tank is None and len(shell.fired_shells) <= 0:
         _wait_count += framework.frame_time
         if _wait_count > 2:
-            # NEED : draw
+            from state_battle import set_state
+            
             if len(tank_list) == 1:
                 if type(tank_list[0]) == Tank_AI:
-                    return -1
-                return 0
+                    set_state("Ending")
+                return
+            
+            _wait_count = 0
+            supply.reset()
+            if supply.update() == True:
+                return
+
             select_next_tank()
             gmap.env.wind.randomize()
-            _wait_count = 0
     
     return True
 
+def handle_event(event):
+    if not crnt_tank:
+        return
+    if type(crnt_tank) == Tank_AI:
+        return
 
+    if event.type == SDL_KEYDOWN:
+        if event.key == SDLK_F1:
+            gmap.start_draw_mode()
+        elif event.key == SDLK_RIGHT:
+            crnt_tank.start_move(RIGHT)
+        elif event.key == SDLK_LEFT:
+            crnt_tank.start_move(LEFT)
+        elif event.key == SDLK_5: # for test
+            crnt_tank.fuel = Tank.MAX_FUEL
+        elif event.key == SDLK_F10:
+            gui.toggle_gui()
+        elif event.key == SDLK_F5:
+            tank_list[0].get_damage(100)
+            select_tank(None)
+        elif event.key == SDLK_F6:
+            tank_list[1].get_damage(100)
+            select_tank(None)
+        elif event.key == SDLK_SPACE:
+            if crnt_tank.is_locked:
+                gui_gauge.fill(True)
+    
+    elif event.type == SDL_KEYUP:
+        if event.key == SDLK_RIGHT or event.key == SDLK_LEFT:
+            crnt_tank.stop()
+        elif event.key == SDLK_SPACE:
+            if crnt_tank.is_locked:
+                gui_gauge.fill(False)
+                crnt_tank.fire()
+                if framework.state_in_stack(state_inventory):
+                    framework.pop_state()
+            
+    elif event.type == SDL_MOUSEMOTION:
+        mouse_pos = convert_pico2d(event.x, event.y)
+        crnt_tank.update_barrel(Vector2(*mouse_pos))
+        gui.set_degree(crnt_tank.center, math.degrees(crnt_tank.get_barrel_theta()))
+
+
+    elif event.type == SDL_MOUSEBUTTONDOWN:
+        mouse_pos = convert_pico2d(event.x, event.y)
+        if event.button == SDL_BUTTON_LEFT:
+            if point_in_rect(mouse_pos, gui.rect_gui):
+                if point_in_rect(mouse_pos, gui.rect_weapon):
+                    if not framework.state_in_stack(state_inventory):
+                        state_inventory.set_window("weapon")
+                        framework.push_state(state_inventory)
+                        sound.play_sound('click')
+                    else:
+                        framework.pop_state()
+                        sound.play_sound('click')
+                        if state_inventory.get_window() == "item":
+                            state_inventory.set_window("weapon")
+                            framework.push_state(state_inventory)
+                elif point_in_rect(mouse_pos, gui.rect_item):
+                    if not framework.state_in_stack(state_inventory):
+                        state_inventory.set_window("item")
+                        framework.push_state(state_inventory)
+                        sound.play_sound('click')
+                    else:
+                        framework.pop_state()
+                        sound.play_sound('click')
+                        if state_inventory.get_window() == "weapon":
+                            state_inventory.set_window("item")
+                            framework.push_state(state_inventory)
+            else:
+                crnt_tank.toggle_lock()
 
 
 
@@ -738,80 +811,6 @@ def check_explosion(position : Vector2, radius, damage):
     for tank in tank_list:
         if tank.is_in_radius(position, radius):
             tank.get_damage(damage)
-
-
-
-def handle_event(event):
-    if not crnt_tank:
-        return
-    if type(crnt_tank) == Tank_AI:
-        return
-
-    if event.type == SDL_KEYDOWN:
-        if event.key == SDLK_F1:
-            gmap.start_draw_mode()
-        elif event.key == SDLK_RIGHT:
-            crnt_tank.start_move(RIGHT)
-        elif event.key == SDLK_LEFT:
-            crnt_tank.start_move(LEFT)
-        elif event.key == SDLK_5: # for test
-            crnt_tank.fuel = Tank.MAX_FUEL
-        elif event.key == SDLK_F10:
-            gui.toggle_gui()
-        elif event.key == SDLK_F5:
-            tank_list[0].get_damage(100)
-            select_tank(None)
-        elif event.key == SDLK_F6:
-            tank_list[1].get_damage(100)
-            select_tank(None)
-        elif event.key == SDLK_SPACE:
-            if crnt_tank.is_locked:
-                gui_gauge.fill(True)
-    
-    elif event.type == SDL_KEYUP:
-        if event.key == SDLK_RIGHT or event.key == SDLK_LEFT:
-            crnt_tank.stop()
-        elif event.key == SDLK_SPACE:
-            if crnt_tank.is_locked:
-                gui_gauge.fill(False)
-                crnt_tank.fire()
-                if framework.state_in_stack(state_inventory):
-                    framework.pop_state()
-            
-    elif event.type == SDL_MOUSEMOTION:
-        mouse_pos = convert_pico2d(event.x, event.y)
-        crnt_tank.update_barrel(Vector2(*mouse_pos))
-        gui.set_degree(crnt_tank.center, math.degrees(crnt_tank.get_barrel_theta()))
-
-
-    elif event.type == SDL_MOUSEBUTTONDOWN:
-        mouse_pos = convert_pico2d(event.x, event.y)
-        if event.button == SDL_BUTTON_LEFT:
-            if point_in_rect(mouse_pos, gui.rect_gui):
-                if point_in_rect(mouse_pos, gui.rect_weapon):
-                    if not framework.state_in_stack(state_inventory):
-                        state_inventory.set_window("weapon")
-                        framework.push_state(state_inventory)
-                        sound.play_sound('click')
-                    else:
-                        framework.pop_state()
-                        sound.play_sound('click')
-                        if state_inventory.get_window() == "item":
-                            state_inventory.set_window("weapon")
-                            framework.push_state(state_inventory)
-                elif point_in_rect(mouse_pos, gui.rect_item):
-                    if not framework.state_in_stack(state_inventory):
-                        state_inventory.set_window("item")
-                        framework.push_state(state_inventory)
-                        sound.play_sound('click')
-                    else:
-                        framework.pop_state()
-                        sound.play_sound('click')
-                        if state_inventory.get_window() == "weapon":
-                            state_inventory.set_window("item")
-                            framework.push_state(state_inventory)
-            else:
-                crnt_tank.toggle_lock()
 
 
 

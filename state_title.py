@@ -19,7 +19,7 @@ def enter():
     global font_show_count
     font_show_count = 0
 
-    sound.play_bgm('title')
+    sound.play_bgm('title', 128)
 
 def exit():
     global image, font

@@ -6,7 +6,7 @@ from tools import *
 _crnt_bgm : Music = None
 _sounds : dict[str, Wav] = {}
 
-def play_bgm(name):
+def play_bgm(name, volume=128):
     global _crnt_bgm
 
     if _crnt_bgm != None:
@@ -14,19 +14,20 @@ def play_bgm(name):
     
     file_name = 'bgm_' + name
     _crnt_bgm = load_music_path(file_name)
+    _crnt_bgm.set_volume(volume)
     _crnt_bgm.repeat_play()
 
 def play_battle_bgm(index):
     file_name = 'battle_' + str(index)
-    play_bgm(file_name)
+    play_bgm(file_name, 64)
 
 def stop_bgm():
     global _crnt_bgm
 
     _crnt_bgm.stop()
+    _crnt_bgm.set_volume(0)
     del _crnt_bgm
     _crnt_bgm = None
-
 
 def add_sound(name):
     global _sounds
@@ -38,11 +39,6 @@ def add_sound(name):
     wav = load_wav_path(file_name)
 
     _sounds[name] = wav
-
-def del_sounds():
-    for sound in _sounds.values():
-        del sound
-    _sounds.clear()
 
 def play_sound(name, volume=128, channel=-1, is_repeat=False):
     assert(name in _sounds)
@@ -67,10 +63,16 @@ def stop_channel(channel):
 
 def enter(state : str):
     if state == 'battle':
-        add_sound('tank_fire')
+        add_sound('tank_fire_general')
+        add_sound('tank_fire_homing')
         add_sound('explosion')
         add_sound('tank_explosion')
         add_sound('tank_movement')
         add_sound('lock_on')
     else:
         assert(0)
+
+def exit():
+    for sound in _sounds.values():
+        del sound
+    _sounds.clear()

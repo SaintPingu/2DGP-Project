@@ -14,7 +14,7 @@ DEFAULT_SHELL = "AP"
 SHELLS : dict
 EXPLOSIONS : dict
 
-SOUND_CHANNEL_HOMING = 2
+SOUND_CHANNEL_HOMING = 1
 
 def enter():
     global SHELLS, EXPLOSIONS, fired_shells
@@ -124,7 +124,7 @@ class Shell(object.GameObject):
             self.delay -= framework.frame_time
             if self.delay <= 0 and not self.sub:
                 sprite.add_animation("Shot", self.origin, self.start_theta)
-                sound.play_sound('tank_fire', 64)
+                play_fire_sound(self.shell_name)
             return
 
         self.invalidate()
@@ -216,7 +216,7 @@ class Shell(object.GameObject):
 class Shell_Homing(Shell):
     SPEED_LOCK_ON = 1.5
     MAX_DISTANCE = 500
-    def __init__(self, shell_name: str, position, theta, target_pos : Vector2, power=1, is_simulation=False, delay=0):
+    def __init__(self, shell_name: str, position, theta, target_pos : Vector2, power=1, is_simulation=False, delay=0, id=0):
         assert(target_pos is not None)
 
         super().__init__(shell_name, position, theta, power, is_simulation, delay)
@@ -224,10 +224,11 @@ class Shell_Homing(Shell):
         self.guide_t = 0
         self.is_locked = False
         self.gui_lock = None
+        self.id = id
     
     def release(self):
         super().release()
-        sound.stop_channel(SOUND_CHANNEL_HOMING)
+        sound.stop_channel(SOUND_CHANNEL_HOMING + self.id)
         if self.gui_lock != None:
             import gui
             gui.del_gui(self.gui_lock)
@@ -265,7 +266,7 @@ class Shell_Homing(Shell):
 
     def target_lock(self):
         import gui
-        sound.play_sound('lock_on', channel=SOUND_CHANNEL_HOMING)
+        sound.play_sound('lock_on', 128, channel=SOUND_CHANNEL_HOMING + self.id)
         self.is_locked = True   # can hit
         self.speed = get_attributes("HOMING")[0] * 4
         lock_image = load_image_path('target_lock.png')
@@ -284,7 +285,7 @@ def add_shell(shell_name, head_position, theta, power = 1, item = None, target_p
     for i in range(count_shot):
 
         if shell_name == "HOMING":
-            shell = Shell_Homing(shell_name, head_position, theta, target_pos, power, delay=delay)
+            shell = Shell_Homing(shell_name, head_position, theta, target_pos, power, delay=delay, id=i)
         else:
             shell = Shell(shell_name, head_position, theta, power, delay=delay)
 
@@ -294,7 +295,7 @@ def add_shell(shell_name, head_position, theta, power = 1, item = None, target_p
         fired_shells.append(shell)
         object.add_object(shell)
 
-        if shell_name == "MUL" and item != "TP":
+        if shell_name == "MUL":
             for n in range(3):
                 t = 0.05 * (n+1)
                 shell_1 = Shell(shell_name, position, theta + t, power, delay=delay)
@@ -370,3 +371,11 @@ def get_shell_image(shell_name):
     assert shell_name in SHELLS.keys()
 
     return SHELLS[shell_name]
+
+def play_fire_sound(shell_name):
+    assert shell_name in SHELLS.keys()
+
+    if shell_name == "HOMING":
+        sound.play_sound('tank_fire_homing', 64)
+    else:
+        sound.play_sound('tank_fire_general', 64)

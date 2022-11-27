@@ -7,9 +7,17 @@ import gmap
 import framework
 import state_lobby
 
+class CloudImageError(Exception):
+    def __init__(self):
+        super().__init__("The cloud image's max height is 200!")
+
 _BASE_WIND_SPEED_MPS = 5
 _BASE_WIND_SPEED_PPS = (_BASE_WIND_SPEED_MPS * PIXEL_PER_METER)
 _WIND_AFFECT = 0.1
+
+_CLOUD_IMAGE_MAX_HEIGHT = 200
+_CLOUD_MIN_HEIGHT = MAX_HEIGHT + _CLOUD_IMAGE_MAX_HEIGHT
+_CLOUD_IMAGE_COUNT = 9
 
 _clouds : list[object.GameObject] = None
 
@@ -20,6 +28,9 @@ def enter(cloud_count=10):
     map_index = state_lobby.crnt_map_index + 1
     for i in range(_CLOUD_IMAGE_COUNT):
         image = load_image_path('clouds/map_' + str(map_index) + '/cloud_' + str(i) + '.png')
+        if image.h >= _CLOUD_IMAGE_MAX_HEIGHT:
+            raise CloudImageError
+            
         image.opacify(0.3)
         _images_cloud.append(image)
 
@@ -95,8 +106,6 @@ class Wind:
         return Vector2(self.direction * self.speed * _WIND_AFFECT, 0)
 
 
-_CLOUD_MIN_HEIGHT = 800
-_CLOUD_IMAGE_COUNT = 9
 class Cloud(object.GameObject):
     def __init__(self):
         super().__init__()

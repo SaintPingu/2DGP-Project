@@ -25,8 +25,8 @@ _is_create_block = False
 _is_delete_block = False
 _is_print_mouse_pos = False
 
-_rect_inv_list : list[InvRect] = []
-_rect_debug_list : list[InvRect] = []
+_rect_inv_list : list[InvRect]
+_rect_debug_list : list[InvRect]
 
 selected_tank = None
 
@@ -65,8 +65,6 @@ def draw(is_draw_full=False):
     if is_draw_full:
         _rect_inv_list.clear()
         _rect_inv_list.append(InvRect((SCREEN_WIDTH//2, SCREEN_HEIGHT//2), SCREEN_WIDTH, SCREEN_HEIGHT))
-    elif len(_rect_inv_list) == 0:
-        return
 
     # draw background
     for rect_inv in list(_rect_inv_list):
@@ -238,6 +236,8 @@ def draw_block(radius, position, is_block):
             cell_y = row+y
             if out_of_range_cell(cell_x, cell_y):
                 continue
+            elif cell_y >= MAX_HEIGHT//CELL_SIZE:
+                continue
             elif get_block(cell_x, cell_y) == is_block:
                 continue
             cell_pos = get_pos_from_cell(cell_x, cell_y)
@@ -252,10 +252,15 @@ def draw_block(radius, position, is_block):
 
 ##### Invalidate #####
 def resize_rect_inv(rect : Rect):
+    # for invalidate correction
+    rect.width += 2
+    rect.height += 2
+    rect.update()
+
     if rect.left < 0:
         rect.set_origin((0, rect.bottom), rect.right, rect.height)
     elif rect.right > SCREEN_WIDTH:
-        rect.set_origin((rect.left, rect.bottom), SCREEN_WIDTH - rect.left, rect.height)
+        rect.set_origin((rect.left, rect.bottom), SCREEN_WIDTH - rect.left + 1, rect.height)
 
     if rect.bottom <= MIN_HEIGHT:
         rect.set_origin((rect.left, MIN_HEIGHT), rect.width, rect.top - MIN_HEIGHT + 1)
@@ -467,6 +472,12 @@ def set_block(col : int, row : int, is_block : bool):
     if type(is_block) is not bool:
         pass
     _crnt_map[row][col] = is_block
+
+def check_collision_vectors(vectors : list[Vector2]):
+    for vector in vectors:
+        if get_block(*get_cell(vector)) == True:
+            return True
+    return False
 
 # end is inclusive
 def get_sliced_map(start_x, start_y, end_x, end_y):

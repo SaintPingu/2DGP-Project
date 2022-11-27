@@ -15,13 +15,20 @@ import shell
 import sprite
 import ending
 import environment as env
+import supply
 
 _is_game_over = False
 _winner = 0
 
+SCENE_STATES = ( "Control", "Fire", "Supply", "Ending" )
+_scene_state : str
+
 def enter():
     from  state_lobby import get_mode, get_difficulty
     mode = get_mode()
+
+    global scene_state
+    scene_state = SCENE_STATES[0]
 
     object.enter()
     gmap.enter()
@@ -32,6 +39,7 @@ def enter():
     env.enter()
     ending.enter()
     sound.enter('battle')
+    supply.enter()
 
     map_index = state_lobby.crnt_map_index + 1
     #map_index = -3
@@ -53,7 +61,8 @@ def exit():
     object.exit()
     ending.exit()
     gmap.exit()
-    sound.del_sounds()
+    sound.exit()
+    supply.exit()
 
 
 def update():
@@ -62,8 +71,9 @@ def update():
     object.update()
     sprite.update()
     gui.update()
-    _winner = tank.update()
-    if _winner <= 0:
+    tank.update()
+
+    if scene_state == "Ending":
         if _is_game_over == False:
             if _winner == 0:
                 sound.play_bgm('win')
@@ -73,16 +83,14 @@ def update():
                 assert(0)
 
         _is_game_over = True
-
-    if _is_game_over:
         if ending.update() == False:
             framework.change_state(state_title)
 
 def draw():
 
     gmap.draw()
-    gui.draw()
     object.draw()
+    gui.draw()
     sprite.draw()
     gmap.draw_debugs()
 
@@ -115,3 +123,10 @@ def pause():
     pass
 def resume():
     pass
+
+
+def set_state(state : str):
+    assert(state in SCENE_STATES)
+
+    global scene_state
+    scene_state = state
