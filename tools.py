@@ -181,6 +181,12 @@ class Rect:
             return True
         return False
     
+    def collide_rect(self, other):
+        if self.left > other.right or self.right < other.left or self.bottom > other.top or self.top < other.bottom:
+            return False
+        
+        return True
+    
     def move(self, x, y):
         self.center = (self.center[0] + x, self.center[1] + y)
         self.update()

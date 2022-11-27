@@ -19,7 +19,7 @@ class GameObject:
 
         self.is_draw = True
 
-        detect_square = self.get_squre()
+        detect_square = self.get_square()
         self.detect_radius = (Vector2(*detect_square.center) - Vector2(detect_square.left, detect_square.top)).get_norm()
     
     def release(self):
@@ -64,7 +64,7 @@ class GameObject:
     def get_rect(self):
         return Rect(tuple(self.center), self.width, self.height)
     
-    def get_squre(self):
+    def get_square(self):
         width = self.width
         height = self.height
         if width < height:
@@ -112,16 +112,21 @@ class GameObject:
     def update(self):
         pass
     
-    def invalidate(self, is_invalidate_square=False, is_force=False):
+    def invalidate(self, is_invalidate_square=False, is_force=False, is_grid=True):
         if is_force or self.is_rect_invalid == False:
             import gmap
 
             if is_invalidate_square:
-                inv_rect = self.get_squre()
+                inv_rect = self.get_square()
             else:
                 inv_rect = self.get_rect()
             gmap.resize_rect_inv(inv_rect)
-            gmap.set_invalidate_rect(*inv_rect.__getitem__())
+            
+            if is_grid==False:
+                gmap.set_invalidate_rect(*inv_rect.__getitem__(), grid_size=0)
+            else:
+                gmap.set_invalidate_rect(*inv_rect.__getitem__())
+
             self.is_rect_invalid = True
 
 
@@ -142,6 +147,9 @@ class GroundObject(GameObject):
 
         self.update_object()
     
+    def release(self):
+        self.invalidate(is_force=True)
+    
     def draw(self):
         self.draw_image(self.image, flip=self.image_flip)
 
@@ -159,6 +167,9 @@ class GroundObject(GameObject):
         vec_left_to_center = (self.bot_right - self.bot_left).normalized() * (self.width // 2)
         self.bot_center = self.bot_left + vec_left_to_center
         super().update_object()
+    
+    def create(self):
+        self.is_created = True
     
     def get_vec_left(self):
         return (self.bot_left - self.bot_right).normalized()

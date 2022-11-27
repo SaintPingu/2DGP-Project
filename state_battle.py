@@ -89,8 +89,8 @@ def update():
 def draw():
 
     gmap.draw()
-    object.draw()
     gui.draw()
+    object.draw()
     sprite.draw()
     gmap.draw_debugs()
 

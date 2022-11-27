@@ -128,7 +128,7 @@ class Shell(object.GameObject):
             return
 
         self.invalidate()
-        rect = self.get_squre()
+        rect = self.get_square()
 
         # out of range
         if rect.right < 0 or rect.left > SCREEN_WIDTH or rect.top <= MIN_HEIGHT:
@@ -257,7 +257,6 @@ class Shell_Homing(Shell):
 
         for vector in toTargetVectors:
             cell = gmap.get_cell(vector)
-            gmap.draw_debug_cell(cell)
 
             if gmap.get_block(*cell) == True:   
                 return True

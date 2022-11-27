@@ -135,6 +135,9 @@ class Tank(object.GroundObject):
         elif item_name == "TP":
             gui.gui_weapon.set_item(None)
         self.item = item_name
+    
+    def get_item(self, item_name):
+        pass
 
     ##### Movement #####
     def deselect(self):
@@ -199,6 +202,8 @@ class Tank(object.GroundObject):
         self.is_rect_invalid = True
 
         self.fuel -= 1
+
+        supply.check_collision(self)
 
         return True
     
@@ -323,6 +328,7 @@ class Tank(object.GroundObject):
         self.dir = 0
         select_tank(None)
         shell.play_fire_sound(self.crnt_shell)
+        supply.reset()
     ##########
 
 
@@ -652,18 +658,18 @@ def update():
         if _wait_count > 2:
             from state_battle import set_state
             
-            if len(tank_list) == 1:
-                if type(tank_list[0]) == Tank_AI:
-                    set_state("Ending")
+            if len(tank_list) <= 1:
+                set_state("Ending")
                 return
             
-            _wait_count = 0
-            supply.reset()
             if supply.update() == True:
+                set_state("Supply")
                 return
-
+            
+            set_state("Control")
             select_next_tank()
             gmap.env.wind.randomize()
+            _wait_count = 0
     
     return True
 
@@ -837,10 +843,15 @@ def teleport(position):
         gui.invalidate_degree()
         prev_tank.is_created = False
         prev_tank.set_pos(position)
+        prev_tank.rotate_ground(ignore_size=True)
         prev_tank.is_created = True
 
 def apply_difficulty(difficulty):
     Tank_AI.error_range = Tank_AI.error_table[difficulty]
+
+def get_tanks():
+    for tank in tank_list:
+        yield tank
     
 
 

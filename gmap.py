@@ -252,20 +252,15 @@ def draw_block(radius, position, is_block):
 
 ##### Invalidate #####
 def resize_rect_inv(rect : Rect):
-    # for invalidate correction
-    rect.width += 4
-    rect.height += 4
-    rect.update()
-
     if rect.left < 0:
-        rect.set_origin((0, rect.bottom), rect.right, rect.height)
+        rect.set_origin((0, rect.bottom), rect.right + 1, rect.height)
     elif rect.right > SCREEN_WIDTH:
         rect.set_origin((rect.left, rect.bottom), SCREEN_WIDTH - rect.left + 1, rect.height)
 
     if rect.bottom <= MIN_HEIGHT:
         rect.set_origin((rect.left, MIN_HEIGHT), rect.width, rect.top - MIN_HEIGHT + 1)
     elif rect.top > SCREEN_HEIGHT:
-        rect.set_origin((rect.left, rect.bottom), rect.width, SCREEN_HEIGHT - rect.bottom)
+        rect.set_origin((rect.left, rect.bottom), rect.width, SCREEN_HEIGHT - rect.bottom + 1)
 
 # merge rectangles
 def merge_rects(rect_left : InvRect, rect_right : InvRect):
@@ -299,9 +294,6 @@ def add_invalidate(center, width, height, grid_size=_DEFAULT_DIVIDE_GRID_SIZE):
     rect_inv = InvRect(*rect_inv.__getitem__())
 
     resize_rect_inv(rect_inv)
-
-    if rect_inv.center[0] == 8:
-        pass
 
     if grid_size == 0 or (rect_inv.width <= grid_size and rect_inv.height <= grid_size):
         rect_inv.is_grid = False
@@ -548,6 +540,7 @@ def draw_debugs():
     if is_debug_mode():
         for rect in _rect_debug_list:
             draw_rectangle(rect.origin[0], rect.origin[1], rect.origin[0]+rect.width, rect.origin[1]+rect.height)
+            del rect
         _rect_debug_list.clear()
         
 def draw_debug_cell(cell):

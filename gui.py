@@ -355,5 +355,5 @@ def invalidate_degree():
     rect_font.set_pos((deg_pos[0] + 5, deg_pos[1] - 30))
     rect_inv = Rect(rect_font.center, rect_font.width, rect_font.height)
     gmap.resize_rect_inv(rect_inv)
-    gmap.set_invalidate_rect(*rect_inv.__getitem__())
+    gmap.set_invalidate_rect(*rect_inv.__getitem__(), grid_size=60)
     del rect_inv

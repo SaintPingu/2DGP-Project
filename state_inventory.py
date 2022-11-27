@@ -57,6 +57,7 @@ class Inven_Weapon(Inventory):
         gui_weapon.set_image(shell_name)
 
 class Inven_Item(Inventory):
+    name_table = ( "double", "extension", "TP", "heal" )
     def __init__(self):
         image = load_image_path('inventory_items.png')
         position = (345, 140)
