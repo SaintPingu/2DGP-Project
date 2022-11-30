@@ -9,7 +9,7 @@ import sprite
 import gui
 import sound
 import framework
-import state_inventory
+import inventory
 import supply
 
 image_tank_green : Image
@@ -51,18 +51,24 @@ class Tank(object.GroundObject):
         # attributes
         self.speed = TANK_SPEED_PPS
         self.hp = Tank.MAX_HP
+        self.max_hp = Tank.MAX_HP
         self.fuel = Tank.MAX_FUEL
         self.crnt_shell = "AP"
         self.is_locked = False
         self.is_sound_movement = False
-        self.item_used = False
-        self.item = None
 
         # gui
         self.gui_hp = gui.GUI_HP(self)
         self.gui_fuel = gui.GUI_Fuel(self, Tank.MAX_FUEL)
         gui.add_gui(self.gui_hp, 1)
         gui.add_gui(self.gui_fuel, 1)
+
+        # inventory
+        self.inven_weapon = inventory.Inven_Weapon()
+        self.inven_item = inventory.Inven_Item()
+        self.inven_item.add_item("double")
+        self.inven_item.add_item("heal")
+        self.inven_item.add_item("TP")
     
     def release(self):
         if tank_list: # death
@@ -121,23 +127,8 @@ class Tank(object.GroundObject):
             sprite.add_animation("Tank_Explosion", self.center + (0,self.height//2))
             sound.play_sound('tank_explosion')
     
-    def use_item(self, item_name):
-        if self.item_used == True:
-            return
-            
-        if item_name == "heal":
-            self.item_used = True
-            self.hp += 15
-            self.hp = clamp(0, self.hp, Tank.MAX_HP)
-            self.item = None
-            gui.gui_weapon.set_item(None)
-            gui.gui_weapon.set_image(self.crnt_shell)
-        elif item_name == "TP":
-            gui.gui_weapon.set_item(None)
-        self.item = item_name
-    
-    def get_item(self, item_name):
-        pass
+    def add_item(self, item_name):
+        self.inven_item.add_item(item_name)
 
     ##### Movement #####
     def deselect(self):
@@ -148,8 +139,7 @@ class Tank(object.GroundObject):
         
     def select(self):
         self.is_turn = True
-        self.item = None
-        self.item_used = False
+        self.inven_item.reset()
         gui.gui_weapon.set_image(self.crnt_shell)
     
     def move(self):
@@ -324,7 +314,7 @@ class Tank(object.GroundObject):
                 if tank.team != self.team:
                     target_pos = tank.center
 
-        shell.add_shell(self.crnt_shell, head, theta, gui_gauge.get_filled(), self.item, target_pos)
+        shell.add_shell(self.crnt_shell, head, theta, gui_gauge.get_filled(), self.inven_item.get_item(), target_pos)
         self.dir = 0
         select_tank(None)
         shell.play_fire_sound(self.crnt_shell)
@@ -378,7 +368,6 @@ class Tank_AI(Tank):
         self.check_dir = None
         self.target_tank : Tank = None
         self.virtual_shell : shell.Shell = None
-        self.item = None
 
         self.init_values()
     
@@ -400,7 +389,6 @@ class Tank_AI(Tank):
         self.precise_dir = None
         self.target_tank = None
         self.virtual_shell = None
-        self.item = None
     
     def select(self):
         self.init_values()
@@ -497,12 +485,12 @@ class Tank_AI(Tank):
         self.set_barrel_pos()
         gui_gauge.set_fill(1)
         
-        if self.item == None:
-            self.item = random.randint(0, 1)
-        state_inventory.set_window("item")
-        framework.push_state(state_inventory)
-        state_inventory.inventory.select(self.item)
-        framework.pop_state()
+        # if self.inven_item.get_item() == None:
+        #     self.item = random.randint(0, 1)
+        # inventory.set_window("item")
+        # framework.push_state(inventory)
+        # inventory.inventory.select(self.item)
+        # framework.pop_state()
 
         super().fire()
     
@@ -707,7 +695,7 @@ def handle_event(event):
             if crnt_tank.is_locked:
                 gui_gauge.fill(False)
                 crnt_tank.fire()
-                if framework.state_in_stack(state_inventory):
+                if framework.state_in_stack(inventory):
                     framework.pop_state()
             
     elif event.type == SDL_MOUSEMOTION:
@@ -721,28 +709,12 @@ def handle_event(event):
         if event.button == SDL_BUTTON_LEFT:
             if point_in_rect(mouse_pos, gui.rect_gui):
                 if point_in_rect(mouse_pos, gui.rect_weapon):
-                    if not framework.state_in_stack(state_inventory):
-                        state_inventory.set_window("weapon")
-                        framework.push_state(state_inventory)
-                        sound.play_sound('click')
-                    else:
-                        framework.pop_state()
-                        sound.play_sound('click')
-                        if state_inventory.get_window() == "item":
-                            state_inventory.set_window("weapon")
-                            framework.push_state(state_inventory)
+                    sound.play_sound('click')
+                    inventory.set_inventory(crnt_tank.inven_weapon)
                 elif point_in_rect(mouse_pos, gui.rect_item):
-                    if not framework.state_in_stack(state_inventory):
-                        state_inventory.set_window("item")
-                        framework.push_state(state_inventory)
-                        sound.play_sound('click')
-                    else:
-                        framework.pop_state()
-                        sound.play_sound('click')
-                        if state_inventory.get_window() == "weapon":
-                            state_inventory.set_window("item")
-                            framework.push_state(state_inventory)
-            else:
+                    sound.play_sound('click')
+                    inventory.set_inventory(crnt_tank.inven_item)
+            elif inventory.check_select(crnt_tank, mouse_pos) == False:
                 crnt_tank.toggle_lock()
 
 
@@ -765,6 +737,8 @@ def add_tank(tank):
 
 def select_tank(tank):
     global prev_tank, crnt_tank, gui_selection
+
+    inventory.hide_inventory()
 
     if crnt_tank is not None:
         prev_tank = crnt_tank
@@ -817,27 +791,7 @@ def check_explosion(position : Vector2, radius, damage):
     for tank in tank_list:
         if tank.is_in_radius(position, radius):
             tank.get_damage(damage)
-
-
-
-def set_shell(shell_name):
-    if crnt_tank:
-        crnt_tank.crnt_shell = shell_name
-        if crnt_tank.item == "TP":
-            crnt_tank.item = None
     
-def set_item(item):
-    if crnt_tank:
-        if crnt_tank.item_used == False:
-            crnt_tank.use_item(item[0])
-            if item[0] == "heal":
-                return
-            if item[0] == "TP":
-                gui.gui_weapon.set_image(item[0])
-                return
-            gui.gui_weapon.set_image(crnt_tank.crnt_shell)
-            gui.gui_weapon.set_item(item[1])
-
 def teleport(position):
     if prev_tank:
         gui.invalidate_degree()

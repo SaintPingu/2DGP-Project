@@ -14,13 +14,13 @@ class AirDrop(object.GroundObject):
     image_parachute : Image
     FALL_SPEED = 200
     def __init__(self, center):
-        from state_inventory import Inven_Item
+        from inventory import Inven_Item
         super().__init__(AirDrop.image, center, AirDrop.image.w, AirDrop.image.h)
         self.is_falling = True
         self.create()
         
-        item_count = len(Inven_Item.name_table)
-        self.item : str = Inven_Item.name_table[random.randint(0, item_count - 1)]
+        item_count = len(Inven_Item.items)
+        self.item : str = Inven_Item.items[random.randint(0, item_count - 1)]
     
     def update(self):
         if self.is_falling:
@@ -209,7 +209,7 @@ def check_collision(object : object.GroundObject):
 
         air_drop_rect = air_drop.get_square()
         if air_drop_rect.collide_rect(rect_object) == True:
-            object.get_item(air_drop.get_item())
+            object.add_item(air_drop.get_item())
             delete_air_drop(air_drop)
             sound.play_sound('pickup_item')
             return True

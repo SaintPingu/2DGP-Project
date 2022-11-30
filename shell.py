@@ -214,7 +214,7 @@ class Shell(object.GameObject):
         self.sub = True
 
 class Shell_Homing(Shell):
-    SPEED_LOCK_ON = 1.5
+    SPEED_LOCK_ON = 2
     MAX_DISTANCE = 500
     def __init__(self, shell_name: str, position, theta, target_pos : Vector2, power=1, is_simulation=False, delay=0, id=0):
         assert(target_pos is not None)

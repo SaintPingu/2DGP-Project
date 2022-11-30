@@ -16,6 +16,7 @@ import sprite
 import ending
 import environment as env
 import supply
+import inventory
 
 _is_game_over = False
 _winner = 0
@@ -40,6 +41,7 @@ def enter():
     ending.enter()
     sound.enter('battle')
     supply.enter()
+    inventory.enter()
 
     map_index = state_lobby.crnt_map_index + 1
     #map_index = -3
@@ -53,6 +55,7 @@ def enter():
 
 
 def exit():
+    inventory.exit()
     env.exit()
     sprite.exit()
     shell.exit()
@@ -63,7 +66,6 @@ def exit():
     gmap.exit()
     sound.exit()
     supply.exit()
-
 
 def update():
     global _is_game_over, _winner
@@ -90,6 +92,7 @@ def draw():
 
     gmap.draw()
     gui.draw()
+    inventory.draw()
     object.draw()
     sprite.draw()
     gmap.draw_debugs()
