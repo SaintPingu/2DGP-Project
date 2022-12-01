@@ -487,12 +487,7 @@ class Tank_AI(Tank):
         self.set_barrel_pos()
         gui_gauge.set_fill(1)
         
-        # if self.inven_item.get_item() == None:
-        #     self.item = random.randint(0, 1)
-        # inventory.set_window("item")
-        # framework.push_state(inventory)
-        # inventory.inventory.select(self.item)
-        # framework.pop_state()
+        self.inven_item.select_random_item(self)
 
         super().fire()
     

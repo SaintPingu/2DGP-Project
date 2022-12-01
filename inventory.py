@@ -136,6 +136,13 @@ class Inven_Item(Inventory):
     def reset(self):
         self.crnt_item = None
         self.item_used = False
+    
+    def select_random_item(self, tank):
+        if len(self.slot_items) <= 0:
+            return
+
+        index = random.randint(0, len(self.slot_items) - 1)
+        self.select(tank, index)
 
 
 _crnt_inventory : Inventory = None
