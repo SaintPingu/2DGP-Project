@@ -810,7 +810,11 @@ def get_tanks():
     for tank in tank_list:
         yield tank
     
+def get_crnt_tank():
+    return crnt_tank
 
+def get_prev_tank():
+    return prev_tank
 
 def read_data(file, mode):
     file.readline()

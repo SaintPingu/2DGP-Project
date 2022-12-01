@@ -35,10 +35,13 @@ class GUI:
 
 class GUI_HP(GUI):
     image : Image = None
+    image_control : Image = None
+    position_control = (90, 67)
 
     def __init__(self, owner):
         if GUI_HP.image == None:
             GUI_HP.image = load_image_path('hp_bar.png')
+            GUI_HP.image_control = load_image_path('gui_control_hp_bar.png')
 
         super().__init__(GUI_HP.image)
         self.owner = owner
@@ -52,14 +55,20 @@ class GUI_HP(GUI):
         self.invalidate()
 
     def draw(self):
+        from tank import get_crnt_tank, get_prev_tank
         if self.is_draw:
             self.image.draw(*self.position, self.width, self.height)
+
+        if self.owner == get_crnt_tank() or self.owner == get_prev_tank():
+            w = GUI_HP.image_control.w * (self.owner.hp / self.max_hp)
+            GUI_HP.image_control.draw(*GUI_HP.position_control, w, GUI_HP.image_control.h)
     
     def update(self):
         if self.is_draw:
             self.invalidate()
             self.position = (self.owner.center.x, self.owner.get_rect().top + 20)
             self.update_gauge()
+        gmap.set_invalidate_rect(GUI_HP.position_control, GUI_HP.image_control.w, GUI_HP.image_control.h, grid_size=0)
     
     def update_gauge(self):
         self.width = self.max_width * (self.owner.hp / self.max_hp)
