@@ -8,6 +8,7 @@ import sound
 
 
 _is_supply : bool
+_area = 0
 
 class AirDrop(object.GroundObject):
     image : Image
@@ -57,7 +58,7 @@ class AirDrop(object.GroundObject):
             self.is_falling = False
             self.rotate_ground(True, True)
             _is_supply = False
-            sound.play_sound("air_drop_crash")
+            sound.play_sound('crash')
             return
         
         from tank import get_tanks
@@ -65,6 +66,9 @@ class AirDrop(object.GroundObject):
             if check_collision(tank) == True:
                 _is_supply = False
                 return
+        if self.center.y < MIN_HEIGHT:
+            _is_supply = False
+            delete_air_drop(self)
         
     def get_item(self):
         return self.item
@@ -86,7 +90,14 @@ class Ship(object.FlyObject):
         super().__init__(Ship.image, (pos_x, yPos), Ship.image.w, Ship.image.h, dir=self.dir, image_flip=image_flip)
 
         self.speed = 300
-        self.drop_pos_x = random.randint(100, SCREEN_WIDTH - 100)
+
+        global _area
+        if _area == LEFT:
+            self.drop_pos_x = random.randint(100, SCREEN_WIDTH //2)
+        else:
+            self.drop_pos_x = random.randint(SCREEN_WIDTH //2, SCREEN_WIDTH - 100)
+        _area *= -1
+
         self.is_droped = False
         self.is_move = False
 
@@ -140,6 +151,9 @@ def enter():
     _air_drops = []
     _is_supply = False
 
+    global _area
+    _area = random.randint(0, 1) * 2 - 1    # LEFT or RIGHT
+
 def exit():
     del Ship.image
     del AirDrop.image
@@ -160,20 +174,18 @@ def draw():
     pass
 
 def reset():
-    global _is_supply
-
-    #_is_supply = random.randint(0, 1)
-    _is_supply = True
-    if _is_supply:
-        create_ship()
+    create_ship()
 
 def create_ship():
-    global _ship
+    global _ship, _is_supply
     if _ship != None:
+        return
+    if _is_supply:
         return
 
     _ship = Ship()
     object.add_object(_ship)
+    _is_supply = True
 
 def delete_ship():
     global _ship, _is_reseted

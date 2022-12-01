@@ -67,7 +67,7 @@ class Tank(object.GroundObject):
         self.inven_weapon = inventory.Inven_Weapon()
         self.inven_item = inventory.Inven_Item()
         self.inven_item.add_item("double")
-        self.inven_item.add_item("heal")
+        self.inven_item.add_item("extension")
         self.inven_item.add_item("TP")
     
     def release(self):
@@ -194,6 +194,8 @@ class Tank(object.GroundObject):
         self.fuel -= 1
 
         supply.check_collision(self)
+        if self.theta == 0:
+            pass
 
         return True
     
@@ -799,6 +801,7 @@ def teleport(position):
         prev_tank.set_pos(position)
         prev_tank.rotate_ground(ignore_size=True)
         prev_tank.is_created = True
+        sound.play_sound('crash')
 
 def apply_difficulty(difficulty):
     Tank_AI.error_range = Tank_AI.error_table[difficulty]

@@ -108,6 +108,11 @@ class Inven_Item(Inventory):
 
         import gui
         if self.crnt_item == "heal":
+            if tank.hp >= tank.max_hp:
+                self.add_item("heal")
+                self.crnt_item = None
+                gui.gui_weapon.set_item(None)
+                return
             self.item_used = True
             tank.hp += 15
             tank.hp = clamp(0, tank.hp, tank.max_hp)

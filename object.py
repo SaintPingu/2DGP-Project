@@ -454,6 +454,5 @@ def check_ground(position : Vector2, radius):
     for object in _groundObjects:
         if object.is_in_radius(position, radius):
             object.invalidate()
-            #if object.rotate_ground() == False:
-            object.rotate_ground(True)
+            object.rotate_ground(True, True)
             object.is_rect_invalid = True

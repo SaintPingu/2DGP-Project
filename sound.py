@@ -70,7 +70,7 @@ def enter(state : str):
         add_sound('tank_movement')
         add_sound('lock_on')
         add_sound('air_ship')
-        add_sound('air_drop_crash')
+        add_sound('crash')
         add_sound('pickup_item')
     else:
         assert(0)

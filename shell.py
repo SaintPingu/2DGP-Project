@@ -60,7 +60,7 @@ class Shell(object.GameObject):
         "TP" : "Teleport",
         "HOMING" : "Homing",
     }
-    MIN_POWER = 0.1
+    MIN_POWER = 0.2
     SIMULATION_t = 0.15
     def __init__(self, shell_name : str, position, theta, power = 1, is_simulation=False, delay = 0):
         self.img_shell : Image = get_shell_image(shell_name)
@@ -80,7 +80,7 @@ class Shell(object.GameObject):
             power = Shell.MIN_POWER
         self.speed *= power
 
-        self.is_destroyed = False
+        self.is_destroyed = False 
         self.DETECTION_RADIUS = 2
         self.prev_head : Vector2() = None
 
@@ -200,7 +200,7 @@ class Shell(object.GameObject):
         else:
             gmap.draw_block(self.explosion_radius, head, False)
             tank.check_explosion(head, self.explosion_radius, self.explosion_damage)
-            object.check_ground(head, self.explosion_radius)
+            object.check_ground(head, self.explosion_radius + 10)
             sprite.add_animation(EXPLOSIONS[self.shell_name], head, scale=self.explosion_radius/10)
             self.invalidate()
             sound.play_sound('explosion', 100)
