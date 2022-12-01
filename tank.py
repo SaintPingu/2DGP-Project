@@ -644,7 +644,12 @@ def update():
             from state_battle import set_state
             
             if len(tank_list) <= 1:
+                from state_battle import set_winner
                 set_state("Ending")
+                if type(tank_list[0]) == Tank:
+                    set_winner(0)
+                else:
+                    set_winner(-1)
                 return
             
             if supply.update() == True:

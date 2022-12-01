@@ -23,7 +23,6 @@ _winner = 0
 _is_edit_mode = False
 
 SCENE_STATES = ( "Control", "Fire", "Supply", "Ending" )
-_scene_state : str
 
 def enter():
     from  state_lobby import get_mode, get_difficulty
@@ -53,12 +52,12 @@ def enter():
     global _is_game_over
     _is_game_over = False
     
+    global _is_edit_mode
     if map_index > 0:
         sound.play_battle_bgm(map_index)
+        _is_edit_mode = False
     else:
-        global _is_edit_mode
         _is_edit_mode = True
-    _is_edit_mode = True
 
 
 def exit():
@@ -142,3 +141,7 @@ def set_state(state : str):
 
     global scene_state
     scene_state = state
+
+def set_winner(winner):
+    global _winner
+    _winner = winner

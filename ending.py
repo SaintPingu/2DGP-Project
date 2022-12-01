@@ -4,7 +4,7 @@ import framework
 import state_lobby
 
 TIME_FOR_ENDING = 10
-TEXT_POS_Y = 700
+TEXT_POS_Y = 800
 
 _ending_time = None
 _game_over_font : Font = None
@@ -37,6 +37,8 @@ def draw(winner):
         rgb = (255, 255, 0)
     elif state_lobby.crnt_map_index == 2:
         rgb = (0, 167, 255)
+    elif state_lobby.crnt_map_index == 3:
+        rgb = (37, 65, 255)
     else:
         assert(0)
 
