@@ -7,7 +7,7 @@ import state_battle
 import sound
 
 # global
-NUM_OF_MAP = 3
+NUM_OF_MAP = 4
 _crnt_mode : str
 _crnt_difficulty : str
 crnt_map_index = 0

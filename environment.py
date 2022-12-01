@@ -21,7 +21,14 @@ _CLOUD_IMAGE_COUNT = 9
 
 _clouds : list[object.GameObject] = None
 
-def enter(cloud_count=10):
+crnt_map_index = 0
+def enter(map_index, cloud_count=10):
+    global crnt_map_index
+    crnt_map_index = map_index
+
+    if map_index in NO_WIND_MAPS:
+        return
+
     global _images_cloud
     _images_cloud = []
 
@@ -45,6 +52,10 @@ def enter(cloud_count=10):
     wind.randomize()
 
 def exit():
+    global crnt_map_index
+    if crnt_map_index in NO_WIND_MAPS:
+        return
+
     global _images_cloud
     
     for image in _images_cloud:
@@ -74,8 +85,8 @@ class Wind:
         self.wind_pos_right = (pos_cloud[0] + self.image_cloud.w, pos_cloud[1])
         gui_cloud = gui.GUI(self.image_cloud, pos_cloud)
         self.gui_wind = gui.GUI(self.image_wind, is_draw=False)
-        gui.add_gui(gui_cloud, 1)
-        gui.add_gui(self.gui_wind, 1)
+        #gui.add_gui(gui_cloud, 1)
+        #gui.add_gui(self.gui_wind, 1)
         
         self.direction : int = 0
         self.speed : float = 0
@@ -164,3 +175,12 @@ class Cloud(object.GameObject):
 
 _images_cloud : list[Image]
 wind : Wind = None
+
+def randomize_wind():
+    if crnt_map_index not in NO_WIND_MAPS:
+        wind.randomize()
+    
+def get_wind_vector():
+    if crnt_map_index not in NO_WIND_MAPS:
+        return wind.get_wind_vector()
+    return Vector2(0, 0)

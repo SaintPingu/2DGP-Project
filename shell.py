@@ -114,7 +114,7 @@ class Shell(object.GameObject):
         dest.y = self.origin[1] + (self.speed * self.t * math.sin(self.start_theta) - (0.5 * GRAVITY * self.t**2))
 
         if is_affected_wind:
-            dest += gmap.env.wind.get_wind_vector() * self.t
+            dest += gmap.env.get_wind_vector() * self.t
         self.vector = self.vector.get_rotated_dest(self.center, dest)
         self.set_center(dest)
         

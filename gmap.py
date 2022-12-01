@@ -145,7 +145,7 @@ def handle_draw_mode_events(events : list):
             elif event.key == SDLK_F6:
                 draw(True)
             elif event.key == SDLK_F7:
-                env.wind.randomize()
+                env.randomize_wind()
             elif event.key == SDLK_F9:
                 if selected_tank == None:
                     selected_tank = tank.new_tank()

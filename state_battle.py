@@ -20,6 +20,7 @@ import inventory
 
 _is_game_over = False
 _winner = 0
+_is_edit_mode = False
 
 SCENE_STATES = ( "Control", "Fire", "Supply", "Ending" )
 _scene_state : str
@@ -30,6 +31,8 @@ def enter():
 
     global scene_state
     scene_state = SCENE_STATES[0]
+    
+    map_index = state_lobby.crnt_map_index + 1
 
     object.enter()
     gmap.enter()
@@ -37,21 +40,25 @@ def enter():
     gui.enter()
     tank.enter()
     sprite.enter()
-    env.enter()
+    env.enter(map_index)
     ending.enter()
     sound.enter('battle')
     supply.enter()
     inventory.enter()
 
-    map_index = state_lobby.crnt_map_index + 1
-    #map_index = -3
+    #map_index = -4
     gmap.read_mapfile(map_index, mode)
     tank.apply_difficulty(get_difficulty())
 
     global _is_game_over
     _is_game_over = False
     
-    sound.play_battle_bgm(map_index)
+    if map_index > 0:
+        sound.play_battle_bgm(map_index)
+    else:
+        global _is_edit_mode
+        _is_edit_mode = True
+    _is_edit_mode = True
 
 
 def exit():
@@ -75,6 +82,8 @@ def update():
     gui.update()
     tank.update()
 
+    if _is_edit_mode:
+        return
     if scene_state == "Ending":
         if _is_game_over == False:
             if _winner == 0:

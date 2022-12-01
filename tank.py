@@ -36,8 +36,8 @@ class Tank(object.GroundObject):
     MAX_FUEL = TANK_SPEED_KMPH * 5
     MAX_HP = 100
     def __init__(self, center=(0,0)):
-        self.image_barrel = None
-        super().__init__(None, center, image_tank_green.w, image_tank_green.h)
+        self.image_barrel = image_barrel_green
+        super().__init__(image_tank_green, center, image_tank_green.w, image_tank_green.h)
 
         self.barrel_position = Vector2()
         self.barrel_pivot = Vector2()
@@ -653,7 +653,7 @@ def update():
             
             set_state("Control")
             select_next_tank()
-            gmap.env.wind.randomize()
+            gmap.env.randomize_wind()
             _wait_count = 0
     
     return True

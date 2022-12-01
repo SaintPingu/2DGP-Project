@@ -7,6 +7,8 @@ import object
 import sound
 
 
+MAX_AIR_DROP = 8
+
 _is_supply : bool
 _area = 0
 
@@ -85,7 +87,7 @@ class Ship(object.FlyObject):
             image_flip = 'h'
             pos_x = SCREEN_WIDTH + Ship.image.w * 2
         
-        yPos = random.randint(MAX_HEIGHT, SCREEN_HEIGHT - Ship.image.h)
+        yPos = random.randint(MAX_HEIGHT + Ship.image.h, SCREEN_HEIGHT - Ship.image.h)
         
         super().__init__(Ship.image, (pos_x, yPos), Ship.image.w, Ship.image.h, dir=self.dir, image_flip=image_flip)
 
@@ -186,6 +188,11 @@ def create_ship():
     _ship = Ship()
     object.add_object(_ship)
     _is_supply = True
+
+    global _air_drops
+    if len(_air_drops) >= MAX_AIR_DROP:
+        air_drop = _air_drops[0]
+        delete_air_drop(air_drop)
 
 def delete_ship():
     global _ship, _is_reseted

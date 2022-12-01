@@ -21,6 +21,8 @@ END_OF_LINE = 'END\n'
 GRAVITY = 9.8
 PIXEL_PER_METER = 5
 
+NO_WIND_MAPS = [4,]
+
 class Vector2:
     def __init__(self, x=0, y=0):
         self.x : float = x
