@@ -102,6 +102,7 @@ class Shell(object.GameObject):
         self.draw_image(self.img_shell)
     
     def move(self, is_affected_wind=True):
+        from state_battle import get_gravity
         dest = Vector2()
         
         # Use projectile moition formula
@@ -111,7 +112,7 @@ class Shell(object.GameObject):
             self.t += Shell.SIMULATION_t # faster search
             
         dest.x = self.origin[0] + (self.speed * self.t * math.cos(self.start_theta))
-        dest.y = self.origin[1] + (self.speed * self.t * math.sin(self.start_theta) - (0.5 * GRAVITY * self.t**2))
+        dest.y = self.origin[1] + (self.speed * self.t * math.sin(self.start_theta) - (0.5 * get_gravity() * self.t**2))
 
         if is_affected_wind:
             dest += gmap.env.get_wind_vector() * self.t
@@ -335,36 +336,38 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
     explosion_radius = 0
 
     if shell_name == "HP":
-        speed = 100
+        speed = 350
         shell_damage = 20
         explosion_damage = 20 
         explosion_radius = 15
     elif shell_name == "AP":
-        speed = 120
+        speed = 400
         shell_damage = 30
         explosion_damage = 5
         explosion_radius = 8
     elif shell_name == "MUL":
-        speed = 80
+        speed = 300
         shell_damage = 5
         explosion_damage = 10
         explosion_radius = 4
     elif shell_name == "NUCLEAR":
-        speed = 110
+        speed = 375
         shell_damage = 5
         explosion_damage = 30
         explosion_radius = 22
     elif shell_name == "TP":
-        speed = 80
+        speed = 300
     elif shell_name == "HOMING":
-        speed = 120
+        speed = 400
         shell_damage = 15
         explosion_damage = 2
         explosion_radius = 5
     else:
         assert(0)
 
-    return speed, shell_damage, explosion_damage, explosion_radius
+    speed_pps = get_pps(speed)
+
+    return speed_pps, shell_damage, explosion_damage, explosion_radius
 
 def get_shell_image(shell_name):
     assert shell_name in SHELLS.keys()

@@ -15,7 +15,7 @@ _area = 0
 class AirDrop(object.GroundObject):
     image : Image
     image_parachute : Image
-    FALL_SPEED = 200
+    FALL_SPEED = get_pps(350)
     def __init__(self, center):
         from inventory import Inven_Item
         super().__init__(AirDrop.image, center, AirDrop.image.w, AirDrop.image.h)
@@ -91,7 +91,7 @@ class Ship(object.FlyObject):
         
         super().__init__(Ship.image, (pos_x, yPos), Ship.image.w, Ship.image.h, dir=self.dir, image_flip=image_flip)
 
-        self.speed = 300
+        self.speed = get_pps(1000)
 
         global _area
         if _area == LEFT:
@@ -133,6 +133,7 @@ class Ship(object.FlyObject):
         if self.is_droped == False:
             create_air_drop((self.drop_pos_x + (Ship.SUPPLY_POINT_X * self.dir), self.center.y - self.height//2))
             self.is_droped = True
+            sound.play_sound('parachute')
 
 
 

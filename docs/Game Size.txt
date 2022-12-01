@@ -1,6 +1,13 @@
-1 Pixel : 5m
+[ 1 Pixel : 1m ]
 
-Tank Length = 150m
-Tank Height = 80m
-Tank Speed = 30km/h
-Missile Speed = about 100km/h
+size = w x h
+
+Tank size = 30m x 15m
+Tank speed = 1000km/h
+Missile speed = about 300~ km/h
+
+Map width = 1280m
+Map height = 892m  (1000(canvase_height) - 108(gui_height))
+
+Air drop size = 16m x 16m
+Air ship size = 146m x 58m

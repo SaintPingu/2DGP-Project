@@ -23,6 +23,7 @@ _winner = 0
 _is_edit_mode = False
 
 SCENE_STATES = ( "Control", "Fire", "Supply", "Ending" )
+map_index = 0
 
 def enter():
     from  state_lobby import get_mode, get_difficulty
@@ -31,6 +32,7 @@ def enter():
     global scene_state
     scene_state = SCENE_STATES[0]
     
+    global map_index
     map_index = state_lobby.crnt_map_index + 1
 
     object.enter()
@@ -145,3 +147,9 @@ def set_state(state : str):
 def set_winner(winner):
     global _winner
     _winner = winner
+
+def get_gravity():
+    gravity = 9.8
+    if map_index == 4:
+        return gravity * 0.7
+    return gravity

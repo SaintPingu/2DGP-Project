@@ -18,8 +18,7 @@ RIGHT = 1
 
 END_OF_LINE = 'END\n'
 
-GRAVITY = 9.8
-PIXEL_PER_METER = 5
+PIXEL_PER_METER = 1
 
 NO_WIND_MAPS = [4,]
 
@@ -271,3 +270,8 @@ def point_in_rect(point, rect : Rect):
         return True
     
     return False
+
+def get_pps(kmph):
+    mpm = (kmph * 1000.0 / 60.0)
+    mps = (mpm / 60.0)
+    return (mps * PIXEL_PER_METER)

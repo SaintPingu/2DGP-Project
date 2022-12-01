@@ -24,16 +24,14 @@ gui_launch : gui.GUI_LAUNCH
 gui_gauge : gui.GUI_GUAGE
 
 
-TANK_SPEED_KMPH = 30
-TANK_SPEED_MPM = (TANK_SPEED_KMPH * 1000.0 / 60.0)
-TANK_SPEED_MPS = (TANK_SPEED_MPM / 60.0)
-TANK_SPEED_PPS = (TANK_SPEED_MPS * PIXEL_PER_METER)
-        
+TANK_SPEED_KMPH = 100
+TANK_SPEED_PPS = get_pps(TANK_SPEED_KMPH)
+
 SOUND_CHANNEL_MOVEMENT = 1
 
 class Tank(object.GroundObject):
     MAX_DEGREE = 10
-    MAX_FUEL = TANK_SPEED_KMPH * 5
+    MAX_FUEL = 5 # n second
     MAX_HP = 100
     def __init__(self, center=(0,0)):
         self.image_barrel = image_barrel_green
@@ -191,7 +189,7 @@ class Tank(object.GroundObject):
         gmap.set_invalidate_rect(*prev_rect.__getitem__(), square=True)
         self.is_rect_invalid = True
 
-        self.fuel -= 1
+        self.fuel -= framework.frame_time
 
         supply.check_collision(self)
         if self.theta == 0:
