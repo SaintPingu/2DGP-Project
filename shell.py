@@ -68,7 +68,7 @@ class Shell(object.GameObject):
         super().__init__(position, self.img_shell.w, self.img_shell.h, theta)
 
         self.shell_name = shell_name
-        self.origin = position
+        self.origin = Vector2(*position)
         self.start_theta = theta
 
         self.vector = Vector2.right().get_rotated(theta)
@@ -78,6 +78,8 @@ class Shell(object.GameObject):
 
         if power < Shell.MIN_POWER:
             power = Shell.MIN_POWER
+        elif power > 1:
+            power = 1
         self.speed *= power
 
         self.is_destroyed = False 
@@ -111,11 +113,14 @@ class Shell(object.GameObject):
         else:
             self.t += Shell.SIMULATION_t # faster search
             
-        dest.x = self.origin[0] + (self.speed * self.t * math.cos(self.start_theta))
-        dest.y = self.origin[1] + (self.speed * self.t * math.sin(self.start_theta) - (0.5 * get_gravity() * self.t**2))
+        dest.x = self.origin.x + (self.speed * self.t * math.cos(self.start_theta))
+        dest.y = self.origin.y + (self.speed * self.t * math.sin(self.start_theta) - (0.5 * get_gravity() * self.t**2))
 
+        # not applied air resistance
+        # and this is not drag
         if is_affected_wind:
-            dest += gmap.env.get_wind_vector() * self.t
+            dest.x += gmap.env.get_wind() * self.t
+
         self.vector = self.vector.get_rotated_dest(self.center, dest)
         self.set_center(dest)
         
@@ -366,7 +371,8 @@ def get_attributes(shell_name : str) -> tuple[float, float]:
         assert(0)
 
     speed_pps = get_pps(speed)
-
+    shell_damage *= 2
+    explosion_damage *= 2
     return speed_pps, shell_damage, explosion_damage, explosion_radius
 
 def get_shell_image(shell_name):

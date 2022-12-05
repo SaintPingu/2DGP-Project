@@ -66,7 +66,7 @@ class Tank(object.GroundObject):
         self.inven_item = inventory.Inven_Item()
         self.inven_item.add_item("double")
         self.inven_item.add_item("extension")
-        self.inven_item.add_item("TP")
+        #self.inven_item.add_item("TP")
     
     def release(self):
         if tank_list: # death
@@ -342,7 +342,7 @@ class Tank_AI(Tank):
         "easy" : 4,
         "normal" : 3,
         "hard" : 2,
-        "god" : 0
+        "god" : 0.5
     }
     error_range = 0
     def __init__(self, center=(0, 0)):
@@ -407,7 +407,7 @@ class Tank_AI(Tank):
             else:
                 self.dir = random.randrange(-1, 2, 2)
 
-            self.max_movement_fuel = random.randint(0, Tank.MAX_FUEL - 20)
+            self.max_movement_fuel = random.randint(0, Tank.MAX_FUEL)
 
     def set_shell(self):
         REACHABLE_EVALUATION = 6
@@ -572,7 +572,7 @@ class Tank_AI(Tank):
                 
                 self.crnt_degree += Tank_AI.degree_table[self.degree_level]
 
-                if self.crnt_degree >= 90: # didn't find target tank
+                if self.crnt_degree >= 180: # didn't find target tank
                     self.fire(self.last_hit_degree)
                     return
 

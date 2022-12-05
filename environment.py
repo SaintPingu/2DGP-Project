@@ -4,16 +4,15 @@ if __name__ == "__main__":
 from tools import *
 import object
 import gmap
-import framework
+import framework          
 import state_lobby
 
 class CloudImageError(Exception):
     def __init__(self):
         super().__init__("The cloud image's max height is 200!")
 
-_BASE_WIND_SPEED_MPS = 5
-_BASE_WIND_SPEED_PPS = (_BASE_WIND_SPEED_MPS * PIXEL_PER_METER)
-_WIND_AFFECT = 0.1
+_BASE_WIND_SPEED_KMPH = 10
+_BASE_WIND_SPEED_PPS = get_pps(_BASE_WIND_SPEED_KMPH)
 
 _CLOUD_IMAGE_MAX_HEIGHT = 200
 _CLOUD_MIN_HEIGHT = MAX_HEIGHT + _CLOUD_IMAGE_MAX_HEIGHT
@@ -85,8 +84,8 @@ class Wind:
         self.wind_pos_right = (pos_cloud[0] + self.image_cloud.w, pos_cloud[1])
         gui_cloud = gui.GUI(self.image_cloud, pos_cloud)
         self.gui_wind = gui.GUI(self.image_wind, is_draw=False)
-        #gui.add_gui(gui_cloud, 1)
-        #gui.add_gui(self.gui_wind, 1)
+        gui.add_gui(gui_cloud, 1)
+        gui.add_gui(self.gui_wind, 1)
         
         self.direction : int = 0
         self.speed : float = 0
@@ -97,7 +96,7 @@ class Wind:
 
     def randomize(self):
         gmap.set_invalidate_rect(self.gui_wind.position, self.image_wind.w, self.image_wind.h)
-        rand_direction = random.randint(-1, 1)
+        rand_direction = random.randint(0, 1) * 2 -1  # LEFT, 0, RIGHT
         rand_speed = _BASE_WIND_SPEED_PPS / (random.random() + 0.1)
         self.direction = rand_direction
         self.speed = rand_speed
@@ -113,8 +112,8 @@ class Wind:
             self.gui_wind.position = self.wind_pos_right
             
     
-    def get_wind_vector(self) -> Vector2:
-        return Vector2(self.direction * self.speed * _WIND_AFFECT, 0)
+    def get_wind(self) -> float:
+        return self.direction * self.speed
 
 
 class Cloud(object.GameObject):
@@ -162,7 +161,7 @@ class Cloud(object.GameObject):
     def update(self):
         rect_inv = Rect(self.center, self.width + 2, self.height + 2)
         gmap.draw_background(rect_inv, False)
-        speed = wind.speed
+        speed = wind.speed * 10
         self.offset(wind.direction * speed * framework.frame_time, 0)
         self.is_rect_invalid = True
 
@@ -180,7 +179,7 @@ def randomize_wind():
     if crnt_map_index not in NO_WIND_MAPS:
         wind.randomize()
     
-def get_wind_vector():
+def get_wind():
     if crnt_map_index not in NO_WIND_MAPS:
-        return wind.get_wind_vector()
-    return Vector2(0, 0)
+        return wind.get_wind()
+    return 0

@@ -15,7 +15,7 @@ _area = 0
 class AirDrop(object.GroundObject):
     image : Image
     image_parachute : Image
-    FALL_SPEED = get_pps(350)
+    FALL_SPEED = get_pps(500)
     def __init__(self, center):
         from inventory import Inven_Item
         super().__init__(AirDrop.image, center, AirDrop.image.w, AirDrop.image.h)
